@@ -232,3 +232,57 @@ This document defines the initial set of structured GitHub issues for the LavaTe
   - Graceful degradation if OS metrics cannot be gathered.
   - Integration test verifying headless simulation with active system signals.
 - **Dependencies**: Issue 15, Issue 16.
+
+---
+
+## Phase 7: Audio Reactive (v0.8.0)
+
+### Issue 18: Audio Signal Abstraction & FFT Spectrum Analyzer
+- **Goal**: Implement high-performance zero-dependency FFT and spectrum energy band binning.
+- **Context**: Converts raw audio PCM samples into normalized frequency bands (`bass`, `mid`, `treble`).
+- **Scope**: `src/audio/mod.rs`, `src/audio/fft.rs`, `src/audio/signals.rs`.
+- **Non-goals**: Low-level audio hardware drivers in the FFT module.
+- **Acceptance Criteria**:
+  - Radix-2 / Cooley-Tukey FFT implementation with Hann windowing.
+  - Spectrum band energy extractor mapping frequencies to `bass` (20-250Hz), `mid` (250-4000Hz), and `treble` (4000-20000Hz).
+  - Deterministic unit tests with synthetic sine waves verifying frequency bin isolation.
+- **Dependencies**: None.
+
+---
+
+### Issue 19: Audio Provider Trait & Mock / Synthetic Audio Provider
+- **Goal**: Define `AudioProvider` trait and deterministic fixtures for testing without physical audio devices.
+- **Context**: Enables audio reactivity simulation and testability on CI runners.
+- **Scope**: `src/audio/provider.rs`.
+- **Non-goals**: Physical ALSA/PipeWire device acquisition.
+- **Acceptance Criteria**:
+  - `AudioProvider` trait returning `AudioSignals`.
+  - `MockAudioProvider` and `SyntheticAudioGenerator` (sine wave, pulse, sweep).
+  - Unit tests verifying provider contract.
+- **Dependencies**: Issue 18.
+
+---
+
+### Issue 20: Native Linux Audio Capture Integration & Ring Buffer
+- **Goal**: Implement non-blocking PCM stream receiver with lockless ring-buffer for Linux.
+- **Context**: Captures real audio playback from PipeWire or default audio stream without stalling the 60 FPS render loop.
+- **Scope**: `src/audio/capture.rs` / `src/audio/linux.rs`.
+- **Non-goals**: Modifying system sound server configuration.
+- **Acceptance Criteria**:
+  - Non-blocking ring buffer decoupling audio capture thread from render loop.
+  - Graceful fallback to silence/mock provider if no audio device is present.
+  - Unit tests for circular ring buffer overflow and read semantics.
+- **Dependencies**: Issue 18, Issue 19.
+
+---
+
+### Issue 21: Simulation Audio Modulation & CLI `--audio` Integration
+- **Goal**: Map audio spectrum signals to fluid metaball motion and add CLI/TOML controls.
+- **Context**: Bass pulses buoyancy/velocity, mid-range modulates turbulence, treble vibrates surfaces.
+- **Scope**: `src/core/simulation.rs`, `src/config/schema.rs`, `src/main.rs`.
+- **Non-goals**: Full DAW plugin features.
+- **Acceptance Criteria**:
+  - `Simulation::apply_audio_signals()` smoothly modulates physics parameters.
+  - CLI switch `--audio` and `[audio]` section in TOML config.
+  - Integration test verifying audio-reactive simulation pipeline.
+- **Dependencies**: Issue 18, Issue 19, Issue 20.
