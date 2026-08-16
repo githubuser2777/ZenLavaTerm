@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: LavaTerm Discussions
+    url: https://github.com/ZenLavaTerm/lavaterm/discussions
+    about: Ask questions and discuss architectural ideas with the community.
