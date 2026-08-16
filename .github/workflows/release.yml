@@ -103,3 +103,41 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-archlinux-package:
+    name: Build & Package (Arch Linux x86_64)
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm git rust cargo zstd binutils
+
+      - name: Configure build environment
+        run: |
+          useradd -m -s /bin/bash builduser
+          chown -R builduser:builduser .
+
+      - name: Build Arch Linux package with makepkg
+        run: |
+          su builduser -c "./scripts/package_arch.sh"
+        working-directory: .
+
+      - name: Prepare release assets
+        run: |
+          cp target/arch_pkg/lavaterm-*.pkg.tar.zst* .
+          ls -la lavaterm-*.pkg.tar.zst*
+
+      - name: Upload Arch Linux package to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            lavaterm-*.pkg.tar.zst
+            lavaterm-*.pkg.tar.zst.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

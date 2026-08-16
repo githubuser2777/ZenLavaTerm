@@ -118,6 +118,32 @@ Before building or running LavaTerm, ensure your environment meets the following
    - **Windows**: Windows Terminal, WezTerm, Alacritty.
 3. **Unicode Font**: A modern monospace font with Unicode Symbols and Braille Patterns (e.g. JetBrains Mono, Fira Code, Cascadia Code, Nerd Fonts).
 
+## Installation
+
+### Arch Linux
+
+#### Option 1: Pre-built Package (Instant Install, No Rust Required)
+```bash
+# Download the latest .pkg.tar.zst from GitHub Releases and install with pacman
+wget https://github.com/ZenLavaTerm/lavaterm/releases/latest/download/lavaterm-0.9.0-1-x86_64.pkg.tar.zst
+sudo pacman -U lavaterm-0.9.0-1-x86_64.pkg.tar.zst
+
+# Or install lavaterm-bin via AUR helper
+yay -S lavaterm-bin
+```
+
+#### Option 2: Build from Source
+```bash
+# Via AUR helper
+yay -S lavaterm
+
+# Or compile and package locally
+./scripts/package_arch.sh --install
+
+# Or via Cargo
+cargo install --locked --git https://github.com/ZenLavaTerm/lavaterm.git
+```
+
 ---
 
 ## Getting Started

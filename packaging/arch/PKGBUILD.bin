@@ -1,0 +1,19 @@
+# Maintainer: ZenLavaTerm Contributors <https://github.com/ZenLavaTerm/lavaterm>
+pkgname=lavaterm-bin
+pkgver=0.9.0
+pkgrel=1
+pkgdesc="A terminal-native ambient lava lamp and metaball visualizer (precompiled binary)"
+arch=('x86_64')
+url="https://github.com/ZenLavaTerm/lavaterm"
+license=('MIT')
+depends=('gcc-libs')
+provides=('lavaterm')
+conflicts=('lavaterm' 'lavaterm-git')
+source=("$pkgname-$pkgver.tar.gz::$url/releases/download/v$pkgver/lavaterm-x86_64-unknown-linux-gnu.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  install -Dm755 "lavaterm" "$pkgdir/usr/bin/lavaterm"
+  install -Dm644 "README.md" "$pkgdir/usr/share/doc/lavaterm/README.md"
+  install -Dm644 "LICENSE" "$pkgdir/usr/share/licenses/lavaterm/LICENSE"
+}
