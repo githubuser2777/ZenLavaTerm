@@ -180,3 +180,55 @@ This document defines the initial set of structured GitHub issues for the LavaTe
   - Cross-platform matrix test verification.
 - **Technical Notes**: Cache cargo dependencies for fast turnaround.
 - **Dependencies**: Issue 01.
+
+---
+
+### Issue 14: System Signal Abstraction & Mock Provider
+- **Goal**: Define decoupled reactive system signal domain types and provider traits.
+- **Context**: Enables simulation to react to OS metrics without tying core logic to OS APIs.
+- **Scope**: `src/reactive/mod.rs` and `src/reactive/signals.rs`.
+- **Non-goals**: Direct platform syscalls in core.
+- **Acceptance Criteria**:
+  - `SystemSignals` struct normalized in $[0.0, 1.0]$ (`cpu_load`, `memory_usage`, `battery_level`, `io_activity`).
+  - `SystemProvider` trait for fetching signals with graceful error recovery.
+  - `MockSystemProvider` for deterministic testing.
+- **Dependencies**: Issue 04.
+
+---
+
+### Issue 15: Linux /proc and sysfs System Metrics Provider
+- **Goal**: Implement zero-dependency native Linux metric extraction via `/proc/stat`, `/proc/meminfo`, and `/sys/class/power_supply`.
+- **Context**: High-performance ambient visualizer integration on primary target platform (Linux).
+- **Scope**: `src/platform/linux.rs` (or `src/reactive/linux.rs`).
+- **Non-goals**: Heavy third-party daemon dependencies.
+- **Acceptance Criteria**:
+  - Reads CPU utilization, memory pressure, and battery status safely.
+  - Returns `None` or default fallback if virtual files are unreadable (never panics).
+  - Unit tests parsing mock procfs strings.
+- **Dependencies**: Issue 14.
+
+---
+
+### Issue 16: Simulation Signal Mapping & Fluid Modulation
+- **Goal**: Map normalized system signals to metaball physical properties (turbulence, size, convection rate).
+- **Context**: CPU usage drives turbulence, RAM drives blob radius/count, battery drives thermal buoyancy.
+- **Scope**: `src/core/simulation.rs` and `src/core/physics.rs`.
+- **Non-goals**: Audio FFT spectrum.
+- **Acceptance Criteria**:
+  - Simulation smoothly modulates physics constants in response to signal updates.
+  - Stable numerical integration even under sudden metric spikes.
+  - Unit tests verifying parameter modulation.
+- **Dependencies**: Issue 14, Issue 15.
+
+---
+
+### Issue 17: CLI & Configuration Integration for System Reactive Mode
+- **Goal**: Add `--system` CLI switch and `[reactive]` TOML configuration options.
+- **Context**: Allows users to enable ambient system monitoring mode with custom mappings.
+- **Scope**: `src/config/schema.rs` and `src/main.rs`.
+- **Non-goals**: External desktop widget embedding (Phase 9).
+- **Acceptance Criteria**:
+  - CLI flag `--system` enables real-time background metric polling.
+  - Graceful degradation if OS metrics cannot be gathered.
+  - Integration test verifying headless simulation with active system signals.
+- **Dependencies**: Issue 15, Issue 16.
