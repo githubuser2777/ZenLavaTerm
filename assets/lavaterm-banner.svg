@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0e0e18" />
+      <stop offset="60%" stop-color="#08080f" />
+      <stop offset="100%" stop-color="#040408" />
+    </linearGradient>
+    
+    <radialGradient id="bottom-heat-glow" cx="50%" cy="100%" r="65%">
+      <stop offset="0%" stop-color="#ff3b00" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#7b2cff" stop-opacity="0.18" />
+      <stop offset="80%" stop-color="#00f0ff" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#08080f" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="top-ambient-glow" cx="50%" cy="0%" r="50%">
+      <stop offset="0%" stop-color="#7b2cff" stop-opacity="0.22" />
+      <stop offset="60%" stop-color="#ff3b00" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#08080f" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Lava Flame & Fluid Gradients -->
+    <linearGradient id="lava-core" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ff1a00" />
+      <stop offset="25%" stop-color="#ff5e00" />
+      <stop offset="55%" stop-color="#ffaa00" />
+      <stop offset="85%" stop-color="#ff0077" />
+      <stop offset="100%" stop-color="#7b2cff" />
+    </linearGradient>
+
+    <linearGradient id="lava-glow" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ff3300" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#ff9900" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#9900ff" stop-opacity="0.4" />
+    </linearGradient>
+
+    <linearGradient id="blob-grad-left" x1="20%" y1="100%" x2="80%" y2="0%">
+      <stop offset="0%" stop-color="#ff2200" />
+      <stop offset="40%" stop-color="#ff7700" />
+      <stop offset="80%" stop-color="#ff0066" />
+      <stop offset="100%" stop-color="#7b2cff" />
+    </linearGradient>
+
+    <linearGradient id="blob-grad-right" x1="80%" y1="100%" x2="20%" y2="0%">
+      <stop offset="0%" stop-color="#ff3700" />
+      <stop offset="45%" stop-color="#ff9500" />
+      <stop offset="75%" stop-color="#e100ff" />
+      <stop offset="100%" stop-color="#6700ff" />
+    </linearGradient>
+
+    <linearGradient id="title-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="35%" stop-color="#fff5ea" />
+      <stop offset="70%" stop-color="#ffbe76" />
+      <stop offset="100%" stop-color="#ff7043" />
+    </linearGradient>
+
+    <linearGradient id="border-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff7a00" stop-opacity="0.4" />
+      <stop offset="50%" stop-color="#7b2cff" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#00f0ff" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Filters for Bloom & Glow -->
+    <filter id="bloom-strong" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur1" />
+      <feGaussianBlur stdDeviation="30" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="bloom-subtle" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="text-shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#ff4500" flood-opacity="0.45" />
+    </filter>
+
+    <!-- Terminal Dot Grid Pattern -->
+    <pattern id="grid-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1" fill="#ffffff" fill-opacity="0.04" />
+    </pattern>
+
+    <!-- Sub-pixel Braille Texture Matrix Pattern -->
+    <pattern id="matrix-dots" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+      <text x="5" y="15" fill="#ff7a00" fill-opacity="0.035" font-family="monospace" font-size="10">⠶⠮⠵</text>
+      <text x="35" y="35" fill="#7b2cff" fill-opacity="0.035" font-family="monospace" font-size="10">⠿⠗⠲</text>
+      <text x="15" y="55" fill="#00f0ff" fill-opacity="0.03" font-family="monospace" font-size="10">⠳⠞⠧</text>
+    </pattern>
+  </defs>
+
+  <!-- Background Base Container -->
+  <rect width="1200" height="360" rx="16" fill="url(#bg-grad)" />
+  
+  <!-- Dot Grid & Matrix Patterns -->
+  <rect width="1200" height="360" rx="16" fill="url(#grid-dots)" />
+  <rect width="1200" height="360" rx="16" fill="url(#matrix-dots)" />
+
+  <!-- Ambient Light Radiance -->
+  <rect width="1200" height="360" fill="url(#bottom-heat-glow)" />
+  <rect width="1200" height="360" fill="url(#top-ambient-glow)" />
+
+  <!-- Window Chrome Header -->
+  <rect x="0" y="0" width="1200" height="38" fill="#ffffff" fill-opacity="0.015" />
+  <line x1="0" y1="38" x2="1200" y2="38" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1" />
+
+  <!-- Terminal Window Buttons -->
+  <g transform="translate(24, 14)">
+    <circle cx="0" cy="5" r="5" fill="#ff5f56" fill-opacity="0.85" />
+    <circle cx="16" cy="5" r="5" fill="#ffbd2e" fill-opacity="0.85" />
+    <circle cx="32" cy="5" r="5" fill="#27c93f" fill-opacity="0.85" />
+  </g>
+
+  <!-- Terminal Header Title / Status -->
+  <text x="80" y="23" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" letter-spacing="1">lavaterm — 60 FPS • TRUECOLOR • AMBIENT ENGINE</text>
+
+  <g transform="translate(1030, 14)">
+    <rect x="0" y="0" width="146" height="20" rx="10" fill="#ff7a00" fill-opacity="0.12" stroke="#ff7a00" stroke-opacity="0.3" stroke-width="1" />
+    <circle cx="10" cy="10" r="3" fill="#00ff66" />
+    <text x="20" y="14" fill="#ffbe76" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="bold" letter-spacing="1">RUST NATIVE</text>
+  </g>
+
+  <!-- ================= LAVA METABALLS SIMULATION LAYER ================= -->
+
+  <!-- Outer Lava Glow (Heavy Blur Underlayer) -->
+  <g filter="url(#bloom-strong)" opacity="0.75">
+    <!-- Bottom Molten Heat Pool -->
+    <path d="M 0,360 L 0,310 Q 150,270 300,320 T 600,285 T 900,325 T 1200,295 L 1200,360 Z" fill="url(#lava-glow)" />
+
+    <!-- Connected Metaball Blob Formations -->
+    <!-- Left Major Rising Droplet -->
+    <path d="M 160,330 C 130,290 140,230 185,190 C 225,150 280,165 295,215 C 310,265 285,300 250,330 Z" fill="url(#blob-grad-left)" />
+    <!-- Center-Left Ascending Bulb -->
+    <path d="M 380,340 C 350,310 360,250 400,210 C 440,170 490,180 510,230 C 525,270 490,320 460,340 Z" fill="url(#lava-glow)" />
+    <!-- Center Bridge Droplet (Rising High) -->
+    <circle cx="600" cy="190" r="48" fill="url(#lava-glow)" />
+    <circle cx="600" cy="120" r="26" fill="url(#lava-glow)" />
+    <!-- Center-Right Splitting Droplet -->
+    <path d="M 720,335 C 690,300 705,240 750,205 C 795,170 850,185 865,240 C 880,285 840,320 805,340 Z" fill="url(#blob-grad-right)" />
+    <!-- Right Ambient Thermal Blob -->
+    <path d="M 980,340 C 940,300 955,230 1010,195 C 1060,160 1115,180 1125,240 C 1135,290 1100,325 1060,340 Z" fill="url(#blob-grad-right)" />
+  </g>
+
+  <!-- Crisp Vector Metaball Geometry Layer -->
+  <g filter="url(#bloom-subtle)">
+    <!-- Bottom Baseline Liquid Pool -->
+    <path d="M 0,360 L 0,315 Q 150,280 300,325 T 600,295 T 900,330 T 1200,305 L 1200,360 Z" fill="url(#lava-core)" />
+
+    <!-- Left Metabolic Cluster -->
+    <!-- Blob 1 (Base & Stem) -->
+    <path d="M 170,340 C 145,295 155,235 195,195 C 230,160 275,170 290,215 C 305,260 280,305 245,340 Z" fill="url(#blob-grad-left)" />
+    <!-- Small Detached Cold Blob Floating Up -->
+    <circle cx="215" cy="135" r="22" fill="url(#blob-grad-left)" />
+    <circle cx="165" cy="100" r="12" fill="url(#blob-grad-left)" opacity="0.85" />
+    <circle cx="260" cy="90" r="8" fill="#ff7700" opacity="0.6" />
+
+    <!-- Mid-Left Convective Surge (Bridge Neck) -->
+    <path d="M 390,345 C 365,310 375,255 410,220 C 445,185 485,195 500,240 C 515,280 480,325 450,345 Z" fill="url(#lava-core)" />
+    <circle cx="445" cy="155" r="28" fill="url(#lava-core)" />
+    <!-- Organic Neck Connection between 445,155 and 410,220 -->
+    <path d="M 425,175 C 415,190 410,205 418,225 C 430,210 455,195 460,175 Z" fill="url(#lava-core)" opacity="0.9" />
+
+    <!-- Center Pinnacle Metaball (Apex Cooling Zone) -->
+    <circle cx="600" cy="205" r="44" fill="url(#lava-core)" />
+    <circle cx="600" cy="128" r="25" fill="url(#blob-grad-left)" />
+    <circle cx="600" cy="72" r="14" fill="#7b2cff" />
+    <!-- Fluid Isosurface Neck Pinch -->
+    <path d="M 585,190 C 592,165 590,150 588,140 C 605,145 612,160 615,190 Z" fill="url(#lava-core)" />
+    <path d="M 593,118 C 596,102 595,90 594,82 C 603,86 605,96 607,118 Z" fill="#b829dd" opacity="0.85" />
+
+    <!-- Mid-Right Ascending Cluster -->
+    <path d="M 735,340 C 705,305 720,245 760,215 C 800,180 845,195 860,245 C 870,285 835,325 800,340 Z" fill="url(#blob-grad-right)" />
+    <circle cx="810" cy="148" r="32" fill="url(#blob-grad-right)" />
+    <circle cx="865" cy="95" r="16" fill="url(#blob-grad-right)" />
+    <circle cx="755" cy="120" r="10" fill="#e100ff" opacity="0.75" />
+
+    <!-- Right Droplet Field -->
+    <path d="M 995,345 C 960,310 975,245 1020,210 C 1065,175 1110,195 1120,245 C 1130,290 1095,330 1055,345 Z" fill="url(#blob-grad-right)" />
+    <circle cx="1045" cy="140" r="26" fill="url(#blob-grad-right)" />
+    <circle cx="1100" cy="95" r="14" fill="#6700ff" opacity="0.8" />
+  </g>
+
+  <!-- Fluid Specular Highlights & Core Radiance -->
+  <g opacity="0.65">
+    <ellipse cx="600" cy="200" rx="20" ry="10" fill="#ffffff" opacity="0.3" />
+    <ellipse cx="600" cy="125" rx="10" ry="6" fill="#ffffff" opacity="0.35" />
+    <ellipse cx="445" cy="150" rx="12" ry="7" fill="#ffffff" opacity="0.28" />
+    <ellipse cx="810" cy="142" rx="14" ry="8" fill="#ffffff" opacity="0.3" />
+    <ellipse cx="215" cy="130" rx="9" ry="5" fill="#ffffff" opacity="0.3" />
+    <ellipse cx="1045" cy="135" rx="11" ry="6" fill="#ffffff" opacity="0.25" />
+  </g>
+
+  <!-- Ambient Micro-particles (Brownian Thermal Drift) -->
+  <g opacity="0.6">
+    <circle cx="320" cy="140" r="2" fill="#ffbe76" />
+    <circle cx="350" cy="95" r="1.5" fill="#ff7a00" />
+    <circle cx="510" cy="110" r="2" fill="#ff3b00" />
+    <circle cx="680" cy="130" r="2" fill="#ff7700" />
+    <circle cx="705" cy="85" r="1.5" fill="#e100ff" />
+    <circle cx="915" cy="130" r="2.5" fill="#bd93f9" />
+    <circle cx="940" cy="180" r="1.5" fill="#00f0ff" />
+    <circle cx="130" cy="210" r="2" fill="#ff5e00" />
+  </g>
+
+  <!-- Bottom Terminal Status Overlay Bar -->
+  <g transform="translate(0, 326)">
+    <rect width="1200" height="34" fill="#06060c" fill-opacity="0.82" />
+    <line x1="0" y1="0" x2="1200" y2="0" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1" />
+    
+    <text x="30" y="21" fill="#71788e" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11">
+      <tspan fill="#ff7a00" font-weight="bold">$</tspan> lavaterm --theme lava --renderer halfblock --system --audio
+    </text>
+    
+    <text x="1170" y="21" text-anchor="end" fill="#5a6075" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11">
+      v0.9.0 • ISOSURFACE CONVECTION
+    </text>
+  </g>
+
+  <!-- ================= BRANDING & HERO TEXT ================= -->
+
+  <!-- Decorative Accent Lines around Title -->
+  <g opacity="0.65">
+    <line x1="280" y1="124" x2="380" y2="124" stroke="url(#title-grad)" stroke-width="1.5" stroke-linecap="round" opacity="0.5" />
+    <circle cx="385" cy="124" r="2.5" fill="#ffbe76" />
+    <circle cx="815" cy="124" r="2.5" fill="#ffbe76" />
+    <line x1="820" y1="124" x2="920" y2="124" stroke="url(#title-grad)" stroke-width="1.5" stroke-linecap="round" opacity="0.5" />
+  </g>
+
+  <!-- Main Hero Title -->
+  <g filter="url(#text-shadow)">
+    <text x="600" y="132" text-anchor="middle" fill="url(#title-grad)" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'JetBrains Mono', 'Fira Code', sans-serif" font-size="54" font-weight="900" letter-spacing="16">LAVATERM</text>
+  </g>
+
+  <!-- Hero Subtitle -->
+  <text x="600" y="162" text-anchor="middle" fill="#c3c8de" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="12" font-weight="700" letter-spacing="7" opacity="0.95">AMBIENT • REACTIVE • BEAUTIFUL</text>
+
+  <!-- Hero Tagline Details -->
+  <text x="600" y="184" text-anchor="middle" fill="#8f96b2" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.5" letter-spacing="3" opacity="0.85">TERMINAL-NATIVE AMBIENT LAVA LAMP &amp; METABALL VISUALIZER</text>
+
+  <!-- Border Frame Accent -->
+  <rect x="0.5" y="0.5" width="1199" height="359" rx="16" fill="none" stroke="url(#border-grad)" stroke-width="1" />
+</svg>

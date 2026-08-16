@@ -9,15 +9,7 @@
 >
 > LavaTerm brings soothing, organic fluid dynamics to your terminal using 2D scalar field isosurfaces, sub-pixel Unicode block and Braille character packing, and 24-bit True Color gradients. Designed for aesthetic desktop ricing, ambient computing, and real-time audio and system-reactive observability.
 
-```text
-       .---.          .---.
-      /     \        /     \
-     |  (o)  |      |   *   |
-      \     /        \     /
-       '---'  ~~~~~   '---'
-           (  L A V A  )
-            ~~~~~~~~~~~
-```
+<img src="assets/lavaterm-banner.svg" alt="LavaTerm ambient lava visualization" width="100%">
 
 ---
 
