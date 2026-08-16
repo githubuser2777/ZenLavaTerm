@@ -20,12 +20,24 @@ mkdir -p "$BUILD_DIR"
 # Copy PKGBUILD and source files
 cp "$ROOT_DIR/packaging/arch/PKGBUILD" "$BUILD_DIR/"
 
-# Create source archive from current repository tree
+# Extract version from Cargo.toml and sync PKGBUILD
 VERSION=$(grep -m 1 '^version = ' "$ROOT_DIR/Cargo.toml" | awk -F '"' '{print $2}')
+sed -i "s/^pkgver=.*/pkgver=$VERSION/" "$BUILD_DIR/PKGBUILD"
 PKG_TAR="$BUILD_DIR/lavaterm-$VERSION.tar.gz"
 
 echo "==> Creating source tarball for lavaterm v$VERSION..."
-(cd "$ROOT_DIR" && git archive --format=tar.gz --prefix="lavaterm-$VERSION/" -o "$PKG_TAR" HEAD)
+git config --global --add safe.directory "*" 2>/dev/null || true
+export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+
+if (cd "$ROOT_DIR" && git archive --format=tar.gz --prefix="lavaterm-$VERSION/" -o "$PKG_TAR" HEAD 2>/dev/null); then
+    echo "==> Source tarball created via git archive."
+else
+    echo "==> Creating source tarball via tar fallback..."
+    tar --transform "s|^\.|lavaterm-$VERSION|" \
+        --exclude="./target" \
+        --exclude="./.git" \
+        -czf "$PKG_TAR" -C "$ROOT_DIR" .
+fi
 
 # Run makepkg inside BUILD_DIR
 echo "==> Running makepkg..."

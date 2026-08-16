@@ -119,12 +119,14 @@ jobs:
 
       - name: Configure build environment
         run: |
-          useradd -m -s /bin/bash builduser
-          chown -R builduser:builduser .
+          git config --global --add safe.directory '*' || true
+          useradd -m -s /bin/bash builduser || true
+          su builduser -c "git config --global --add safe.directory '*'" || true
+          chown -R builduser:builduser "$PWD" /__w || true
 
       - name: Build Arch Linux package with makepkg
         run: |
-          su builduser -c "./scripts/package_arch.sh"
+          su builduser -c "export GIT_DISCOVERY_ACROSS_FILESYSTEM=1 && ./scripts/package_arch.sh"
         working-directory: .
 
       - name: Prepare release assets
