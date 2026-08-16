@@ -23,7 +23,8 @@ LavaTerm simulates organic, soothing fluid metaballs directly within your termin
 ## Features
 
 - 🫧 **Real-Time Metaball Physics**: Buoyancy, gravity, viscosity damping, and subtle thermal noise.
-- 🎨 **True-Color Half-Block Rendering**: Converts virtual pixel grids to terminal character cells via `▀` and `▄` sub-cell packing.
+- 📊 **Ambient System Observability**: Dynamically modulates fluid turbulence from CPU load, blob expansion from RAM usage, and buoyancy from battery levels.
+- 🎨 **Multi-Renderer Pipeline**: Half-Block (`▀`), Full-Block (`█`), and 2x4 Braille dot-matrix (`⠿`) renderers with 24-bit True Color.
 - ⚡ **Zero-Overhead Core**: Simulation logic is completely decoupled from terminal I/O for deterministic testing and peak performance.
 - 🛠️ **Configurable**: Fully customizable via TOML files and intuitive CLI flags.
 - 🛡️ **Robust Terminal Handling**: Safe raw mode transitions, alternate screen support, and automatic terminal state restoration on exit or panic.
@@ -47,14 +48,17 @@ cd lavaterm
 # Build in release mode
 cargo build --release
 
-# Run LavaTerm (Half-Block mode)
+# Run LavaTerm (Standard Half-Block mode)
 cargo run --release
 
-# Run LavaTerm (Braille dot matrix mode)
-cargo run --release -- --renderer braille
+# Run in System Reactive Mode (CPU/RAM/Battery ambient visualizer)
+cargo run --release -- --system
+
+# Run LavaTerm with Braille dot matrix renderer
+cargo run --release -- --renderer braille --system
 
 # Run headless simulation test (no TTY takeover)
-cargo run -- --headless --frames 30
+cargo run -- --headless --frames 30 --system
 
 # Run micro-benchmarks
 cargo bench
@@ -72,6 +76,7 @@ Options:
   -r, --renderer <TYPE>      Renderer backend: halfblock | block | braille [default: halfblock]
       --fps <FPS>            Target frames per second [default: 30]
       --blobs <COUNT>        Number of metaball blobs [default: 12]
+      --system               Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
       --headless             Run headless simulation without taking over TTY (useful for testing/CI)
       --frames <COUNT>       Number of frames to step when in headless mode [default: 60]
   -h, --help                 Print help
@@ -101,9 +106,13 @@ gradient = true
 bottom = "#ff3b00"
 middle = "#ff7a00"
 top = "#7b2cff"
+
+[reactive]
+enabled = true
+poll_interval_ms = 500
 ```
 
-For more details on configuration parameters, see [docs/configuration.md](docs/configuration.md).
+For more details on configuration parameters, see [docs/configuration.md](docs/configuration.md) and [docs/reactive.md](docs/reactive.md).
 
 ---
 
@@ -112,13 +121,13 @@ For more details on configuration parameters, see [docs/configuration.md](docs/c
 LavaTerm follows a strict unidirectional data flow:
 
 ```text
-Signals / Time / Input
+System Metrics / Signals / Time / Input
          ↓
   Simulation Core (Blobs & Scalar Field)
          ↓
   Virtual Framebuffer (2D RGB Canvas)
          ↓
-  Terminal Renderer (Half-block / Block)
+  Terminal Renderer (Half-block / Block / Braille)
          ↓
   Terminal Output (ANSI batched stream)
 ```
@@ -132,6 +141,7 @@ See [docs/architecture.md](docs/architecture.md) for detailed architectural spec
 - [Architecture & Data Flow](docs/architecture.md)
 - [Simulation & Physics Model](docs/simulation.md)
 - [Rendering Pipeline & Terminal I/O](docs/rendering.md)
+- [System Reactive Observability](docs/reactive.md)
 - [Configuration Schema](docs/configuration.md)
 - [Development Roadmap](docs/roadmap.md)
 - [Contributing Guidelines](docs/contributing.md)

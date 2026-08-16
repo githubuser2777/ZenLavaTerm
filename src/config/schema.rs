@@ -14,6 +14,9 @@ pub struct Config {
 
     #[serde(default)]
     pub palette: PaletteConfig,
+
+    #[serde(default)]
+    pub reactive: ReactiveConfig,
 }
 
 impl Config {
@@ -191,6 +194,34 @@ impl From<PaletteConfig> for ColorPalette {
     }
 }
 
+/// Reactive system monitoring configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ReactiveConfig {
+    /// Enable system-reactive ambient visualizer mode.
+    #[serde(default = "default_reactive_enabled")]
+    pub enabled: bool,
+
+    /// Metric polling interval in milliseconds.
+    #[serde(default = "default_poll_interval_ms")]
+    pub poll_interval_ms: u64,
+}
+
+fn default_reactive_enabled() -> bool {
+    false
+}
+fn default_poll_interval_ms() -> u64 {
+    500
+}
+
+impl Default for ReactiveConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_reactive_enabled(),
+            poll_interval_ms: default_poll_interval_ms(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,6 +232,7 @@ mod tests {
         assert!(config.validate().is_ok());
         assert_eq!(config.simulation.blobs, 12);
         assert_eq!(config.render.fps, 30);
+        assert!(!config.reactive.enabled);
     }
 
     #[test]
@@ -219,6 +251,10 @@ mod tests {
             middle = "#ffff00"
             top = "#0000ff"
             background = "#000000"
+
+            [reactive]
+            enabled = true
+            poll_interval_ms = 250
         "##;
 
         let config: Config = toml::from_str(toml_str).expect("Valid TOML");
@@ -226,6 +262,8 @@ mod tests {
         assert_eq!(config.render.renderer, "block");
         assert_eq!(config.render.fps, 60);
         assert_eq!(config.palette.bottom, Rgb::new(255, 0, 0));
+        assert!(config.reactive.enabled);
+        assert_eq!(config.reactive.poll_interval_ms, 250);
     }
 
     #[test]

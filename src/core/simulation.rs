@@ -113,11 +113,34 @@ impl Simulation {
     pub fn evaluate_at(&self, px: f32, py: f32) -> (f32, f32) {
         self.field.evaluate_with_temperature(&self.blobs, px, py)
     }
+
+    /// Dynamically modulates physics constants and blob parameters from normalized reactive signals.
+    pub fn apply_signals(&mut self, signals: &crate::reactive::SystemSignals) {
+        // CPU load modulates Brownian thermal noise and turbulence (base * (1.0 + cpu * 2.5))
+        self.params.noise = 0.15 * (1.0 + signals.cpu_load * 2.5);
+
+        // Battery level modulates upward buoyancy (low battery -> slower sluggish lava, high battery -> lively convection)
+        self.params.buoyancy = 0.50 + signals.battery_level * 0.60;
+
+        // RAM memory usage modulates blob size: higher memory -> larger, expanding blobs
+        let radius_multiplier = 0.85 + signals.memory_usage * 0.40;
+        for (i, blob) in self.blobs.iter_mut().enumerate() {
+            let base_r = 0.08 + 0.04 * ((i % 3) as f32 / 3.0);
+            blob.radius = base_r * radius_multiplier;
+        }
+    }
+
+    /// Advances the simulation by $\Delta t$ seconds while applying reactive system signals.
+    pub fn step_reactive(&mut self, dt: f32, signals: &crate::reactive::SystemSignals) {
+        self.apply_signals(signals);
+        self.step(dt);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::reactive::SystemSignals;
 
     #[test]
     fn test_simulation_step_deterministic() {
@@ -141,5 +164,35 @@ mod tests {
         let mut sim = Simulation::new(PhysicsParams::default(), 4, 123);
         sim.step(10.0); // Extreme pause
         assert!(sim.elapsed_time <= Simulation::MAX_DT + 1e-5);
+    }
+
+    #[test]
+    fn test_simulation_reactive_signal_modulation() {
+        let mut sim = Simulation::new(PhysicsParams::default(), 6, 42);
+        let low_signals = SystemSignals::new(0.0, 0.0, 0.0, 0.0);
+        let high_signals = SystemSignals::new(1.0, 1.0, 1.0, 1.0);
+
+        sim.apply_signals(&low_signals);
+        let low_noise = sim.params.noise;
+        let low_buoyancy = sim.params.buoyancy;
+        let low_radius = sim.blobs[0].radius;
+
+        sim.apply_signals(&high_signals);
+        let high_noise = sim.params.noise;
+        let high_buoyancy = sim.params.buoyancy;
+        let high_radius = sim.blobs[0].radius;
+
+        assert!(
+            high_noise > low_noise,
+            "CPU load must increase turbulence noise"
+        );
+        assert!(
+            high_buoyancy > low_buoyancy,
+            "Battery charge must increase buoyancy"
+        );
+        assert!(
+            high_radius > low_radius,
+            "Memory usage must increase blob size"
+        );
     }
 }

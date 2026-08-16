@@ -76,3 +76,30 @@ fn test_end_to_end_simulation_and_rasterization() {
         "Braille output must contain Unicode Braille patterns"
     );
 }
+
+#[test]
+fn test_system_reactive_integration() {
+    use lavaterm::reactive::{MockSystemProvider, SystemProvider, SystemSignals};
+
+    let mut provider = MockSystemProvider::new(SystemSignals::new(0.85, 0.60, 0.95, 0.40));
+    let mut sim = Simulation::new(PhysicsParams::default(), 6, 123);
+    let palette = ColorPalette::default();
+    let mut fb = VirtualFramebuffer::new(40, 20, palette.background);
+
+    for _ in 0..10 {
+        let signals = provider.poll_signals();
+        sim.step_reactive(0.033, &signals);
+        rasterize_simulation(&sim, &mut fb, &palette, 1.0);
+    }
+
+    assert!(sim.elapsed_time > 0.0);
+    let active_pixels = fb
+        .as_slice()
+        .iter()
+        .filter(|c| **c != palette.background)
+        .count();
+    assert!(
+        active_pixels > 0,
+        "Reactive simulation must rasterize active pixels"
+    );
+}

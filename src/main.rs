@@ -11,6 +11,7 @@ use lavaterm::{
     config::load_config,
     core::{PhysicsParams, Simulation},
     input::{map_key_event, Action},
+    reactive::default_system_provider,
     render::{
         rasterize_simulation, BlockRenderer, BrailleRenderer, ColorPalette, HalfBlockRenderer,
         Renderer, VirtualFramebuffer,
@@ -43,6 +44,10 @@ struct Cli {
     #[arg(long, value_name = "COUNT")]
     blobs: Option<usize>,
 
+    /// Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
+    #[arg(long)]
+    system: bool,
+
     /// Run headless simulation without taking over TTY (useful for testing/CI)
     #[arg(long)]
     headless: bool,
@@ -66,16 +71,27 @@ fn run_headless(
     palette: &ColorPalette,
     threshold: f32,
     frames: usize,
+    system_reactive: bool,
 ) -> Result<()> {
     println!(
-        "Starting LavaTerm headless simulation ({} frames)...",
-        frames
+        "Starting LavaTerm headless simulation ({} frames, reactive={})...",
+        frames, system_reactive
     );
     let mut fb = VirtualFramebuffer::new(80, 48, palette.background);
     let dt = 1.0 / 30.0;
+    let mut provider = if system_reactive {
+        Some(default_system_provider())
+    } else {
+        None
+    };
 
     for frame in 0..frames {
-        sim.step(dt);
+        if let Some(ref mut p) = provider {
+            let signals = p.poll_signals();
+            sim.step_reactive(dt, &signals);
+        } else {
+            sim.step(dt);
+        }
         rasterize_simulation(sim, &mut fb, palette, threshold);
         if frame % 20 == 0 || frame == frames - 1 {
             println!(
@@ -109,6 +125,8 @@ fn run_interactive(
     threshold: f32,
     fps: u32,
     renderer_type: &str,
+    system_reactive: bool,
+    poll_interval_ms: u64,
 ) -> Result<()> {
     // 1. Initialize Terminal
     setup_panic_hook();
@@ -130,6 +148,16 @@ fn run_interactive(
     let target_frame_duration = Duration::from_secs_f32(1.0 / fps as f32);
     let mut last_instant = Instant::now();
     let mut paused = false;
+
+    // Optional Reactive Metrics Poller
+    let mut provider = if system_reactive {
+        Some(default_system_provider())
+    } else {
+        None
+    };
+    let mut last_metric_poll = Instant::now();
+    let poll_duration = Duration::from_millis(poll_interval_ms.max(100));
+    let mut current_signals = provider.as_mut().map(|p| p.poll_signals());
 
     // 3. Event and Render Loop
     let loop_result = (|| -> Result<()> {
@@ -166,9 +194,21 @@ fn run_interactive(
                 }
             }
 
+            // Poll background OS metrics if reactive mode active
+            if let Some(ref mut p) = provider {
+                if last_metric_poll.elapsed() >= poll_duration {
+                    current_signals = Some(p.poll_signals());
+                    last_metric_poll = Instant::now();
+                }
+            }
+
             // Step Simulation
             if !paused {
-                sim.step(delta.as_secs_f32());
+                if let Some(ref signals) = current_signals {
+                    sim.step_reactive(delta.as_secs_f32(), signals);
+                } else {
+                    sim.step(delta.as_secs_f32());
+                }
             }
 
             // Rasterize into Framebuffer
@@ -210,6 +250,8 @@ fn main() -> std::process::ExitCode {
     let blob_count = cli.blobs.unwrap_or(config.simulation.blobs);
     let fps = cli.fps.unwrap_or(config.render.fps);
     let renderer_type = cli.renderer.unwrap_or(config.render.renderer);
+    let system_reactive = cli.system || config.reactive.enabled;
+    let poll_interval_ms = config.reactive.poll_interval_ms;
 
     let physics = PhysicsParams {
         gravity: config.simulation.gravity,
@@ -224,9 +266,17 @@ fn main() -> std::process::ExitCode {
     let threshold = config.simulation.threshold;
 
     let result = if cli.headless {
-        run_headless(&mut sim, &palette, threshold, cli.frames)
+        run_headless(&mut sim, &palette, threshold, cli.frames, system_reactive)
     } else {
-        run_interactive(sim, palette, threshold, fps, &renderer_type)
+        run_interactive(
+            sim,
+            palette,
+            threshold,
+            fps,
+            &renderer_type,
+            system_reactive,
+            poll_interval_ms,
+        )
     };
 
     if let Err(e) = result {
