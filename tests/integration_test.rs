@@ -103,3 +103,30 @@ fn test_system_reactive_integration() {
         "Reactive simulation must rasterize active pixels"
     );
 }
+
+#[test]
+fn test_audio_reactive_integration() {
+    use lavaterm::audio::{AudioProvider, SyntheticAudioGenerator};
+
+    let mut provider = SyntheticAudioGenerator::new(128.0);
+    let mut sim = Simulation::new(PhysicsParams::default(), 6, 456);
+    let palette = ColorPalette::default();
+    let mut fb = VirtualFramebuffer::new(40, 20, palette.background);
+
+    for _ in 0..15 {
+        let audio_sig = provider.poll_signals();
+        sim.step_audio(0.033, &audio_sig);
+        rasterize_simulation(&sim, &mut fb, &palette, 1.0);
+    }
+
+    assert!(sim.elapsed_time > 0.0);
+    let active_pixels = fb
+        .as_slice()
+        .iter()
+        .filter(|c| **c != palette.background)
+        .count();
+    assert!(
+        active_pixels > 0,
+        "Audio reactive simulation must rasterize active pixels"
+    );
+}

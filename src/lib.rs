@@ -3,6 +3,7 @@
 //! This crate provides the decoupled core simulation, virtual framebuffer,
 //! color processing, and terminal rendering abstractions for LavaTerm.
 
+pub mod audio;
 pub mod config;
 pub mod core;
 pub mod input;

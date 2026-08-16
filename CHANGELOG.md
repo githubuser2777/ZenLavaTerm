@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-16 — Phase 7: Audio-Reactive Mode
+
+### Added
+- Zero-dependency Cooley-Tukey Radix-2 Fast Fourier Transform (FFT) with Hann windowing (`SpectrumAnalyzer`).
+- Frequency energy spectrum band extractor partitioning into `bass` (20-250 Hz), `mid` (250-4000 Hz), and `treble` (4000-20000 Hz).
+- Decoupled `AudioSignals` domain structure and `AudioProvider` trait.
+- Thread-safe circular `PcmRingBuffer` and `LiveAudioProvider` decoupling audio capture from 60 FPS rendering.
+- `SyntheticAudioGenerator` procedural beat generator for headless testing and demos.
+- Dynamic physical fluid modulation in `Simulation`: bass kick upward convective surges, midrange fluid turbulence, treble kinetic jitter.
+- CLI flag `--audio` and TOML configuration section `[audio]`.
+- Integration and unit test suites verifying FFT frequency isolation and audio-reactive simulation.
+
 ## [0.6.0] - 2026-08-16 — Phase 6: System-Reactive Ambient Observability
 
 ### Added

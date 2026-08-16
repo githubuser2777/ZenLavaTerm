@@ -17,6 +17,9 @@ pub struct Config {
 
     #[serde(default)]
     pub reactive: ReactiveConfig,
+
+    #[serde(default)]
+    pub audio: AudioConfig,
 }
 
 impl Config {
@@ -222,6 +225,34 @@ impl Default for ReactiveConfig {
     }
 }
 
+/// Audio reactive monitoring configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AudioConfig {
+    /// Enable audio-reactive ambient visualizer mode.
+    #[serde(default = "default_audio_enabled")]
+    pub enabled: bool,
+
+    /// BPM tempo for synthetic fallback beat generator.
+    #[serde(default = "default_bpm")]
+    pub bpm: f32,
+}
+
+fn default_audio_enabled() -> bool {
+    false
+}
+fn default_bpm() -> f32 {
+    120.0
+}
+
+impl Default for AudioConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_audio_enabled(),
+            bpm: default_bpm(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -233,6 +264,7 @@ mod tests {
         assert_eq!(config.simulation.blobs, 12);
         assert_eq!(config.render.fps, 30);
         assert!(!config.reactive.enabled);
+        assert!(!config.audio.enabled);
     }
 
     #[test]
@@ -255,6 +287,10 @@ mod tests {
             [reactive]
             enabled = true
             poll_interval_ms = 250
+
+            [audio]
+            enabled = true
+            bpm = 128.0
         "##;
 
         let config: Config = toml::from_str(toml_str).expect("Valid TOML");
@@ -264,6 +300,8 @@ mod tests {
         assert_eq!(config.palette.bottom, Rgb::new(255, 0, 0));
         assert!(config.reactive.enabled);
         assert_eq!(config.reactive.poll_interval_ms, 250);
+        assert!(config.audio.enabled);
+        assert_eq!(config.audio.bpm, 128.0);
     }
 
     #[test]

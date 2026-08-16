@@ -135,11 +135,34 @@ impl Simulation {
         self.apply_signals(signals);
         self.step(dt);
     }
+
+    /// Dynamically modulates physics constants and blob kinetics from normalized audio spectrum signals.
+    pub fn apply_audio_signals(&mut self, audio: &crate::audio::AudioSignals) {
+        // Bass kick gives strong convective thrust and upward buoyancy surge
+        self.params.buoyancy = 0.80 + audio.bass * 1.50;
+
+        // Midrange frequencies modulate fluid turbulence and Brownian noise
+        self.params.noise = 0.15 * (1.0 + audio.mid * 2.5);
+
+        // Treble adds subtle kinetic energy jitter
+        if audio.treble > 0.3 {
+            for blob in &mut self.blobs {
+                blob.vx += (self.prng.next_f32_signed()) * audio.treble * 0.02;
+            }
+        }
+    }
+
+    /// Advances the simulation by $\Delta t$ seconds while applying reactive audio signals.
+    pub fn step_audio(&mut self, dt: f32, audio: &crate::audio::AudioSignals) {
+        self.apply_audio_signals(audio);
+        self.step(dt);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::audio::AudioSignals;
     use crate::reactive::SystemSignals;
 
     #[test]
@@ -193,6 +216,30 @@ mod tests {
         assert!(
             high_radius > low_radius,
             "Memory usage must increase blob size"
+        );
+    }
+
+    #[test]
+    fn test_simulation_audio_signal_modulation() {
+        let mut sim = Simulation::new(PhysicsParams::default(), 6, 42);
+        let quiet = AudioSignals::new(0.0, 0.0, 0.0, 0.0);
+        let drop = AudioSignals::new(1.0, 0.8, 0.6, 0.9);
+
+        sim.apply_audio_signals(&quiet);
+        let quiet_buoyancy = sim.params.buoyancy;
+        let quiet_noise = sim.params.noise;
+
+        sim.apply_audio_signals(&drop);
+        let drop_buoyancy = sim.params.buoyancy;
+        let drop_noise = sim.params.noise;
+
+        assert!(
+            drop_buoyancy > quiet_buoyancy,
+            "Bass kick must increase buoyancy"
+        );
+        assert!(
+            drop_noise > quiet_noise,
+            "Midrange audio must increase turbulence noise"
         );
     }
 }

@@ -110,9 +110,13 @@ top = "#7b2cff"
 [reactive]
 enabled = true
 poll_interval_ms = 500
+
+[audio]
+enabled = true
+bpm = 120.0
 ```
 
-For more details on configuration parameters, see [docs/configuration.md](docs/configuration.md) and [docs/reactive.md](docs/reactive.md).
+For more details on configuration parameters, see [docs/configuration.md](docs/configuration.md), [docs/reactive.md](docs/reactive.md), and [docs/audio.md](docs/audio.md).
 
 ---
 
@@ -121,7 +125,7 @@ For more details on configuration parameters, see [docs/configuration.md](docs/c
 LavaTerm follows a strict unidirectional data flow:
 
 ```text
-System Metrics / Signals / Time / Input
+Audio Spectrum / System Metrics / Signals / Time / Input
          ↓
   Simulation Core (Blobs & Scalar Field)
          ↓
@@ -142,6 +146,7 @@ See [docs/architecture.md](docs/architecture.md) for detailed architectural spec
 - [Simulation & Physics Model](docs/simulation.md)
 - [Rendering Pipeline & Terminal I/O](docs/rendering.md)
 - [System Reactive Observability](docs/reactive.md)
+- [Audio-Reactive Mode & FFT](docs/audio.md)
 - [Configuration Schema](docs/configuration.md)
 - [Development Roadmap](docs/roadmap.md)
 - [Contributing Guidelines](docs/contributing.md)
