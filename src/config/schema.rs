@@ -20,6 +20,9 @@ pub struct Config {
 
     #[serde(default)]
     pub audio: AudioConfig,
+
+    #[serde(default)]
+    pub theme: ThemeConfig,
 }
 
 impl Config {
@@ -253,6 +256,18 @@ impl Default for AudioConfig {
     }
 }
 
+/// Theme and visual styling configuration.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct ThemeConfig {
+    /// Active theme name, preset (e.g. "ocean", "cyberpunk", "nord", "synthwave"), "auto", "pywal", or "wallust".
+    #[serde(default)]
+    pub name: Option<String>,
+
+    /// Optional explicit path to custom theme file (JSON/TOML/wal cache).
+    #[serde(default)]
+    pub path: Option<std::path::PathBuf>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -265,6 +280,7 @@ mod tests {
         assert_eq!(config.render.fps, 30);
         assert!(!config.reactive.enabled);
         assert!(!config.audio.enabled);
+        assert_eq!(config.theme.name, None);
     }
 
     #[test]
@@ -291,6 +307,9 @@ mod tests {
             [audio]
             enabled = true
             bpm = 128.0
+
+            [theme]
+            name = "cyberpunk"
         "##;
 
         let config: Config = toml::from_str(toml_str).expect("Valid TOML");
@@ -302,6 +321,7 @@ mod tests {
         assert_eq!(config.reactive.poll_interval_ms, 250);
         assert!(config.audio.enabled);
         assert_eq!(config.audio.bpm, 128.0);
+        assert_eq!(config.theme.name.as_deref(), Some("cyberpunk"));
     }
 
     #[test]

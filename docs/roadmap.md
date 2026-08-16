@@ -81,7 +81,11 @@ Phase 12: Performance Profiling, Packaging & V1.0 Release
 - Decoupled signal dispatch into fluid buoyancy and surface ripples.
 
 ### Phase 8: Theme Engine Integration
-- Dynamic color extraction from pywal, wallust, and standard terminal 16-color ANSI palettes.
+- Built-in curated presets (`lava`, `ocean`, `cyberpunk`, `synthwave`, `nord`, `forest`, `monochrome`, `matrix`, `sunset`, `dracula`, `catppuccin`, `tokyo-night`).
+- Zero-dependency extraction from Pywal (`~/.cache/wal/colors.json`, flat `colors`) and Wallust (`~/.cache/wallust/colors.json`, `nix-colors.json`).
+- Auto-detection engine (`--theme auto`) querying active desktop schemes with robust fallback.
+- Custom user theme file support (`.json` and `.toml`).
+- Full CLI `--theme <name|auto|path>` and TOML `[theme]` configuration integration.
 
 ### Phase 9: Multiplexer & Compact Modes
 - Low-overhead widget mode for `tmux` status bars and `zellij` panes.

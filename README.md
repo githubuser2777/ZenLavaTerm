@@ -23,8 +23,10 @@ LavaTerm simulates organic, soothing fluid metaballs directly within your termin
 ## Features
 
 - 🫧 **Real-Time Metaball Physics**: Buoyancy, gravity, viscosity damping, and subtle thermal noise.
+- 🎨 **Theme Engine & Desktop Ricing**: 12 curated aesthetic presets (`cyberpunk`, `synthwave`, `ocean`, `nord`, `forest`, `matrix`, etc.), Pywal / Wallust dynamic extraction, and auto-detection.
+- 🎵 **Audio-Reactive Mode**: Zero-dependency Cooley-Tukey FFT spectrum analyzer separating bass, mid, and treble into fluid motion.
 - 📊 **Ambient System Observability**: Dynamically modulates fluid turbulence from CPU load, blob expansion from RAM usage, and buoyancy from battery levels.
-- 🎨 **Multi-Renderer Pipeline**: Half-Block (`▀`), Full-Block (`█`), and 2x4 Braille dot-matrix (`⠿`) renderers with 24-bit True Color.
+- 🖼️ **Multi-Renderer Pipeline**: Half-Block (`▀`), Full-Block (`█`), and 2x4 Braille dot-matrix (`⠿`) renderers with 24-bit True Color.
 - ⚡ **Zero-Overhead Core**: Simulation logic is completely decoupled from terminal I/O for deterministic testing and peak performance.
 - 🛠️ **Configurable**: Fully customizable via TOML files and intuitive CLI flags.
 - 🛡️ **Robust Terminal Handling**: Safe raw mode transitions, alternate screen support, and automatic terminal state restoration on exit or panic.
@@ -51,14 +53,23 @@ cargo build --release
 # Run LavaTerm (Standard Half-Block mode)
 cargo run --release
 
+# Run with a curated theme preset (e.g. cyberpunk, synthwave, ocean, nord, matrix)
+cargo run --release -- --theme cyberpunk
+
+# Run with automatic desktop theme detection (Pywal / Wallust)
+cargo run --release -- --theme auto
+
+# Run in Audio-Reactive Mode (music visualizer)
+cargo run --release -- --audio --theme synthwave
+
 # Run in System Reactive Mode (CPU/RAM/Battery ambient visualizer)
-cargo run --release -- --system
+cargo run --release -- --system --theme matrix
 
 # Run LavaTerm with Braille dot matrix renderer
-cargo run --release -- --renderer braille --system
+cargo run --release -- --renderer braille --theme ocean
 
 # Run headless simulation test (no TTY takeover)
-cargo run -- --headless --frames 30 --system
+cargo run -- --headless --frames 30 --theme cyberpunk
 
 # Run micro-benchmarks
 cargo bench
@@ -74,9 +85,11 @@ Usage: lavaterm [OPTIONS]
 Options:
   -c, --config <PATH>        Path to custom TOML configuration file
   -r, --renderer <TYPE>      Renderer backend: halfblock | block | braille [default: halfblock]
+  -t, --theme <THEME>        Theme preset, auto-detect, or theme file path (e.g. ocean, cyberpunk, synthwave, auto, pywal, wallust)
       --fps <FPS>            Target frames per second [default: 30]
       --blobs <COUNT>        Number of metaball blobs [default: 12]
       --system               Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
+      --audio                Enable audio-reactive visualizer mode (FFT bass/mid/treble)
       --headless             Run headless simulation without taking over TTY (useful for testing/CI)
       --frames <COUNT>       Number of frames to step when in headless mode [default: 60]
   -h, --help                 Print help
@@ -102,21 +115,24 @@ renderer = "halfblock"
 fps = 30
 gradient = true
 
+[theme]
+name = "cyberpunk"
+
 [palette]
 bottom = "#ff3b00"
 middle = "#ff7a00"
 top = "#7b2cff"
 
 [reactive]
-enabled = true
+enabled = false
 poll_interval_ms = 500
 
 [audio]
-enabled = true
+enabled = false
 bpm = 120.0
 ```
 
-For more details on configuration parameters, see [docs/configuration.md](docs/configuration.md), [docs/reactive.md](docs/reactive.md), and [docs/audio.md](docs/audio.md).
+For more details on configuration parameters, see [docs/configuration.md](docs/configuration.md), [docs/theme.md](docs/theme.md), [docs/reactive.md](docs/reactive.md), and [docs/audio.md](docs/audio.md).
 
 ---
 

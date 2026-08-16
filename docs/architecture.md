@@ -43,13 +43,16 @@
 
 ## 3. Module Hierarchy & Dependency Direction
 
-The crate is organized into four main layers:
+The crate is organized into modular decoupled layers:
 
 ```text
 lavaterm (binary: src/main.rs)
    ├── input      (Event polling, keyboard action mapping)
    ├── config     (TOML parser, validation, defaults)
-   ├── render     (Framebuffer, RGB math, Half-block/Block renderers)
+   ├── theme      (Presets, Pywal, Wallust, Auto-detection, Custom theme files)
+   ├── audio      (FFT Spectrum Analyzer, PCM capture, synthetic audio generator)
+   ├── reactive   (System metrics collector, Linux procfs/sysfs, normalized signals)
+   ├── render     (Framebuffer, RGB math, Half-block/Block/Braille renderers)
    └── core       (Pure simulation, Blobs, Physics, Scalar Field)
 ```
 

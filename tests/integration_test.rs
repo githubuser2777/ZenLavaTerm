@@ -130,3 +130,49 @@ fn test_audio_reactive_integration() {
         "Audio reactive simulation must rasterize active pixels"
     );
 }
+
+#[test]
+fn test_theme_engine_integration() {
+    use lavaterm::theme::{list_presets, load_custom_theme_file, resolve_theme};
+    use std::io::Write;
+
+    // 1. Verify all presets resolve successfully and produce distinct palettes
+    let presets = list_presets();
+    assert!(presets.len() >= 8);
+    for preset in &presets {
+        let pal =
+            resolve_theme(preset).unwrap_or_else(|_| panic!("Failed to resolve preset {preset}"));
+        assert_ne!(pal.bottom, pal.background);
+    }
+
+    // 2. Test custom temporary JSON theme file
+    let temp_dir = std::env::temp_dir();
+    let json_theme_path = temp_dir.join("lavaterm_test_theme.json");
+    let json_content = r##"{
+        "bottom": "#00ffcc",
+        "middle": "#0077ff",
+        "top": "#ff0077",
+        "background": "#000011"
+    }"##;
+    std::fs::File::create(&json_theme_path)
+        .expect("create test theme json")
+        .write_all(json_content.as_bytes())
+        .expect("write test theme json");
+
+    let pal_json = load_custom_theme_file(&json_theme_path).expect("load json theme");
+    assert_eq!(
+        pal_json.bottom,
+        lavaterm::render::Rgb::new(0x00, 0xFF, 0xCC)
+    );
+    assert_eq!(pal_json.top, lavaterm::render::Rgb::new(0xFF, 0x00, 0x77));
+
+    // Test rasterization with resolved theme
+    let mut sim = Simulation::new(PhysicsParams::default(), 6, 999);
+    let mut fb = VirtualFramebuffer::new(40, 20, pal_json.background);
+    sim.step(0.033);
+    rasterize_simulation(&sim, &mut fb, &pal_json, 1.0);
+    assert_eq!(fb.get_pixel(0, 0), Some(pal_json.background));
+
+    // Clean up
+    let _ = std::fs::remove_file(json_theme_path);
+}

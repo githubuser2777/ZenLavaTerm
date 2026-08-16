@@ -17,6 +17,7 @@ use lavaterm::{
         rasterize_simulation, BlockRenderer, BrailleRenderer, ColorPalette, HalfBlockRenderer,
         Renderer, VirtualFramebuffer,
     },
+    theme::{load_custom_theme_file, resolve_theme},
     LavaError, Result,
 };
 use std::{
@@ -44,6 +45,10 @@ struct Cli {
     /// Number of metaball blobs
     #[arg(long, value_name = "COUNT")]
     blobs: Option<usize>,
+
+    /// Theme preset, auto-detect, or theme file path (e.g. ocean, cyberpunk, synthwave, auto, pywal, wallust)
+    #[arg(short, long, value_name = "THEME")]
+    theme: Option<String>,
 
     /// Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
     #[arg(long)]
@@ -287,7 +292,34 @@ fn main() -> std::process::ExitCode {
     };
 
     let mut sim = Simulation::new(physics, blob_count, 1337);
-    let palette = ColorPalette::from(config.palette);
+
+    let palette = if let Some(ref theme_spec) = cli.theme {
+        match resolve_theme(theme_spec) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("Error resolving theme '{theme_spec}': {e}");
+                return std::process::ExitCode::FAILURE;
+            }
+        }
+    } else if let Some(ref path) = config.theme.path {
+        match load_custom_theme_file(path) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("Error loading theme file '{}': {e}", path.display());
+                return std::process::ExitCode::FAILURE;
+            }
+        }
+    } else if let Some(ref theme_name) = config.theme.name {
+        match resolve_theme(theme_name) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("Error resolving theme '{theme_name}': {e}");
+                return std::process::ExitCode::FAILURE;
+            }
+        }
+    } else {
+        ColorPalette::from(config.palette)
+    };
 
     let opts = RuntimeOptions {
         renderer_type,

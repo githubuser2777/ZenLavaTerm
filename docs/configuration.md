@@ -61,6 +61,23 @@ top = "#7b2cff"
 
 # Background color for empty fluid space (Hex or "none" for default terminal background)
 background = "#0d0d15"
+
+[reactive]
+# Enable ambient system-reactive visualizer mode
+enabled = false
+# Polling interval for /proc metrics (milliseconds)
+poll_interval_ms = 500
+
+[audio]
+# Enable audio-reactive visualizer mode
+enabled = false
+# BPM tempo for synthetic fallback beat generator
+bpm = 120.0
+
+[theme]
+# Active theme preset ("lava", "ocean", "cyberpunk", "synthwave", "nord", "forest", "monochrome", "matrix", "sunset", "dracula", "catppuccin", "tokyo-night"), "auto", "pywal", "wallust", or custom file path
+name = "lava"
+# path = "/path/to/custom_theme.json"
 ```
 
 ---
@@ -70,7 +87,7 @@ background = "#0d0d15"
 ### `[simulation]`
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `blobs` | integer | `12` | Number of simultaneous blobs in the fluid chamber (range: 1..64) |
+| `blobs` | integer | `12` | Number of simultaneous blobs in the fluid chamber (range: 1..128) |
 | `gravity` | float | `0.12` | Downward gravitational acceleration constant |
 | `buoyancy` | float | `0.80` | Upward thermal buoyancy acceleration coefficient |
 | `viscosity` | float | `0.93` | Velocity retention factor per second |
@@ -80,8 +97,8 @@ background = "#0d0d15"
 ### `[render]`
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `renderer` | string | `"halfblock"` | Rendering engine: `"halfblock"` (high-res) or `"block"` |
-| `fps` | integer | `30` | Target render frequency (10..120) |
+| `renderer` | string | `"halfblock"` | Rendering engine: `"halfblock"` (high-res), `"block"`, or `"braille"` |
+| `fps` | integer | `30` | Target render frequency (1..240) |
 | `gradient` | boolean | `true` | Interpolate smooth colors across field intensity |
 | `double_buffering` | boolean | `true` | Skip unchanged terminal cells between frames |
 
@@ -92,3 +109,22 @@ background = "#0d0d15"
 | `middle` | string | `"#ff7a00"` | Hex color for medium temperature |
 | `top` | string | `"#7b2cff"` | Hex color for cooled top zone |
 | `background` | string | `"#0d0d15"` | Hex color for void fluid chamber background |
+
+### `[theme]`
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `name` | string | `None` | Preset name, `"auto"`, `"pywal"`, `"wallust"`, or theme file path |
+| `path` | string | `None` | Explicit path to JSON/TOML theme file |
+
+### `[reactive]`
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | boolean | `false` | Enable background system resource polling (CPU/RAM/Battery) |
+| `poll_interval_ms` | integer | `500` | Polling frequency in milliseconds |
+
+### `[audio]`
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | boolean | `false` | Enable real-time audio FFT capture mode |
+| `bpm` | float | `120.0` | Synthetic beat pulse frequency |
+

@@ -9,6 +9,7 @@ pub mod core;
 pub mod input;
 pub mod reactive;
 pub mod render;
+pub mod theme;
 
 use std::fmt;
 
