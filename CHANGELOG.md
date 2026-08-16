@@ -7,17 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-16 — Phase 4: Multi-Renderer Architecture & Performance Benchmarks
+
 ### Added
-- Phase 0 repository foundation and project bootstrap.
-- Core decoupled architecture with `core`, `render`, `config`, and `input` modules.
-- Metaball mathematical scalar field evaluation and physics simulation skeleton.
-- Virtual Framebuffer abstraction with RGB color interpolation and palette mapping.
-- Half-block (`▀`) and Block (`█`) terminal renderer abstractions.
 - Braille dot matrix (`U+2800`..`U+28FF`) 2x4 sub-pixel terminal renderer (`BrailleRenderer`).
-- TOML configuration schema with serde validation and default fallback.
-- CLI argument parsing supporting configuration overrides, renderer selection (`halfblock`, `block`, `braille`), and headless testing.
-- Panic hook and terminal cleanup handlers.
-- Criterion micro-benchmark suite (`benches/field_and_render.rs`) evaluating field potential and renderer serialization throughput.
-- Automated multi-platform GitHub Release workflow (`.github/workflows/release.yml`) targeting Linux, macOS, and Windows with SHA256 checksums.
-- Comprehensive documentation suite: `architecture.md`, `simulation.md`, `rendering.md`, `configuration.md`, `roadmap.md`, `contributing.md`.
-- GitHub issue templates, PR template, and GitHub Actions CI workflow (`cargo fmt`, `cargo clippy`, `cargo test`, `cargo build`, `cargo bench --no-run`).
+- Multi-renderer CLI selection switch: `lavaterm --renderer [halfblock|block|braille]`.
+- Dynamic aspect-ratio and virtual canvas resizing for sub-cell rendering grids.
+- Criterion micro-benchmark suite (`benches/field_and_render.rs`) for field evaluation and ANSI renderer serialization.
+- Automated multi-platform GitHub Release workflow (`.github/workflows/release.yml`) for Linux, macOS, and Windows with SHA256 checksums.
+- End-to-end integration tests covering all 3 terminal renderers.
+
+## [0.1.0] - 2026-08-16 — Phase 0 & Phase 1-3: Core Simulation & Terminal MVP
+
+### Added
+- Initial project bootstrap, repository foundation, and community health guidelines.
+- Decoupled unidirectional architecture: `core`, `render`, `config`, and `input`.
+- 2D Metaball continuous scalar field evaluation and convective fluid physics.
+- In-memory `VirtualFramebuffer` abstraction with 24-bit True Color palette interpolation.
+- Unicode Half-Block (`▀`) and Full-Block (`█`) terminal renderers.
+- TOML configuration parser with default fallback and validation.
+- Interactive terminal event loop with crossterm, raw mode, alternate screen, and panic recovery hooks.
+- Cross-platform GitHub Actions CI workflow for Linux, macOS, and Windows.
