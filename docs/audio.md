@@ -9,9 +9,9 @@ The audio pipeline follows a decoupled producer-consumer model:
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │                 Audio Capture Providers                     │
-│  - LiveAudioProvider (PipeWire / ALSA PCM streams)          │
 │  - SyntheticAudioGenerator (procedural beat generator)      │
-│  - MockAudioProvider (deterministic testing)                │
+│  - LiveAudioProvider (PCM sample ring buffer stream)        │
+│  - MockAudioProvider (deterministic unit/integration tests) │
 └──────────────────────────────┬──────────────────────────────┘
                                │ Ingests PCM samples
                                ▼
@@ -36,6 +36,12 @@ The audio pipeline follows a decoupled producer-consumer model:
 │  - Treble (4000-20k Hz)  ──> Micro-perturbation jitter      │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### Runtime Providers vs. Implemented Infrastructure
+
+- **Active Default Provider (`--audio`)**: Uses `SyntheticAudioGenerator` to procedurally simulate rhythmic beat pulses at a configurable tempo (`bpm`), enabling fluid audio-reactive kinematics out-of-the-box in headless and interactive environments without requiring hardware audio daemons or root audio permissions.
+- **Spectrum Analysis Infrastructure**: `SpectrumAnalyzer` implements in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral energy isolation.
+- **Buffer & Stream Infrastructure**: `PcmRingBuffer` and `LiveAudioProvider` implement thread-safe circular buffering and FFT analysis ready for external PCM sample stream ingestion.
 
 ## Frequency Band Mappings
 

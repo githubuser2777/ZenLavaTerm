@@ -1,7 +1,7 @@
 # LavaTerm 🌋
 
-[![CI](https://github.com/ZenLavaTerm/lavaterm/actions/workflows/ci.yml/badge.svg)](https://github.com/ZenLavaTerm/lavaterm/actions/workflows/ci.yml)
-[![Release](https://github.com/ZenLavaTerm/lavaterm/actions/workflows/release.yml/badge.svg)](https://github.com/ZenLavaTerm/lavaterm/releases)
+[![CI](https://github.com/githubuser2777/ZenLavaTerm/actions/workflows/ci.yml/badge.svg)](https://github.com/githubuser2777/ZenLavaTerm/actions/workflows/ci.yml)
+[![Release](https://github.com/githubuser2777/ZenLavaTerm/actions/workflows/release.yml/badge.svg)](https://github.com/githubuser2777/ZenLavaTerm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust: 1.75+](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)](https://www.rust-lang.org/)
 
@@ -125,7 +125,7 @@ Before building or running LavaTerm, ensure your environment meets the following
 #### Option 1: Pre-built Package (Instant Install, No Rust Required)
 ```bash
 # Download the latest .pkg.tar.zst from GitHub Releases and install with pacman
-wget https://github.com/ZenLavaTerm/lavaterm/releases/latest/download/lavaterm-0.9.0-1-x86_64.pkg.tar.zst
+wget https://github.com/githubuser2777/ZenLavaTerm/releases/latest/download/lavaterm-0.9.0-1-x86_64.pkg.tar.zst
 sudo pacman -U lavaterm-0.9.0-1-x86_64.pkg.tar.zst
 
 # Or install lavaterm-bin via AUR helper
@@ -141,7 +141,7 @@ yay -S lavaterm
 ./scripts/package_arch.sh --install
 
 # Or via Cargo
-cargo install --locked --git https://github.com/ZenLavaTerm/lavaterm.git
+cargo install --locked --git https://github.com/githubuser2777/ZenLavaTerm.git
 ```
 
 ---
@@ -151,8 +151,8 @@ cargo install --locked --git https://github.com/ZenLavaTerm/lavaterm.git
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/ZenLavaTerm/lavaterm.git
-cd lavaterm
+git clone https://github.com/githubuser2777/ZenLavaTerm.git
+cd ZenLavaTerm
 ```
 
 ### 2. Build the Project
@@ -950,7 +950,7 @@ The workflow automatically builds binaries for all 5 target architectures, packa
 We welcome community contributions, bug reports, theme submissions, and feature requests!
 
 1. Read our [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-2. Check existing [GitHub Issues](https://github.com/ZenLavaTerm/lavaterm/issues) before opening a new issue.
+2. Check existing [GitHub Issues](https://github.com/githubuser2777/ZenLavaTerm/issues) before opening a new issue.
 3. Fork the repository and create a feature branch (`git checkout -b feature/amazing-theme`).
 4. Ensure code passes formatting and linting checks:
    ```bash

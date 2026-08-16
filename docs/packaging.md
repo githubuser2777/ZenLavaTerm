@@ -35,7 +35,7 @@ Every release tag (`v*`) automatically builds a standalone native Arch Linux pac
 
 ```bash
 # 1. Download the latest package from GitHub Releases
-wget https://github.com/ZenLavaTerm/lavaterm/releases/latest/download/lavaterm-0.9.0-1-x86_64.pkg.tar.zst
+wget https://github.com/githubuser2777/ZenLavaTerm/releases/latest/download/lavaterm-0.9.0-1-x86_64.pkg.tar.zst
 
 # 2. Install using pacman
 sudo pacman -U lavaterm-0.9.0-1-x86_64.pkg.tar.zst
@@ -66,8 +66,8 @@ yay -S lavaterm
 ### Method B: Build using `makepkg` & PKGBUILD
 
 ```bash
-git clone https://github.com/ZenLavaTerm/lavaterm.git
-cd lavaterm/packaging/arch
+git clone https://github.com/githubuser2777/ZenLavaTerm.git
+cd ZenLavaTerm/packaging/arch
 makepkg -si
 ```
 
@@ -86,7 +86,7 @@ The repository provides a helper script `scripts/package_arch.sh`:
 ### Method D: Install via Cargo
 
 ```bash
-cargo install --locked --git https://github.com/ZenLavaTerm/lavaterm.git
+cargo install --locked --git https://github.com/githubuser2777/ZenLavaTerm.git
 ```
 
 ---

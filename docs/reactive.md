@@ -63,3 +63,8 @@ lavaterm --system --renderer braille
 enabled = true
 poll_interval_ms = 500
 ```
+
+## Platform Support
+
+- **Linux**: Full native zero-dependency metric telemetry via `/proc/stat` (CPU ticks), `/proc/meminfo` (active/available memory), `/proc/diskstats` (I/O sectors), and `/sys/class/power_supply` (battery capacity).
+- **macOS & Windows**: Automatically falls back to `MockSystemProvider` providing normalized neutral baseline signals (`SystemSignals::default()`), preserving smooth simulation execution and cross-platform portability without runtime errors.
