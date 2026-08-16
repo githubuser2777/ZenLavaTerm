@@ -52,6 +52,18 @@ Virtual Pixels:       Terminal Cell:
 Standard fallback using the full block character `█` (`U+2588`) with 24-bit foreground color:
 - Virtual height equals terminal rows ($H_v = \text{Terminal Rows}$).
 
+### 3.3. Braille Dot-Matrix Renderer (`braille`)
+
+High-density renderer packing 8 virtual sub-pixels ($2 \times 4$ matrix) into each Unicode Braille character cell (`U+2800`..`U+28FF`):
+- Virtual width: $W_v = 2 \times \text{Terminal Columns}$
+- Virtual height: $H_v = 4 \times \text{Terminal Rows}$
+- Dot offset bitmask mapping:
+  - Dot 1: `(0, 0)` -> `0x01` | Dot 4: `(1, 0)` -> `0x08`
+  - Dot 2: `(0, 1)` -> `0x02` | Dot 5: `(1, 1)` -> `0x10`
+  - Dot 3: `(0, 2)` -> `0x04` | Dot 6: `(1, 2)` -> `0x20`
+  - Dot 7: `(0, 3)` -> `0x40` | Dot 8: `(1, 3)` -> `0x80`
+- Delivers extreme spatial resolution for fluid contours.
+
 ---
 
 ## 4. True-Color ANSI Encoding

@@ -47,11 +47,17 @@ cd lavaterm
 # Build in release mode
 cargo build --release
 
-# Run LavaTerm
+# Run LavaTerm (Half-Block mode)
 cargo run --release
+
+# Run LavaTerm (Braille dot matrix mode)
+cargo run --release -- --renderer braille
 
 # Run headless simulation test (no TTY takeover)
 cargo run -- --headless --frames 30
+
+# Run micro-benchmarks
+cargo bench
 ```
 
 ---
@@ -63,7 +69,7 @@ Usage: lavaterm [OPTIONS]
 
 Options:
   -c, --config <PATH>        Path to custom TOML configuration file
-  -r, --renderer <TYPE>      Renderer backend: halfblock | block [default: halfblock]
+  -r, --renderer <TYPE>      Renderer backend: halfblock | block | braille [default: halfblock]
       --fps <FPS>            Target frames per second [default: 30]
       --blobs <COUNT>        Number of metaball blobs [default: 12]
       --headless             Run headless simulation without taking over TTY (useful for testing/CI)
