@@ -286,3 +286,59 @@ This document defines the initial set of structured GitHub issues for the LavaTe
   - CLI switch `--audio` and `[audio]` section in TOML config.
   - Integration test verifying audio-reactive simulation pipeline.
 - **Dependencies**: Issue 18, Issue 19, Issue 20.
+
+---
+
+## Phase 8: Theme Engine (v0.9.0)
+
+### Issue 22: Theme Domain Abstraction, Preset Palettes & Theme Provider Trait
+- **Goal**: Define the core theme domain model, curated preset palettes, and the `ThemeProvider` trait.
+- **Context**: Enables decoupling of visual theme resolution from terminal rendering and physics.
+- **Scope**: `src/theme/mod.rs`, `src/theme/preset.rs`, `src/theme/provider.rs`.
+- **Non-goals**: Hardcoding third-party editor themes into the physics core.
+- **Acceptance Criteria**:
+  - `Theme` struct and `ThemeProvider` trait returning `ColorPalette`.
+  - Built-in curated presets: `lava` (default), `ocean`, `cyberpunk`, `synthwave`, `nord`, `forest`, `monochrome`, `matrix`.
+  - Unit tests verifying color palette generation from presets and custom theme definitions.
+- **Dependencies**: None.
+
+---
+
+### Issue 23: Pywal & Wallust Color Scheme Extractors
+- **Goal**: Implement zero-dependency parsers for pywal and wallust cached color schemes.
+- **Context**: Integrates LavaTerm into dynamic Linux desktop ricing environments (wal / wallust).
+- **Scope**: `src/theme/pywal.rs`, `src/theme/wallust.rs`.
+- **Non-goals**: Spawning external terminal commands or modifying X11/Wayland wallpapers.
+- **Acceptance Criteria**:
+  - `PywalExtractor` reading `~/.cache/wal/colors.json` and raw flat `colors` cache.
+  - `WallustExtractor` reading `~/.cache/wallust/colors.json` or nix-colors.
+  - Graceful fallback: returns standard fallback palette if cache files are missing or malformed (no panics).
+  - Unit tests with mock JSON schemas and flat color string fixtures.
+- **Dependencies**: Issue 22.
+
+---
+
+### Issue 24: Auto-Detection & Custom File Theme Engine
+- **Goal**: Implement auto-detection orchestrator and arbitrary external file theme loader (`.json` / `.toml`).
+- **Context**: Enables `--theme auto` to automatically find active desktop colors and `--theme <path>` for custom user schemes.
+- **Scope**: `src/theme/detector.rs`, `src/theme/file.rs`.
+- **Non-goals**: Polling file changes at 1000 Hz.
+- **Acceptance Criteria**:
+  - `AutoThemeProvider` checks Pywal, Wallust, and falls back to default preset.
+  - `FileThemeProvider` reads and parses custom user theme JSON/TOML files.
+  - Deterministic unit tests with mock filesystem paths and custom palette files.
+- **Dependencies**: Issue 22, Issue 23.
+
+---
+
+### Issue 25: CLI `--theme`, TOML `[theme]` Configuration & Event Loop Integration
+- **Goal**: Add CLI flag `--theme <name|auto|path>`, TOML `[theme]` configuration section, and integrate theme resolution in `main.rs`.
+- **Context**: Users can choose themes via CLI or config file, and see dynamic colors in interactive and headless modes.
+- **Scope**: `src/config/schema.rs`, `src/main.rs`, `tests/integration_test.rs`.
+- **Non-goals**: Runtime in-app interactive GUI theme editor.
+- **Acceptance Criteria**:
+  - CLI flag `--theme` accepts presets (`ocean`, `cyberpunk`, etc.), `auto`, `pywal`, `wallust`, or file paths.
+  - TOML `[theme]` config section supports `name = "..."`, `path = "..."`.
+  - Integration tests verifying all theme modes in end-to-end rendering pipeline.
+- **Dependencies**: Issue 22, Issue 23, Issue 24.
+
