@@ -18,12 +18,17 @@
 - [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-  - [1. Clone the Repository](#1-clone-the-repository)
-  - [2. Build the Project](#2-build-the-project)
-  - [3. Run LavaTerm](#3-run-lavaterm)
-  - [4. Interactive Keybindings](#4-interactive-keybindings)
-  - [5. Headless Mode (CI / Scripting)](#5-headless-mode-ci--scripting)
+- [Installation & Quick Start](#installation--quick-start)
+  - [Quick Start (Recommended)](#quick-start-recommended)
+  - [Direct Git Installation](#direct-git-installation)
+- [Usage](#usage)
+  - [Standard Mode](#standard-mode)
+  - [Running with Aesthetic Themes](#running-with-aesthetic-themes)
+  - [Running with High-Density Braille Renderer](#running-with-high-density-braille-renderer)
+  - [Ambient System-Reactive Observability](#ambient-system-reactive-observability)
+  - [Audio-Reactive Music Visualizer](#audio-reactive-music-visualizer)
+  - [Interactive Keybindings](#interactive-keybindings)
+  - [Headless Mode (CI / Scripting)](#headless-mode-ci--scripting)
 - [CLI Reference](#cli-reference)
 - [Configuration](#configuration)
   - [Configuration File Resolution](#configuration-file-resolution)
@@ -45,6 +50,7 @@
   - [Sub-Pixel Character Packing & Renderers](#sub-pixel-character-packing--renderers)
   - [Buffer Management & Terminal I/O Performance](#buffer-management--terminal-io-performance)
 - [Development, Testing & Benchmarking](#development-testing--benchmarking)
+  - [Development Workflow (`cargo run`)](#development-workflow-cargo-run)
   - [Available Cargo Commands](#available-cargo-commands)
   - [Running Tests](#running-tests)
   - [Running Performance Benchmarks](#running-performance-benchmarks)
@@ -115,105 +121,90 @@ Before building or running LavaTerm, ensure your environment meets the following
    - **Windows**: Windows Terminal, WezTerm, Alacritty.
 3. **Unicode Font**: A modern monospace font with Unicode Symbols and Braille Patterns (e.g. JetBrains Mono, Fira Code, Cascadia Code, Nerd Fonts).
 
-## Installation
+## Installation & Quick Start
 
-### Arch Linux
+### Quick Start (Recommended)
 
-#### Option 1: Pre-built Package (Instant Install, No Rust Required)
+Clone the repository and install the `lavaterm` binary directly into your Cargo binary directory:
+
 ```bash
-# Download the latest .pkg.tar.zst from GitHub Releases and install with pacman
-wget https://github.com/githubuser2777/ZenLavaTerm/releases/latest/download/lavaterm-0.9.0-1-x86_64.pkg.tar.zst
-sudo pacman -U lavaterm-0.9.0-1-x86_64.pkg.tar.zst
+# 1. Clone the repository
+git clone https://github.com/githubuser2777/ZenLavaTerm.git
+cd ZenLavaTerm
 
-# Or install lavaterm-bin via AUR helper
-yay -S lavaterm-bin (not yet)
+# 2. Install the binary globally
+cargo install --path .
+
+# 3. Launch LavaTerm from anywhere
+lavaterm
 ```
 
-#### Option 2: Build from Source
+> **Note:** `cargo install --path .` compiles the optimized release binary and installs `lavaterm` into your standard Cargo bin directory (`$HOME/.cargo/bin` on Linux/macOS or `%USERPROFILE%\.cargo\bin` on Windows). Once installed, you can launch `lavaterm` directly from any terminal prompt without using `cargo` each time.
+
+### Direct Git Installation
+
+You can also install `lavaterm` in a single command without manually cloning:
+
 ```bash
-# Via AUR helper
-yay -S lavaterm (not yet)
-
-# Or compile and package locally
-./scripts/package_arch.sh --install
-
-# Or via Cargo
 cargo install --locked --git https://github.com/githubuser2777/ZenLavaTerm.git
 ```
 
 ---
 
-## Getting Started
+## Usage
 
-### 1. Clone the Repository
+Once installed, simply run `lavaterm` with any desired options, renderer engines, or themes:
 
-```bash
-git clone https://github.com/githubuser2777/ZenLavaTerm.git
-cd ZenLavaTerm
-```
-
-### 2. Build the Project
-
-Build an optimized release binary:
-
-```bash
-cargo build --release
-```
-
-The compiled binary will be located at `target/release/lavaterm`.
-
-### 3. Run LavaTerm
-
-#### Standard Mode
+### Standard Mode
 Runs with the default warm `lava` palette at 30 FPS using Half-Block rendering:
 
 ```bash
-cargo run --release
+lavaterm
 ```
 
-#### Running with Aesthetic Themes
+### Running with Aesthetic Themes
 ```bash
 # Cyberpunk neon yellow & hot magenta
-cargo run --release -- --theme cyberpunk
+lavaterm --theme cyberpunk
 
 # 80s Synthwave outrun sunset
-cargo run --release -- --theme synthwave
+lavaterm --theme synthwave
 
 # Deep oceanic bioluminescence
-cargo run --release -- --theme ocean
+lavaterm --theme ocean
 
 # Arctic Nord frosty blues
-cargo run --release -- --theme nord
+lavaterm --theme nord
 
 # Terminal phosphor Matrix green
-cargo run --release -- --theme matrix
+lavaterm --theme matrix
 
 # Automatically match your desktop wallpaper (Pywal / Wallust)
-cargo run --release -- --theme auto
+lavaterm --theme auto
 ```
 
-#### Running with High-Density Braille Renderer
+### Running with High-Density Braille Renderer
 ```bash
-cargo run --release -- --renderer braille --theme ocean --fps 60
+lavaterm --renderer braille --theme ocean --fps 60
 ```
 
-#### Ambient System-Reactive Observability
+### Ambient System-Reactive Observability
 Transform CPU load, RAM usage, and battery levels into fluid motion:
 
 ```bash
-cargo run --release -- --system --theme matrix
+lavaterm --system --theme matrix
 ```
 
-#### Audio-Reactive Music Visualizer
+### Audio-Reactive Music Visualizer
 Respond dynamically to music and rhythmic beats:
 
 ```bash
-cargo run --release -- --audio --theme synthwave
+lavaterm --audio --theme synthwave
 ```
 
 ---
 
-### 4. Interactive Keybindings
+### Interactive Keybindings
 
 While LavaTerm is running in your terminal, use the following interactive keyboard shortcuts:
 
@@ -228,12 +219,12 @@ While LavaTerm is running in your terminal, use the following interactive keyboa
 
 ---
 
-### 5. Headless Mode (CI / Scripting)
+### Headless Mode (CI / Scripting)
 
 LavaTerm includes a headless mode that steps the simulation and evaluates virtual rasterization without taking over the TTY or entering alternate screen mode. This is useful for automated testing, benchmarks, and container environments:
 
 ```bash
-cargo run -- --headless --frames 60 --theme cyberpunk
+lavaterm --headless --frames 60 --theme cyberpunk
 ```
 
 **Example Output:**
@@ -791,6 +782,26 @@ Encodes an ultra-high-resolution $2 \times 4$ sub-pixel matrix into each Unicode
 
 ## Development, Testing & Benchmarking
 
+### Development Workflow (`cargo run`)
+
+For active development, debugging, or testing local changes without installing the binary globally, you can compile and execute directly using Cargo:
+
+```bash
+# Run in debug mode
+cargo run
+
+# Run optimized release build
+cargo run --release
+
+# Run with custom arguments
+cargo run --release -- --theme cyberpunk --renderer braille
+
+# Run headless simulation without taking over TTY
+cargo run -- --headless --frames 60 --theme cyberpunk
+```
+
+---
+
 ### Available Cargo Commands
 
 | Command | Purpose |
@@ -952,7 +963,7 @@ The workflow automatically builds binaries for all 5 target architectures, packa
    ```bash
    lavaterm --renderer halfblock
    ```
-4. Ensure you are running the optimized release binary (`cargo run --release`), as debug builds contain extensive bounds checking and arithmetic verification.
+4. Ensure you are running the optimized release binary (installed `lavaterm` or `cargo run --release`), as debug builds contain extensive bounds checking and arithmetic verification.
 
 ---
 
