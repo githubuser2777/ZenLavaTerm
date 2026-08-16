@@ -18,6 +18,9 @@ use lavaterm::{
         Renderer, VirtualFramebuffer,
     },
     theme::{load_custom_theme_file, resolve_theme},
+    widget::{
+        render_snapshot, resolve_policy, should_compact, CompactScaler, ExecutionMode, PolicyInput,
+    },
     LavaError, Result,
 };
 use std::{
@@ -49,6 +52,30 @@ struct Cli {
     /// Theme preset, auto-detect, or theme file path (e.g. ocean, cyberpunk, synthwave, auto, pywal, wallust)
     #[arg(short, long, value_name = "THEME")]
     theme: Option<String>,
+
+    /// Force compact geometry & profile scaling
+    #[arg(long)]
+    compact: bool,
+
+    /// Run as low-overhead ambient widget (default 15 FPS, compact physics)
+    #[arg(long)]
+    widget: bool,
+
+    /// Run inline in terminal without entering alternate screen
+    #[arg(long)]
+    inline: bool,
+
+    /// Render a single ANSI frame to stdout and exit
+    #[arg(long)]
+    snapshot: bool,
+
+    /// Explicit viewport width (columns)
+    #[arg(long, value_name = "COLS")]
+    width: Option<u16>,
+
+    /// Explicit viewport height (rows)
+    #[arg(long, value_name = "ROWS")]
+    height: Option<u16>,
 
     /// Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
     #[arg(long)]
@@ -145,15 +172,21 @@ fn framebuffer_dimensions(cols: u16, rows: u16, renderer_type: &str) -> (usize, 
     }
 }
 
-fn run_interactive(mut sim: Simulation, palette: ColorPalette, opts: RuntimeOptions) -> Result<()> {
-    // 1. Initialize Terminal
+fn run_fullscreen_interactive(
+    mut sim: Simulation,
+    palette: ColorPalette,
+    opts: RuntimeOptions,
+    fixed_dim: Option<(u16, u16)>,
+) -> Result<()> {
     setup_panic_hook();
     terminal::enable_raw_mode()?;
     let mut out = BufWriter::with_capacity(64 * 1024, stdout());
     execute!(out, EnterAlternateScreen, cursor::Hide)?;
 
-    // 2. Query initial terminal dimensions
-    let (mut cols, mut rows) = terminal::size()?;
+    let (mut cols, mut rows) = match fixed_dim {
+        Some((w, h)) => (w, h),
+        None => terminal::size()?,
+    };
     let (v_width, v_height) = framebuffer_dimensions(cols, rows, &opts.renderer_type);
     let mut fb = VirtualFramebuffer::new(v_width, v_height, palette.background);
 
@@ -167,7 +200,6 @@ fn run_interactive(mut sim: Simulation, palette: ColorPalette, opts: RuntimeOpti
     let mut last_instant = Instant::now();
     let mut paused = false;
 
-    // Optional Reactive Metrics & Audio Pollers
     let mut sys_provider = if opts.system_reactive {
         Some(default_system_provider())
     } else {
@@ -183,14 +215,12 @@ fn run_interactive(mut sim: Simulation, palette: ColorPalette, opts: RuntimeOpti
     let poll_duration = Duration::from_millis(opts.poll_interval_ms.max(100));
     let mut current_sys_signals = sys_provider.as_mut().map(|p| p.poll_signals());
 
-    // 3. Event and Render Loop
     let loop_result = (|| -> Result<()> {
         loop {
             let now = Instant::now();
             let delta = now.duration_since(last_instant);
             last_instant = now;
 
-            // Poll input events
             while event::poll(Duration::from_millis(0))? {
                 match event::read()? {
                     Event::Key(key) => match map_key_event(key) {
@@ -208,7 +238,7 @@ fn run_interactive(mut sim: Simulation, palette: ColorPalette, opts: RuntimeOpti
                         }
                         Action::None => {}
                     },
-                    Event::Resize(new_cols, new_rows) => {
+                    Event::Resize(new_cols, new_rows) if fixed_dim.is_none() => {
                         cols = new_cols;
                         rows = new_rows;
                         let (new_w, new_h) =
@@ -219,7 +249,6 @@ fn run_interactive(mut sim: Simulation, palette: ColorPalette, opts: RuntimeOpti
                 }
             }
 
-            // Poll background OS metrics if reactive mode active
             if let Some(ref mut sp) = sys_provider {
                 if last_metric_poll.elapsed() >= poll_duration {
                     current_sys_signals = Some(sp.poll_signals());
@@ -227,7 +256,6 @@ fn run_interactive(mut sim: Simulation, palette: ColorPalette, opts: RuntimeOpti
                 }
             }
 
-            // Step Simulation
             if !paused {
                 if let Some(ref mut ap) = audio_provider {
                     let audio_sig = ap.poll_signals();
@@ -239,16 +267,13 @@ fn run_interactive(mut sim: Simulation, palette: ColorPalette, opts: RuntimeOpti
                 }
             }
 
-            // Rasterize into Framebuffer
             rasterize_simulation(&sim, &mut fb, &palette, opts.threshold);
 
-            // Render to Terminal
             renderer
                 .render(&fb, &mut out)
                 .map_err(|e| LavaError::Render(e.to_string()))?;
             out.flush()?;
 
-            // Frame rate capping
             let elapsed = now.elapsed();
             if elapsed < target_frame_duration {
                 std::thread::sleep(target_frame_duration - elapsed);
@@ -256,8 +281,127 @@ fn run_interactive(mut sim: Simulation, palette: ColorPalette, opts: RuntimeOpti
         }
     })();
 
-    // 4. Cleanup Terminal
     let _ = execute!(out, LeaveAlternateScreen, cursor::Show);
+    let _ = out.flush();
+    let _ = terminal::disable_raw_mode();
+
+    loop_result
+}
+
+fn run_inline_interactive(
+    mut sim: Simulation,
+    palette: ColorPalette,
+    opts: RuntimeOptions,
+    fixed_dim: Option<(u16, u16)>,
+) -> Result<()> {
+    setup_panic_hook();
+    terminal::enable_raw_mode()?;
+    let mut out = BufWriter::with_capacity(64 * 1024, stdout());
+    execute!(out, cursor::Hide)?;
+
+    let (mut cols, mut rows) = match fixed_dim {
+        Some((w, h)) => (w, h),
+        None => {
+            let (w, h) = terminal::size().unwrap_or((80, 10));
+            (w, if h > 12 { 10 } else { h })
+        }
+    };
+
+    let (v_width, v_height) = framebuffer_dimensions(cols, rows, &opts.renderer_type);
+    let mut fb = VirtualFramebuffer::new(v_width, v_height, palette.background);
+
+    let mut renderer: Box<dyn Renderer> = match opts.renderer_type.as_str() {
+        "block" => Box::new(BlockRenderer::new()),
+        "braille" => Box::new(BrailleRenderer::new()),
+        _ => Box::new(HalfBlockRenderer::new()),
+    };
+
+    let target_frame_duration = Duration::from_secs_f32(1.0 / opts.fps as f32);
+    let mut last_instant = Instant::now();
+    let mut paused = false;
+
+    let mut sys_provider = if opts.system_reactive {
+        Some(default_system_provider())
+    } else {
+        None
+    };
+    let mut audio_provider = if opts.audio_reactive {
+        Some(default_audio_provider())
+    } else {
+        None
+    };
+
+    let mut last_metric_poll = Instant::now();
+    let poll_duration = Duration::from_millis(opts.poll_interval_ms.max(100));
+    let mut current_sys_signals = sys_provider.as_mut().map(|p| p.poll_signals());
+
+    let loop_result = (|| -> Result<()> {
+        loop {
+            let now = Instant::now();
+            let delta = now.duration_since(last_instant);
+            last_instant = now;
+
+            while event::poll(Duration::from_millis(0))? {
+                match event::read()? {
+                    Event::Key(key) => match map_key_event(key) {
+                        Action::Quit => return Ok(()),
+                        Action::TogglePause => paused = !paused,
+                        Action::SpeedUp => {
+                            sim.params.buoyancy = (sim.params.buoyancy + 0.1).min(3.0)
+                        }
+                        Action::SlowDown => {
+                            sim.params.buoyancy = (sim.params.buoyancy - 0.1).max(0.1)
+                        }
+                        Action::Reset => {
+                            let count = sim.blobs.len();
+                            sim = Simulation::new(sim.params, count, 42);
+                        }
+                        Action::None => {}
+                    },
+                    Event::Resize(new_cols, new_rows) if fixed_dim.is_none() => {
+                        cols = new_cols;
+                        rows = if new_rows > 12 { 10 } else { new_rows };
+                        let (new_w, new_h) =
+                            framebuffer_dimensions(cols, rows, &opts.renderer_type);
+                        fb.resize(new_w, new_h, palette.background);
+                    }
+                    _ => {}
+                }
+            }
+
+            if let Some(ref mut sp) = sys_provider {
+                if last_metric_poll.elapsed() >= poll_duration {
+                    current_sys_signals = Some(sp.poll_signals());
+                    last_metric_poll = Instant::now();
+                }
+            }
+
+            if !paused {
+                if let Some(ref mut ap) = audio_provider {
+                    let audio_sig = ap.poll_signals();
+                    sim.step_audio(delta.as_secs_f32(), &audio_sig);
+                } else if let Some(ref signals) = current_sys_signals {
+                    sim.step_reactive(delta.as_secs_f32(), signals);
+                } else {
+                    sim.step(delta.as_secs_f32());
+                }
+            }
+
+            rasterize_simulation(&sim, &mut fb, &palette, opts.threshold);
+
+            renderer
+                .render(&fb, &mut out)
+                .map_err(|e| LavaError::Render(e.to_string()))?;
+            out.flush()?;
+
+            let elapsed = now.elapsed();
+            if elapsed < target_frame_duration {
+                std::thread::sleep(target_frame_duration - elapsed);
+            }
+        }
+    })();
+
+    let _ = execute!(out, cursor::Show);
     let _ = out.flush();
     let _ = terminal::disable_raw_mode();
 
@@ -275,23 +419,47 @@ fn main() -> std::process::ExitCode {
         }
     };
 
-    let blob_count = cli.blobs.unwrap_or(config.simulation.blobs);
-    let fps = cli.fps.unwrap_or(config.render.fps);
+    let policy_input = PolicyInput {
+        cli_fps: cli.fps,
+        cli_compact: cli.compact,
+        cli_widget: cli.widget,
+        cli_inline: cli.inline,
+        cli_snapshot: cli.snapshot,
+        cli_headless: cli.headless,
+        cli_width: cli.width,
+        cli_height: cli.height,
+
+        toml_render_fps: config.render.fps,
+        toml_widget_fps: config.widget.fps,
+        toml_widget_compact: config.widget.compact,
+        toml_widget_inline: config.widget.inline,
+        toml_widget_width: config.widget.width,
+        toml_widget_height: config.widget.height,
+        toml_widget_adapt_blobs: config.widget.adapt_blobs,
+    };
+
+    let policy = match resolve_policy(&policy_input) {
+        Ok(p) => p,
+        Err(err) => {
+            eprintln!("Configuration/Policy error: {err}");
+            return std::process::ExitCode::FAILURE;
+        }
+    };
+
+    let base_blob_count = cli.blobs.unwrap_or(config.simulation.blobs);
     let renderer_type = cli.renderer.unwrap_or(config.render.renderer);
     let system_reactive = cli.system || config.reactive.enabled;
     let audio_reactive = cli.audio || config.audio.enabled;
     let poll_interval_ms = config.reactive.poll_interval_ms;
     let threshold = config.simulation.threshold;
 
-    let physics = PhysicsParams {
+    let base_physics = PhysicsParams {
         gravity: config.simulation.gravity,
         buoyancy: config.simulation.buoyancy,
         viscosity: config.simulation.viscosity,
         noise: config.simulation.noise,
         thermal_transfer_rate: 0.40,
     };
-
-    let mut sim = Simulation::new(physics, blob_count, 1337);
 
     let palette = if let Some(ref theme_spec) = cli.theme {
         match resolve_theme(theme_spec) {
@@ -321,19 +489,57 @@ fn main() -> std::process::ExitCode {
         ColorPalette::from(config.palette)
     };
 
+    let (initial_cols, initial_rows) = match policy.explicit_dimensions {
+        Some((w, h)) => (w, h),
+        None => terminal::size().unwrap_or((80, 24)),
+    };
+
+    let is_compact = should_compact(initial_cols, initial_rows, policy.force_compact);
+    let (blob_count, physics) = if is_compact && policy.adapt_blobs {
+        let profile = CompactScaler::calculate_profile(initial_cols, initial_rows, base_blob_count);
+        let adapted_physics = CompactScaler::adapt_physics(&profile, base_physics);
+        (profile.blob_count, adapted_physics)
+    } else {
+        (base_blob_count, base_physics)
+    };
+
+    let mut sim = Simulation::new(physics, blob_count, 1337);
+
     let opts = RuntimeOptions {
-        renderer_type,
-        fps,
+        renderer_type: renderer_type.clone(),
+        fps: policy.target_fps,
         threshold,
         system_reactive,
         audio_reactive,
         poll_interval_ms,
     };
 
-    let result = if cli.headless {
-        run_headless(&mut sim, &palette, cli.frames, &opts)
-    } else {
-        run_interactive(sim, palette, opts)
+    let result = match policy.mode {
+        ExecutionMode::Snapshot => {
+            match render_snapshot(
+                &mut sim,
+                &palette,
+                initial_cols,
+                initial_rows,
+                &renderer_type,
+                threshold,
+                5,
+            ) {
+                Ok(snapshot_str) => {
+                    print!("{snapshot_str}");
+                    let _ = stdout().flush();
+                    Ok(())
+                }
+                Err(e) => Err(e),
+            }
+        }
+        ExecutionMode::Headless => run_headless(&mut sim, &palette, cli.frames, &opts),
+        ExecutionMode::Inline => {
+            run_inline_interactive(sim, palette, opts, policy.explicit_dimensions)
+        }
+        ExecutionMode::Interactive | ExecutionMode::Widget => {
+            run_fullscreen_interactive(sim, palette, opts, policy.explicit_dimensions)
+        }
     };
 
     if let Err(e) = result {

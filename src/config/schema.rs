@@ -23,6 +23,9 @@ pub struct Config {
 
     #[serde(default)]
     pub theme: ThemeConfig,
+
+    #[serde(default)]
+    pub widget: WidgetConfig,
 }
 
 impl Config {
@@ -33,6 +36,19 @@ impl Config {
         }
         if self.render.fps < 1 || self.render.fps > 240 {
             return Err("render.fps must be between 1 and 240".to_string());
+        }
+        if self.widget.fps < 1 || self.widget.fps > 240 {
+            return Err("widget.fps must be between 1 and 240".to_string());
+        }
+        if let Some(w) = self.widget.width {
+            if w == 0 {
+                return Err("widget.width must be greater than 0".to_string());
+            }
+        }
+        if let Some(h) = self.widget.height {
+            if h == 0 {
+                return Err("widget.height must be greater than 0".to_string());
+            }
         }
         let valid_renderers = ["halfblock", "block", "braille"];
         if !valid_renderers.contains(&self.render.renderer.as_str()) {
@@ -268,6 +284,54 @@ pub struct ThemeConfig {
     pub path: Option<std::path::PathBuf>,
 }
 
+/// Widget and compact multiplexer configuration.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WidgetConfig {
+    /// Enable compact layout scaling by default.
+    #[serde(default)]
+    pub compact: bool,
+
+    /// Target frame rate in widget mode.
+    #[serde(default = "default_widget_fps")]
+    pub fps: u32,
+
+    /// Run in inline mode without alternate screen by default.
+    #[serde(default)]
+    pub inline: bool,
+
+    /// Optional fixed width for widget layout.
+    #[serde(default)]
+    pub width: Option<u16>,
+
+    /// Optional fixed height for widget layout.
+    #[serde(default)]
+    pub height: Option<u16>,
+
+    /// Automatically adapt blob count and physics in compact mode.
+    #[serde(default = "default_adapt_blobs")]
+    pub adapt_blobs: bool,
+}
+
+fn default_widget_fps() -> u32 {
+    15
+}
+fn default_adapt_blobs() -> bool {
+    true
+}
+
+impl Default for WidgetConfig {
+    fn default() -> Self {
+        Self {
+            compact: false,
+            fps: default_widget_fps(),
+            inline: false,
+            width: None,
+            height: None,
+            adapt_blobs: default_adapt_blobs(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -322,6 +386,38 @@ mod tests {
         assert!(config.audio.enabled);
         assert_eq!(config.audio.bpm, 128.0);
         assert_eq!(config.theme.name.as_deref(), Some("cyberpunk"));
+        assert!(!config.widget.compact);
+        assert_eq!(config.widget.fps, 15);
+    }
+
+    #[test]
+    fn test_widget_toml_parsing_and_validation() {
+        let toml_str = r##"
+            [widget]
+            compact = true
+            fps = 20
+            inline = true
+            width = 30
+            height = 10
+            adapt_blobs = false
+        "##;
+
+        let config: Config = toml::from_str(toml_str).expect("Valid TOML with widget");
+        assert!(config.validate().is_ok());
+        assert!(config.widget.compact);
+        assert_eq!(config.widget.fps, 20);
+        assert!(config.widget.inline);
+        assert_eq!(config.widget.width, Some(30));
+        assert_eq!(config.widget.height, Some(10));
+        assert!(!config.widget.adapt_blobs);
+
+        let mut invalid = config;
+        invalid.widget.fps = 0;
+        assert!(invalid.validate().is_err());
+
+        invalid.widget.fps = 15;
+        invalid.widget.width = Some(0);
+        assert!(invalid.validate().is_err());
     }
 
     #[test]

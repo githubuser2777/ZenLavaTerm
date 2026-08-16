@@ -2,7 +2,7 @@
 
 This document outlines the phased milestone progression of LavaTerm. Each phase builds upon the previous phase following strict Definition of Done criteria.
 
-**Current Maintenance State:** v0.9.0 released — Phase 8 Complete (Maintenance & Release Hygiene) — Phase 9 Not Started.
+**Current Maintenance State:** v0.10.0 released — Phase 9 Complete (Multiplexer & Widget Mode) — Phase 10 Planned.
 
 ---
 
@@ -27,9 +27,9 @@ Phase 7: Audio-Reactive Pipeline (FFT / Beat Generator) (Complete - v0.8.0)
    │
 Phase 8: Theme Engine (pywal, wallust, ANSI presets) (Complete - v0.9.0)
    │
-Phase 9: Multiplexer & Widget Mode (tmux, zellij) (Planned - Not Started)
+Phase 9: Multiplexer & Widget Mode (tmux, zellij) (Complete - v0.10.0)
    │
-Phase 10: Interactive Mode (Mouse, Keyboard Ripple) (Planned)
+Phase 10: Interactive Mode (Mouse, Keyboard Ripple) (Planned - Next)
    │
 Phase 11: Cross-Platform Hardening (Windows, macOS) (Planned)
    │
@@ -90,10 +90,15 @@ Phase 12: Performance Profiling, Packaging & V1.0 Release (Planned)
 - Custom user theme file support (`.json` and `.toml`).
 - Full CLI `--theme <name|auto|path>` and TOML `[theme]` configuration integration.
 
-### Phase 9: Multiplexer & Compact Modes (Planned - Not Started)
-- Low-overhead widget mode for `tmux` status bars and `zellij` panes.
+### Phase 9: Multiplexer & Compact Modes (Complete - v0.10.0)
+- Zero-dependency `tmux` and `zellij` environment detection (`src/widget/multiplexer.rs`).
+- Adaptive compact geometry scaler with profile-based parameter calculation (`src/widget/compact.rs`).
+- Single-shot ANSI True Color status bar serializer (`render_snapshot` in `src/widget/snapshot.rs`).
+- Interactive in-place inline rendering mode (`--inline`) without alternate screen.
+- Policy resolution engine (`src/widget/policy.rs`) managing precedence, FPS defaults, and conflict validation.
+- CLI flags (`--fps`, `--compact`, `--widget`, `--inline`, `--snapshot`, `--width`, `--height`) and TOML `[widget]` configuration section.
 
-### Phase 10: Interactive Physics (Planned)
+### Phase 10: Interactive Physics (Planned - Next)
 - Mouse click shockwaves, drag stirring, and keyboard ripple interactions.
 
 ### Phase 11: Cross-Platform Hardening (Planned)

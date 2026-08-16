@@ -77,6 +77,11 @@
   - **Custom Files**: Load custom JSON and TOML 4-anchor color schemes.
 - 📊 **Ambient System Observability (`--system`)**: Zero-clutter hardware monitoring reading Linux `/proc` and `/sys/class/power_supply` without external background daemons. CPU load drives fluid turbulence, RAM usage expands blob volume, and battery charge regulates thermal buoyancy.
 - 🎵 **Audio-Reactive Mode (`--audio`)**: Zero-dependency Cooley-Tukey Radix-2 FFT and Hann-windowed spectrum analyzer isolating Bass ($20-250\text{ Hz}$), Midrange ($250-4000\text{ Hz}$), and Treble ($4-20\text{ kHz}$) into fluid kinematics.
+- 🪟 **Multiplexer & Widget Integration (`tmux` / `zellij`)**:
+  - **Compact Mode (`--compact`)**: Automatically scales particle counts and radii for small split-panes without particle saturation.
+  - **Low-Overhead Widget (`--widget`)**: Ambient desktop widget mode running at an efficient 15 FPS.
+  - **Inline Mode (`--inline`)**: In-place interactive animation without switching to alternate screens.
+  - **Status-Bar Snapshot (`--snapshot`)**: Single-shot ANSI True Color frame serializer for direct embedding in `tmux` status bars (`status-right`), `zellij` plugins, polybar, and scripts.
 - ⚡ **Zero-Allocation Inner Loop & Decoupled Core**: Pure simulation core operates with zero terminal dependencies, enabling deterministic testing, headless execution, and micro-benchmarking.
 - 🛡️ **Fail-Safe Terminal Handling**: Raw mode initialization with custom panic hooks that restore cursor visibility and exit the alternate screen even during unexpected aborts.
 
@@ -121,13 +126,13 @@ wget https://github.com/githubuser2777/ZenLavaTerm/releases/latest/download/lava
 sudo pacman -U lavaterm-0.9.0-1-x86_64.pkg.tar.zst
 
 # Or install lavaterm-bin via AUR helper
-yay -S lavaterm-bin
+yay -S lavaterm-bin (not yet)
 ```
 
 #### Option 2: Build from Source
 ```bash
 # Via AUR helper
-yay -S lavaterm
+yay -S lavaterm (not yet)
 
 # Or compile and package locally
 ./scripts/package_arch.sh --install
@@ -257,6 +262,12 @@ Options:
                              (e.g. ocean, cyberpunk, synthwave, auto, pywal, wallust, /path/to/theme.json)
       --fps <FPS>            Target frames per second (1-240) [default: 30]
       --blobs <COUNT>        Number of metaball blobs (1-128) [default: 12]
+      --compact              Force compact geometry & profile scaling
+      --widget               Run as low-overhead ambient widget (default 15 FPS, compact physics)
+      --inline               Run inline in terminal without entering alternate screen
+      --snapshot             Render a single ANSI frame to stdout and exit
+      --width <COLS>         Explicit viewport width (columns)
+      --height <ROWS>        Explicit viewport height (rows)
       --system               Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
       --audio                Enable audio-reactive visualizer mode (FFT spectrum analyzer)
       --headless             Run headless simulation without taking over TTY (useful for testing/CI)
@@ -355,6 +366,23 @@ enabled = false
 
 # Tempo BPM for synthetic beat generator fallback
 bpm = 120.0
+
+[widget]
+# Enable compact layout scaling by default
+compact = false
+
+# Target frame rate in widget mode (1..240)
+fps = 15
+
+# Run in inline mode without alternate screen by default
+inline = false
+
+# Optional fixed width and height dimensions for status bars / widgets
+# width = 24
+# height = 8
+
+# Automatically adapt particle count and radius in compact mode
+adapt_blobs = true
 ```
 
 ---
@@ -383,6 +411,12 @@ bpm = 120.0
 | `[reactive]` | `poll_interval_ms` | Integer | `500` | `100..10000` | Polling frequency for `/proc` and `/sys` virtual files. |
 | `[audio]` | `enabled` | Boolean | `false` | `true`, `false` | Enable FFT spectrum analyzer audio reactivity. |
 | `[audio]` | `bpm` | Float | `120.0` | `20.0..300.0` | Procedural rhythm generator tempo for testing and demos. |
+| `[widget]` | `compact` | Boolean | `false` | `true`, `false` | Force compact profile scaling by default. |
+| `[widget]` | `fps` | Integer | `15` | `1..240` | Default frame rate for widget mode. |
+| `[widget]` | `inline` | Boolean | `false` | `true`, `false` | Default to in-place inline rendering without alternate screen. |
+| `[widget]` | `width` | Integer | `None` | `1..1000` | Optional explicit columns width for widget layouts. |
+| `[widget]` | `height` | Integer | `None` | `1..1000` | Optional explicit rows height for widget layouts. |
+| `[widget]` | `adapt_blobs` | Boolean | `true` | `true`, `false` | Scale down blob count in small viewports to prevent saturation. |
 
 ---
 

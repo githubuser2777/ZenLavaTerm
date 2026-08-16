@@ -342,3 +342,60 @@ This document defines the initial set of structured GitHub issues for the LavaTe
   - Integration tests verifying all theme modes in end-to-end rendering pipeline.
 - **Dependencies**: Issue 22, Issue 23, Issue 24.
 
+---
+
+## Phase 9: Multiplexer & Widget Mode (v0.10.0)
+
+### Issue 26: Multiplexer Environment Adapter
+- **Goal**: Implement zero-dependency environment detection for tmux and zellij terminal multiplexers.
+- **Context**: Enables LavaTerm to adapt its behavior when executed inside multiplexer panes and status bars.
+- **Scope**: `src/widget/mod.rs`, `src/widget/multiplexer.rs`.
+- **Non-goals**: Rendering logic or altering terminal buffers inside detection module.
+- **Acceptance Criteria**:
+  - `MultiplexerKind` enum (`Tmux`, `Zellij`, `GenericTerminal`).
+  - Decoupled `detect_multiplexer_with` getter for deterministic testing without mutating global environment.
+  - Unit tests covering `TMUX`, `ZELLIJ`, and generic terminal detection.
+- **Dependencies**: None.
+
+---
+
+### Issue 27: Adaptive Geometry & Compact Profiles
+- **Goal**: Implement deterministic geometry-based compact activation and physics profile scaling for small viewports.
+- **Context**: Prevents particle saturation in micro and compact split-panes (e.g. 20x8 or status bars).
+- **Scope**: `src/widget/compact.rs`.
+- **Non-goals**: Modifying the simulation core or branching physics inside core algorithms.
+- **Acceptance Criteria**:
+  - `should_compact(cols, rows, explicit_flag)` determines activation cleanly.
+  - `CompactScaler::calculate_profile` maps viewport dimensions into `CompactProfile` (`blob_count`, `radius_scale`, `buoyancy_scale`, `noise_scale`).
+  - Unit tests verifying profile scaling across `10x3`, `15x5`, `20x8`, `24x8`, `40x15`, `80x24`, `200x60`.
+- **Dependencies**: Issue 26.
+
+---
+
+### Issue 28: Widget Output Modes (Snapshot & Inline)
+- **Goal**: Implement single-shot ANSI True Color frame serialization and in-place inline rendering.
+- **Context**: Enables status bar embeddings (tmux `status-right`, polybar) and inline terminal usage without stealing alternate screen.
+- **Scope**: `src/widget/snapshot.rs`, `src/render/mod.rs`.
+- **Non-goals**: Interactive keyboard handling in snapshot mode.
+- **Acceptance Criteria**:
+  - `render_snapshot` returns an in-memory ANSI True Color `String` with zero terminal state changes.
+  - Micro-geometry support (`20x1`, `20x2`, `20x3`, `24x8`, `80x24`) across `halfblock`, `block`, and `braille`.
+  - Unit tests directly asserting on serialized string structure and ANSI SGR sequences.
+- **Dependencies**: Issue 26, Issue 27.
+
+---
+
+### Issue 29: Policy Layer, CLI Integration, Configuration, Signals & Full Test Suite
+- **Goal**: Wire up CLI flags, TOML `[widget]` configuration, execution policy resolution, cross-platform signal safety, and integration tests.
+- **Context**: Complete end-to-end integration for the Phase 9 release (v0.10.0).
+- **Scope**: `src/widget/policy.rs`, `src/config/schema.rs`, `src/main.rs`, `tests/integration_test.rs`.
+- **Non-goals**: Mouse click shockwave interaction (Phase 10).
+- **Acceptance Criteria**:
+  - CLI flags `--fps`, `--compact`, `--widget`, `--inline`, `--snapshot`, `--width`, `--height`.
+  - TOML `[widget]` schema supporting `compact`, `fps`, `inline`, `width`, `height`, `adapt_blobs`.
+  - Policy resolver enforcing precedence and rejecting conflicting modes (`--snapshot` + `--inline`).
+  - Cross-platform terminal state restoration on normal exit, panic, and signals.
+  - End-to-end integration tests passing and all quality gates clean.
+- **Dependencies**: Issue 26, Issue 27, Issue 28.
+
+

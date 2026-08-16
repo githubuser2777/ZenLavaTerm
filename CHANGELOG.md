@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-08-16 — Phase 9: Multiplexer & Widget Mode (tmux / zellij)
+
+### Added
+- Multiplexer environment adapter (`src/widget/multiplexer.rs`) detecting active `tmux` (`TMUX`) and `zellij` (`ZELLIJ`) contexts with testable dependency injection abstractions.
+- Adaptive compact geometry scaler (`src/widget/compact.rs`) with deterministic `CompactProfile` calculation adapting blob counts (2–8) and particle radii for micro/compact split-panes (`< 40` cols or `< 15` rows).
+- Single-shot ANSI True Color frame serializer (`render_snapshot` in `src/widget/snapshot.rs`) for embedding into `tmux` status bars (`status-right`), `zellij` plugins, polybar, and external scripts.
+- In-place interactive inline rendering mode (`--inline`) operating cleanly without alternate-screen allocation.
+- Centralized widget policy resolver (`src/widget/policy.rs`) enforcing precedence (`CLI > TOML > Defaults`) and rejecting conflicting execution flags.
+- CLI switches: `--fps <FPS>`, `--compact`, `--widget`, `--inline`, `--snapshot`, `--width <COLS>`, `--height <ROWS>`.
+- TOML configuration `[widget]` schema supporting `compact`, `fps`, `inline`, `width`, `height`, and `adapt_blobs`.
+- Comprehensive unit and integration test coverage across micro-geometries (`20x1`, `20x2`, `20x3`), compact scaling, and policy validation.
+
 ## [0.9.0] - 2026-08-16 — Phase 8: Theme Engine & Desktop Ricing
 
 ### Added
