@@ -12,8 +12,8 @@ use lavaterm::{
     core::{PhysicsParams, Simulation},
     input::{map_key_event, Action},
     render::{
-        rasterize_simulation, BlockRenderer, ColorPalette, HalfBlockRenderer, Renderer,
-        VirtualFramebuffer,
+        rasterize_simulation, BlockRenderer, BrailleRenderer, ColorPalette, HalfBlockRenderer,
+        Renderer, VirtualFramebuffer,
     },
     LavaError, Result,
 };
@@ -31,7 +31,7 @@ struct Cli {
     #[arg(short, long, value_name = "PATH")]
     config: Option<PathBuf>,
 
-    /// Renderer backend: halfblock | block
+    /// Renderer backend: halfblock | block | braille
     #[arg(short, long, value_name = "TYPE")]
     renderer: Option<String>,
 
@@ -95,6 +95,14 @@ fn run_headless(
     Ok(())
 }
 
+fn framebuffer_dimensions(cols: u16, rows: u16, renderer_type: &str) -> (usize, usize) {
+    match renderer_type {
+        "block" => (cols as usize, rows as usize),
+        "braille" => (cols as usize * 2, rows as usize * 4),
+        _ => (cols as usize, (rows as usize) * 2),
+    }
+}
+
 fn run_interactive(
     mut sim: Simulation,
     palette: ColorPalette,
@@ -110,15 +118,12 @@ fn run_interactive(
 
     // 2. Query initial terminal dimensions
     let (mut cols, mut rows) = terminal::size()?;
-    let mut v_height = if renderer_type == "block" {
-        rows as usize
-    } else {
-        (rows as usize) * 2
-    };
-    let mut fb = VirtualFramebuffer::new(cols as usize, v_height, palette.background);
+    let (v_width, v_height) = framebuffer_dimensions(cols, rows, renderer_type);
+    let mut fb = VirtualFramebuffer::new(v_width, v_height, palette.background);
 
     let mut renderer: Box<dyn Renderer> = match renderer_type {
         "block" => Box::new(BlockRenderer::new()),
+        "braille" => Box::new(BrailleRenderer::new()),
         _ => Box::new(HalfBlockRenderer::new()),
     };
 
@@ -154,12 +159,8 @@ fn run_interactive(
                     Event::Resize(new_cols, new_rows) => {
                         cols = new_cols;
                         rows = new_rows;
-                        v_height = if renderer_type == "block" {
-                            rows as usize
-                        } else {
-                            (rows as usize) * 2
-                        };
-                        fb.resize(cols as usize, v_height, palette.background);
+                        let (new_w, new_h) = framebuffer_dimensions(cols, rows, renderer_type);
+                        fb.resize(new_w, new_h, palette.background);
                     }
                     _ => {}
                 }

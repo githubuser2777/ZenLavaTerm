@@ -1,11 +1,13 @@
 //! Terminal rendering, color interpolation, and framebuffer abstractions.
 
 pub mod block;
+pub mod braille;
 pub mod color;
 pub mod framebuffer;
 pub mod halfblock;
 
 pub use block::BlockRenderer;
+pub use braille::BrailleRenderer;
 pub use color::{ColorPalette, Rgb};
 pub use framebuffer::VirtualFramebuffer;
 pub use halfblock::HalfBlockRenderer;

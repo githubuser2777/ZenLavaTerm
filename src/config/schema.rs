@@ -25,6 +25,13 @@ impl Config {
         if self.render.fps < 1 || self.render.fps > 240 {
             return Err("render.fps must be between 1 and 240".to_string());
         }
+        let valid_renderers = ["halfblock", "block", "braille"];
+        if !valid_renderers.contains(&self.render.renderer.as_str()) {
+            return Err(format!(
+                "Invalid renderer '{}'. Must be one of: halfblock, block, braille",
+                self.render.renderer
+            ));
+        }
         Ok(())
     }
 }
@@ -219,5 +226,15 @@ mod tests {
         assert_eq!(config.render.renderer, "block");
         assert_eq!(config.render.fps, 60);
         assert_eq!(config.palette.bottom, Rgb::new(255, 0, 0));
+    }
+
+    #[test]
+    fn test_braille_and_invalid_renderer_validation() {
+        let mut config = Config::default();
+        config.render.renderer = "braille".to_string();
+        assert!(config.validate().is_ok());
+
+        config.render.renderer = "unsupported_renderer".to_string();
+        assert!(config.validate().is_err());
     }
 }

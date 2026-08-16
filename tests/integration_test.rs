@@ -4,8 +4,8 @@ use lavaterm::{
     config::Config,
     core::{PhysicsParams, Simulation},
     render::{
-        rasterize_simulation, BlockRenderer, ColorPalette, HalfBlockRenderer, Renderer,
-        VirtualFramebuffer,
+        rasterize_simulation, BlockRenderer, BrailleRenderer, ColorPalette, HalfBlockRenderer,
+        Renderer, VirtualFramebuffer,
     },
 };
 
@@ -58,5 +58,21 @@ fn test_end_to_end_simulation_and_rasterization() {
     assert!(
         block_str.contains("█"),
         "Block output must contain full block characters"
+    );
+
+    // Test Braille rendering
+    let mut braille_fb = VirtualFramebuffer::new(80, 40, palette.background);
+    rasterize_simulation(&sim, &mut braille_fb, &palette, config.simulation.threshold);
+    let mut braille_renderer = BrailleRenderer::new();
+    let mut braille_out = Vec::new();
+    braille_renderer
+        .render(&braille_fb, &mut braille_out)
+        .expect("Braille render succeeds");
+    let braille_str = String::from_utf8_lossy(&braille_out);
+    assert!(
+        braille_str
+            .chars()
+            .any(|c| ('\u{2800}'..='\u{28FF}').contains(&c)),
+        "Braille output must contain Unicode Braille patterns"
     );
 }
