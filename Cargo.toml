@@ -25,6 +25,11 @@ thiserror = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 
 [dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "field_and_render"
+harness = false
 
 [profile.release]
 opt-level = 3
