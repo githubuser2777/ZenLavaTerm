@@ -122,7 +122,8 @@ jobs:
           git config --global --add safe.directory '*' || true
           useradd -m -s /bin/bash builduser || true
           su builduser -c "git config --global --add safe.directory '*'" || true
-          chown -R builduser:builduser "$PWD" /__w || true
+          chown -R builduser:builduser "$PWD"
+          chmod -R 777 /__w/_temp /__w/_actions || true
 
       - name: Build Arch Linux package with makepkg
         run: |

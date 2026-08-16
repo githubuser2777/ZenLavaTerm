@@ -897,8 +897,8 @@ The resulting binary `target/x86_64-unknown-linux-musl/release/lavaterm` can be 
 Automated multi-platform builds and SHA-256 checksum generation are handled by `.github/workflows/release.yml`. Creating and pushing a git tag triggers the release pipeline:
 
 ```bash
-git tag -a v0.9.0 -m "Release v0.9.0"
-git push origin v0.9.0
+git tag -a v0.10.0 -m "Release v0.10.0"
+git push origin v0.10.0
 ```
 
 The workflow automatically builds binaries for all 5 target architectures, packages `.tar.gz` and `.zip` archives, computes SHA-256 checksums, and uploads assets directly to the GitHub Release.
