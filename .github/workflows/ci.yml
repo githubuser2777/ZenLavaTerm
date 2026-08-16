@@ -53,6 +53,9 @@ jobs:
       - name: Build tests
         run: cargo test --no-run --verbose
 
+      - name: Build benchmarks
+        run: cargo bench --no-run --verbose
+
       - name: Run unit & integration tests
         run: cargo test --verbose
 
