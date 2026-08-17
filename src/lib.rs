@@ -32,6 +32,10 @@ pub enum LavaError {
     /// Simulation or physics error.
     #[error("Simulation error: {0}")]
     Simulation(String),
+
+    /// Audio or FFT processing error.
+    #[error("Audio error: {0}")]
+    Audio(String),
 }
 
 /// Specialized Result type for LavaTerm operations.

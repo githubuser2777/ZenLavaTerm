@@ -69,11 +69,27 @@ impl CompactScaler {
             thermal_transfer_rate: base.thermal_transfer_rate,
         }
     }
+
+    /// Scales the influence radius of all metaball blobs by the compact profile radius_scale.
+    pub fn apply_radius_scale(profile: &CompactProfile, blobs: &mut [crate::core::Blob]) {
+        if (profile.radius_scale - 1.0).abs() > f32::EPSILON {
+            for blob in blobs {
+                blob.radius = (blob.radius * profile.radius_scale).max(0.01);
+            }
+        }
+    }
+
+    /// Adapts both physics parameters and blob radii of an active simulation using the compact profile.
+    pub fn adapt_simulation(profile: &CompactProfile, sim: &mut crate::core::Simulation) {
+        sim.params = Self::adapt_physics(profile, sim.params);
+        sim.apply_radius_scale(profile.radius_scale);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::{Blob, Simulation};
 
     #[test]
     fn test_should_compact_rules() {
@@ -105,7 +121,7 @@ mod tests {
             assert_eq!(profile.noise_scale, 0.80);
         }
 
-        // 2. Small compact viewports: 24x8 (area 192 -> micro, wait 24*8 = 192 < 200 so micro; let's check 40x15 = 600)
+        // 2. Small compact viewports: 24x8 (area 192 -> micro; let's check 40x15 = 600)
         let profile_40x15 = CompactScaler::calculate_profile(40, 15, base_blobs);
         assert_eq!(profile_40x15.blob_count, 8);
         assert_eq!(profile_40x15.radius_scale, 0.85);
@@ -140,5 +156,34 @@ mod tests {
         assert_eq!(adapted.viscosity, 0.93);
         assert_eq!(adapted.noise, 0.15 * 0.80);
         assert_eq!(adapted.thermal_transfer_rate, 0.40);
+    }
+
+    #[test]
+    fn test_apply_radius_scale_to_blobs() {
+        let profile_micro = CompactScaler::calculate_profile(20, 8, 12);
+        assert_eq!(profile_micro.radius_scale, 0.65);
+
+        let mut blobs = vec![Blob::new(0.5, 0.5, 0.10, 0.5)];
+        CompactScaler::apply_radius_scale(&profile_micro, &mut blobs);
+        assert!((blobs[0].radius - 0.065).abs() < 1e-5);
+
+        let profile_standard = CompactScaler::calculate_profile(80, 24, 12);
+        assert_eq!(profile_standard.radius_scale, 1.0);
+        CompactScaler::apply_radius_scale(&profile_standard, &mut blobs);
+        assert!((blobs[0].radius - 0.065).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_adapt_simulation_full() {
+        let profile = CompactScaler::calculate_profile(20, 8, 12);
+        let mut sim = Simulation::new(PhysicsParams::default(), profile.blob_count, 42);
+        let initial_radii: Vec<f32> = sim.blobs.iter().map(|b| b.radius).collect();
+
+        CompactScaler::adapt_simulation(&profile, &mut sim);
+
+        assert_eq!(sim.radius_scale, 0.65);
+        for (initial, blob) in initial_radii.iter().zip(sim.blobs.iter()) {
+            assert!((blob.radius - initial * 0.65).abs() < 1e-5);
+        }
     }
 }

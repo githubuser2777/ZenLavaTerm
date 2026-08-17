@@ -9,9 +9,18 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_DIR="$ROOT_DIR/target/arch_pkg"
 
 INSTALL=false
-if [[ "${1:-}" == "--install" || "${1:-}" == "-i" ]]; then
-    INSTALL=true
-fi
+GEN_SRCINFO=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --install|-i)
+            INSTALL=true
+            ;;
+        --srcinfo|-s)
+            GEN_SRCINFO=true
+            ;;
+    esac
+done
 
 echo "==> Preparing Arch Linux build directory at $BUILD_DIR..."
 rm -rf "$BUILD_DIR"
@@ -37,6 +46,12 @@ else
         --exclude="./target" \
         --exclude="./.git" \
         -czf "$PKG_TAR" -C "$ROOT_DIR" .
+fi
+
+if [[ "$GEN_SRCINFO" == "true" ]]; then
+    echo "==> Generating .SRCINFO for packaging/arch/PKGBUILD..."
+    (cd "$BUILD_DIR" && makepkg --printsrcinfo > "$ROOT_DIR/packaging/arch/.SRCINFO")
+    echo "==> Generated packaging/arch/.SRCINFO successfully."
 fi
 
 # Run makepkg inside BUILD_DIR

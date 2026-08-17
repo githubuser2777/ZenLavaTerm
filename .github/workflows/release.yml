@@ -6,12 +6,14 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-release:
     name: Build & Package (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -57,7 +59,7 @@ jobs:
 
       - name: Install cross (if required)
         if: matrix.use_cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        run: cargo install cross --version 0.2.5 --locked
 
       - name: Build release binary
         run: |
@@ -107,6 +109,8 @@ jobs:
   build-archlinux-package:
     name: Build & Package (Arch Linux x86_64)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     container:
       image: archlinux:base-devel
     steps:

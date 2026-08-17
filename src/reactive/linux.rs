@@ -48,7 +48,7 @@ impl LinuxSystemProvider {
     }
 
     /// Parses total and active CPU ticks from `/proc/stat` content.
-    pub fn parse_cpu_stat(content: &str) -> Option<(u64, u64)> {
+    pub(crate) fn parse_cpu_stat(content: &str) -> Option<(u64, u64)> {
         for line in content.lines() {
             if line.starts_with("cpu ") {
                 let parts: Vec<u64> = line
@@ -77,7 +77,7 @@ impl LinuxSystemProvider {
     }
 
     /// Parses total and available memory in kB from `/proc/meminfo`.
-    pub fn parse_meminfo(content: &str) -> Option<(u64, u64)> {
+    pub(crate) fn parse_meminfo(content: &str) -> Option<(u64, u64)> {
         let mut total_kb = None;
         let mut avail_kb = None;
 
@@ -105,7 +105,7 @@ impl LinuxSystemProvider {
     }
 
     /// Parses battery capacity from capacity file string.
-    pub fn parse_battery(content: &str) -> Option<f32> {
+    pub(crate) fn parse_battery(content: &str) -> Option<f32> {
         content
             .trim()
             .parse::<f32>()
@@ -114,7 +114,7 @@ impl LinuxSystemProvider {
     }
 
     /// Parses total disk sectors read & written from `/proc/diskstats`.
-    pub fn parse_diskstats(content: &str) -> u64 {
+    pub(crate) fn parse_diskstats(content: &str) -> u64 {
         let mut total_sectors: u64 = 0;
         for line in content.lines() {
             let parts: Vec<&str> = line.split_whitespace().collect();

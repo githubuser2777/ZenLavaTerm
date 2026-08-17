@@ -213,8 +213,10 @@ fn test_phase9_compact_mode_integration() {
     assert_eq!(profile.blob_count, 4);
     assert_eq!(profile.radius_scale, 0.65);
 
-    let adapted_physics = CompactScaler::adapt_physics(&profile, base_physics);
-    let mut sim = Simulation::new(adapted_physics, profile.blob_count, 42);
+    let mut sim = Simulation::new(base_physics, profile.blob_count, 42);
+    let initial_radius = sim.blobs[0].radius;
+    CompactScaler::adapt_simulation(&profile, &mut sim);
+
     let palette = ColorPalette::default();
     let mut fb = VirtualFramebuffer::new(20, 16, palette.background);
 
@@ -225,6 +227,8 @@ fn test_phase9_compact_mode_integration() {
 
     assert!(sim.elapsed_time > 0.0);
     assert_eq!(sim.blobs.len(), 4);
+    assert_eq!(sim.radius_scale, 0.65);
+    assert!((sim.blobs[0].radius - initial_radius * 0.65).abs() < 1e-5);
 }
 
 #[test]

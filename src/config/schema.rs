@@ -34,6 +34,11 @@ impl Config {
         if self.simulation.blobs == 0 || self.simulation.blobs > 128 {
             return Err("simulation.blobs must be between 1 and 128".to_string());
         }
+        if self.simulation.thermal_transfer_rate <= 0.0
+            || self.simulation.thermal_transfer_rate > 5.0
+        {
+            return Err("simulation.thermal_transfer_rate must be between 0.0 and 5.0".to_string());
+        }
         if self.render.fps < 1 || self.render.fps > 240 {
             return Err("render.fps must be between 1 and 240".to_string());
         }
@@ -87,6 +92,10 @@ pub struct SimulationConfig {
     /// Isosurface threshold for lava fluid.
     #[serde(default = "default_threshold")]
     pub threshold: f32,
+
+    /// Rate of thermal transfer with chamber boundaries.
+    #[serde(default = "default_thermal_transfer_rate")]
+    pub thermal_transfer_rate: f32,
 }
 
 fn default_blobs() -> usize {
@@ -107,6 +116,9 @@ fn default_noise() -> f32 {
 fn default_threshold() -> f32 {
     1.00
 }
+fn default_thermal_transfer_rate() -> f32 {
+    0.40
+}
 
 impl Default for SimulationConfig {
     fn default() -> Self {
@@ -117,6 +129,7 @@ impl Default for SimulationConfig {
             viscosity: default_viscosity(),
             noise: default_noise(),
             threshold: default_threshold(),
+            thermal_transfer_rate: default_thermal_transfer_rate(),
         }
     }
 }
@@ -124,7 +137,7 @@ impl Default for SimulationConfig {
 /// Rendering options.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RenderConfig {
-    /// Renderer backend ("halfblock" or "block").
+    /// Renderer backend ("halfblock", "block", or "braille").
     #[serde(default = "default_renderer")]
     pub renderer: String,
 
@@ -135,10 +148,6 @@ pub struct RenderConfig {
     /// Enable smooth gradient color mapping.
     #[serde(default = "default_gradient")]
     pub gradient: bool,
-
-    /// Enable double buffering diff optimization.
-    #[serde(default = "default_double_buffering")]
-    pub double_buffering: bool,
 }
 
 fn default_renderer() -> String {
@@ -150,9 +159,6 @@ fn default_fps() -> u32 {
 fn default_gradient() -> bool {
     true
 }
-fn default_double_buffering() -> bool {
-    true
-}
 
 impl Default for RenderConfig {
     fn default() -> Self {
@@ -160,7 +166,6 @@ impl Default for RenderConfig {
             renderer: default_renderer(),
             fps: default_fps(),
             gradient: default_gradient(),
-            double_buffering: default_double_buffering(),
         }
     }
 }
@@ -428,5 +433,24 @@ mod tests {
 
         config.render.renderer = "unsupported_renderer".to_string();
         assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_thermal_transfer_rate_validation() {
+        let mut config = Config::default();
+        assert_eq!(config.simulation.thermal_transfer_rate, 0.40);
+        assert!(config.validate().is_ok());
+
+        config.simulation.thermal_transfer_rate = 0.0;
+        assert!(config.validate().is_err());
+
+        config.simulation.thermal_transfer_rate = -0.5;
+        assert!(config.validate().is_err());
+
+        config.simulation.thermal_transfer_rate = 10.0;
+        assert!(config.validate().is_err());
+
+        config.simulation.thermal_transfer_rate = 1.5;
+        assert!(config.validate().is_ok());
     }
 }

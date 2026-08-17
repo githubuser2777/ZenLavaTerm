@@ -1,6 +1,7 @@
 //! Fast Fourier Transform (FFT) and frequency band spectrum analyzer.
 
 use super::signals::AudioSignals;
+use crate::{LavaError, Result};
 use std::f32::consts::PI;
 
 /// Zero-dependency Cooley-Tukey Radix-2 FFT and spectrum analyzer.
@@ -44,10 +45,26 @@ impl SpectrumAnalyzer {
     }
 
     /// Performs in-place Radix-2 Cooley-Tukey FFT on complex input vectors.
-    pub fn compute_fft(real: &mut [f32], imag: &mut [f32]) {
+    pub fn compute_fft(real: &mut [f32], imag: &mut [f32]) -> Result<()> {
         let n = real.len();
-        assert_eq!(n, imag.len());
-        assert!(n.is_power_of_two(), "FFT size must be power of two");
+        if n != imag.len() {
+            return Err(LavaError::Audio(format!(
+                "Real and imaginary buffer lengths must match: {} != {}",
+                n,
+                imag.len()
+            )));
+        }
+        if n == 0 {
+            return Err(LavaError::Audio(
+                "FFT buffer length must be greater than zero".to_string(),
+            ));
+        }
+        if !n.is_power_of_two() {
+            return Err(LavaError::Audio(format!(
+                "FFT size must be a power of two, got {}",
+                n
+            )));
+        }
 
         // 1. Bit-reversal permutation
         let mut j = 0;
@@ -97,6 +114,8 @@ impl SpectrumAnalyzer {
             }
             len *= 2;
         }
+
+        Ok(())
     }
 
     /// Analyzes a slice of PCM samples and returns normalized `AudioSignals`.
@@ -121,7 +140,10 @@ impl SpectrumAnalyzer {
 
         // Window and FFT
         Self::apply_hann_window(&mut real);
-        Self::compute_fft(&mut real, &mut imag);
+        if let Err(e) = Self::compute_fft(&mut real, &mut imag) {
+            eprintln!("Warning: FFT computation failed in spectrum analyzer: {e}");
+            return AudioSignals::default();
+        }
 
         // Magnitudes (positive frequencies)
         let num_bins = n / 2;
@@ -255,5 +277,47 @@ mod tests {
         assert_eq!(signals.mid, 0.0);
         assert_eq!(signals.treble, 0.0);
         assert_eq!(signals.volume, 0.0);
+    }
+
+    #[test]
+    fn test_compute_fft_mismatched_lengths() {
+        let mut real = vec![0.0f32; 8];
+        let mut imag = vec![0.0f32; 4];
+        let res = SpectrumAnalyzer::compute_fft(&mut real, &mut imag);
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("lengths must match"));
+    }
+
+    #[test]
+    fn test_compute_fft_zero_length() {
+        let mut real = vec![];
+        let mut imag = vec![];
+        let res = SpectrumAnalyzer::compute_fft(&mut real, &mut imag);
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("greater than zero"));
+    }
+
+    #[test]
+    fn test_compute_fft_non_power_of_two() {
+        let mut real = vec![0.0f32; 10];
+        let mut imag = vec![0.0f32; 10];
+        let res = SpectrumAnalyzer::compute_fft(&mut real, &mut imag);
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("power of two"));
+    }
+
+    #[test]
+    fn test_compute_fft_valid_power_of_two_and_transform_correctness() {
+        // Delta impulse at t=0 -> constant magnitude in frequency domain
+        let mut real = vec![1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        let mut imag = vec![0.0; 8];
+        let res = SpectrumAnalyzer::compute_fft(&mut real, &mut imag);
+        assert!(res.is_ok());
+        for &r in &real {
+            assert!((r - 1.0).abs() < 1e-5);
+        }
+        for &im in &imag {
+            assert!(im.abs() < 1e-5);
+        }
     }
 }

@@ -6,7 +6,7 @@ LavaTerm is designed with the philosophy of **zero-configuration out of the box*
 
 LavaTerm checks for configuration files at:
 - CLI argument: `--config <path>`
-- User config directory: `~/.config/lavaterm/config.toml` (Linux/macOS) or `%APPDATA%\lavaterm\config.toml` (Windows)
+- User config directory: `$XDG_CONFIG_HOME/lavaterm/config.toml` or `~/.config/lavaterm/config.toml` (Linux/macOS) or `%APPDATA%\lavaterm\config.toml` (Windows)
 
 ---
 
@@ -36,8 +36,11 @@ noise = 0.15
 # Isosurface metaball threshold for lava boundary
 threshold = 1.00
 
+# Thermal transfer rate with chamber boundaries (> 0.0 to 5.0)
+thermal_transfer_rate = 0.40
+
 [render]
-# Terminal rendering backend: "halfblock" | "block"
+# Terminal rendering backend: "halfblock" | "block" | "braille"
 renderer = "halfblock"
 
 # Target frame rate (FPS)
@@ -45,9 +48,6 @@ fps = 30
 
 # Enable 24-bit True Color gradient interpolation
 gradient = true
-
-# Double buffering and dirty rect diffing
-double_buffering = true
 
 [palette]
 # Hex color code for the hot bottom heat zone
@@ -78,6 +78,20 @@ bpm = 120.0
 # Active theme preset ("lava", "ocean", "cyberpunk", "synthwave", "nord", "forest", "monochrome", "matrix", "sunset", "dracula", "catppuccin", "tokyo-night"), "auto", "pywal", "wallust", or custom file path
 name = "lava"
 # path = "/path/to/custom_theme.json"
+
+[widget]
+# Force compact geometry scaling
+compact = false
+# Target FPS when operating in widget mode (default 15)
+fps = 15
+# Run inline within current terminal without entering alternate screen
+inline = false
+# Explicit width constraint (columns)
+# width = 40
+# Explicit height constraint (rows)
+# height = 12
+# Automatically adapt blob count and physics for small viewports
+adapt_blobs = true
 ```
 
 ---
@@ -93,6 +107,7 @@ name = "lava"
 | `viscosity` | float | `0.93` | Velocity retention factor per second |
 | `noise` | float | `0.15` | Thermal turbulence and lateral drift amplitude |
 | `threshold` | float | `1.00` | Field intensity isosurface threshold |
+| `thermal_transfer_rate` | float | `0.40` | Rate of heat exchange at chamber boundaries (> 0.0..5.0) |
 
 ### `[render]`
 | Field | Type | Default | Description |
@@ -100,7 +115,6 @@ name = "lava"
 | `renderer` | string | `"halfblock"` | Rendering engine: `"halfblock"` (high-res), `"block"`, or `"braille"` |
 | `fps` | integer | `30` | Target render frequency (1..240) |
 | `gradient` | boolean | `true` | Interpolate smooth colors across field intensity |
-| `double_buffering` | boolean | `true` | Skip unchanged terminal cells between frames |
 
 ### `[palette]`
 | Field | Type | Default | Description |
@@ -127,4 +141,14 @@ name = "lava"
 |---|---|---|---|
 | `enabled` | boolean | `false` | Enable real-time audio FFT capture mode |
 | `bpm` | float | `120.0` | Synthetic beat pulse frequency |
+
+### `[widget]`
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `compact` | boolean | `false` | Enable compact viewport mode scaling |
+| `fps` | integer | `15` | Frame rate used when running in widget mode |
+| `inline` | boolean | `false` | Default to inline rendering without alternate screen |
+| `width` | integer | `None` | Viewport width constraint |
+| `height` | integer | `None` | Viewport height constraint |
+| `adapt_blobs` | boolean | `true` | Dynamically scale blob count and radii based on geometry |
 
