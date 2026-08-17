@@ -44,7 +44,7 @@ cargo build --release
 
 ## 3. Pull Request Guidelines
 
-- PRs should address a single well-defined GitHub Issue.
+- PRs should address a single well-defined GitHub Issue and follow `docs/issue_creation_checklist.md` when creating new issues.
 - Keep PRs focused; avoid mixing refactorings with new features.
 - Update documentation in `docs/` whenever configuration schema, CLI options, or core APIs change.
 - Follow the [Conventional Commits](https://www.conventionalcommits.org/) format for all git commits.

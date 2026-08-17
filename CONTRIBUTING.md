@@ -37,7 +37,7 @@ cargo run -- --headless --frames 30
 
 ## Contribution Workflow
 
-1. **Find or Open an Issue**: Check existing issues or open a new one following the issue templates. Every feature or bug fix should correspond to an issue with clear acceptance criteria.
+1. **Find or Open an Issue**: Check existing issues or open a new one following the issue templates and the full checklist in `docs/issue_creation_checklist.md`. Every feature or bug fix should correspond to an issue with clear acceptance criteria.
 2. **Branch Naming**:
    - `feat/<feature-name>`
    - `fix/<bug-name>`
