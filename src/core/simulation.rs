@@ -48,6 +48,8 @@ pub struct Simulation {
     pub field: ScalarField,
     /// Total elapsed simulation time in seconds.
     pub elapsed_time: f32,
+    /// Base radius scale for compact / adaptive viewports.
+    pub radius_scale: f32,
     /// Internal deterministic PRNG.
     prng: SimplePrng,
 }
@@ -86,7 +88,18 @@ impl Simulation {
             params,
             field: ScalarField,
             elapsed_time: 0.0,
+            radius_scale: 1.0,
             prng,
+        }
+    }
+
+    /// Scales all blob radii by `scale` and sets `self.radius_scale`.
+    pub fn apply_radius_scale(&mut self, scale: f32) {
+        self.radius_scale = scale;
+        if (scale - 1.0).abs() > f32::EPSILON {
+            for blob in &mut self.blobs {
+                blob.radius = (blob.radius * scale).max(0.01);
+            }
         }
     }
 
@@ -126,7 +139,7 @@ impl Simulation {
         let radius_multiplier = 0.85 + signals.memory_usage * 0.40;
         for (i, blob) in self.blobs.iter_mut().enumerate() {
             let base_r = 0.08 + 0.04 * ((i % 3) as f32 / 3.0);
-            blob.radius = base_r * radius_multiplier;
+            blob.radius = (base_r * self.radius_scale * radius_multiplier).max(0.01);
         }
     }
 

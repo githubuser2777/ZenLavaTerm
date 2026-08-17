@@ -10,6 +10,8 @@ depends=('gcc-libs')
 provides=('lavaterm')
 conflicts=('lavaterm' 'lavaterm-git')
 source=("$pkgname-$pkgver.tar.gz::$url/releases/download/v$pkgver/lavaterm-x86_64-unknown-linux-gnu.tar.gz")
+# Note: sha256sums is set to 'SKIP' in repo template. When publishing a release to AUR,
+# run `updpkgsums` or replace 'SKIP' with the SHA-256 hash of the release artifact tarball.
 sha256sums=('SKIP')
 
 package() {

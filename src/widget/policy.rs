@@ -79,6 +79,11 @@ pub fn resolve_policy(input: &PolicyInput) -> Result<ResolvedPolicy> {
 
     // 3. Resolve Target FPS
     // Precedence: CLI --fps > (Widget mode default 15 / toml_widget_fps) > (Interactive toml_render_fps) > 30
+    if let Some(0) = input.cli_fps {
+        return Err(LavaError::Config(
+            "Target FPS must be greater than zero".to_string(),
+        ));
+    }
     let target_fps = if let Some(fps) = input.cli_fps {
         fps
     } else if mode == ExecutionMode::Widget {
@@ -92,6 +97,12 @@ pub fn resolve_policy(input: &PolicyInput) -> Result<ResolvedPolicy> {
     } else {
         30
     };
+
+    if target_fps == 0 {
+        return Err(LavaError::Config(
+            "Target FPS must be greater than zero".to_string(),
+        ));
+    }
 
     // 4. Resolve Compact Policy
     // --widget implies compact mode; --compact forces it; toml [widget].compact can configure it
@@ -139,6 +150,24 @@ pub fn resolve_policy(input: &PolicyInput) -> Result<ResolvedPolicy> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_fps_zero_rejected() {
+        let input_cli_zero = PolicyInput {
+            cli_fps: Some(0),
+            ..Default::default()
+        };
+        let err = resolve_policy(&input_cli_zero).expect_err("CLI FPS=0 must be rejected");
+        assert!(err.to_string().contains("greater than zero"));
+
+        let input_all_zero = PolicyInput {
+            toml_render_fps: 0,
+            toml_widget_fps: 0,
+            ..Default::default()
+        };
+        let policy = resolve_policy(&input_all_zero).expect("Fallback default FPS must be > 0");
+        assert_eq!(policy.target_fps, 30);
+    }
 
     #[test]
     fn test_default_policy_resolution() {

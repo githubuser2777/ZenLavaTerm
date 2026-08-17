@@ -331,6 +331,7 @@ dependencies = [
  "crossterm",
  "serde",
  "serde_json",
+ "signal-hook",
  "thiserror",
  "toml",
 ]

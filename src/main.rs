@@ -14,8 +14,8 @@ use lavaterm::{
     input::{map_key_event, Action},
     reactive::default_system_provider,
     render::{
-        rasterize_simulation, BlockRenderer, BrailleRenderer, ColorPalette, HalfBlockRenderer,
-        Renderer, VirtualFramebuffer,
+        rasterize_simulation_options, BlockRenderer, BrailleRenderer, ColorPalette,
+        HalfBlockRenderer, Renderer, VirtualFramebuffer,
     },
     theme::{load_custom_theme_file, resolve_theme},
     widget::{
@@ -26,6 +26,8 @@ use lavaterm::{
 use std::{
     io::{stdout, BufWriter, Write},
     path::PathBuf,
+    sync::atomic::{AtomicBool, Ordering},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -94,19 +96,37 @@ struct Cli {
     frames: usize,
 }
 
+fn restore_terminal(alternate_screen: bool) {
+    let _ = terminal::disable_raw_mode();
+    if alternate_screen {
+        let _ = execute!(stdout(), LeaveAlternateScreen, cursor::Show);
+    } else {
+        let _ = execute!(stdout(), cursor::Show);
+    }
+}
+
 fn setup_panic_hook() {
     let original_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic_info| {
-        let _ = terminal::disable_raw_mode();
-        let _ = execute!(stdout(), LeaveAlternateScreen, cursor::Show);
+        restore_terminal(true);
         original_hook(panic_info);
     }));
 }
+
+#[cfg(unix)]
+fn setup_signal_handler(term_flag: Arc<AtomicBool>) {
+    let _ = signal_hook::flag::register(signal_hook::consts::SIGINT, Arc::clone(&term_flag));
+    let _ = signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&term_flag));
+}
+
+#[cfg(not(unix))]
+fn setup_signal_handler(_term_flag: Arc<AtomicBool>) {}
 
 struct RuntimeOptions {
     renderer_type: String,
     fps: u32,
     threshold: f32,
+    gradient: bool,
     system_reactive: bool,
     audio_reactive: bool,
     poll_interval_ms: u64,
@@ -145,7 +165,7 @@ fn run_headless(
         } else {
             sim.step(dt);
         }
-        rasterize_simulation(sim, &mut fb, palette, opts.threshold);
+        rasterize_simulation_options(sim, &mut fb, palette, opts.threshold, opts.gradient);
         if frame % 20 == 0 || frame == frames - 1 {
             println!(
                 "  [Frame {:03}/{:03}] Sim Time: {:.2}s | Blobs: {} | Active pixels in canvas: {}",
@@ -172,138 +192,40 @@ fn framebuffer_dimensions(cols: u16, rows: u16, renderer_type: &str) -> (usize, 
     }
 }
 
-fn run_fullscreen_interactive(
-    mut sim: Simulation,
-    palette: ColorPalette,
-    opts: RuntimeOptions,
-    fixed_dim: Option<(u16, u16)>,
-) -> Result<()> {
-    setup_panic_hook();
-    terminal::enable_raw_mode()?;
-    let mut out = BufWriter::with_capacity(64 * 1024, stdout());
-    execute!(out, EnterAlternateScreen, cursor::Hide)?;
-
-    let (mut cols, mut rows) = match fixed_dim {
-        Some((w, h)) => (w, h),
-        None => terminal::size()?,
-    };
-    let (v_width, v_height) = framebuffer_dimensions(cols, rows, &opts.renderer_type);
-    let mut fb = VirtualFramebuffer::new(v_width, v_height, palette.background);
-
-    let mut renderer: Box<dyn Renderer> = match opts.renderer_type.as_str() {
-        "block" => Box::new(BlockRenderer::new()),
-        "braille" => Box::new(BrailleRenderer::new()),
-        _ => Box::new(HalfBlockRenderer::new()),
-    };
-
-    let target_frame_duration = Duration::from_secs_f32(1.0 / opts.fps as f32);
-    let mut last_instant = Instant::now();
-    let mut paused = false;
-
-    let mut sys_provider = if opts.system_reactive {
-        Some(default_system_provider())
-    } else {
-        None
-    };
-    let mut audio_provider = if opts.audio_reactive {
-        Some(default_audio_provider())
-    } else {
-        None
-    };
-
-    let mut last_metric_poll = Instant::now();
-    let poll_duration = Duration::from_millis(opts.poll_interval_ms.max(100));
-    let mut current_sys_signals = sys_provider.as_mut().map(|p| p.poll_signals());
-
-    let loop_result = (|| -> Result<()> {
-        loop {
-            let now = Instant::now();
-            let delta = now.duration_since(last_instant);
-            last_instant = now;
-
-            while event::poll(Duration::from_millis(0))? {
-                match event::read()? {
-                    Event::Key(key) => match map_key_event(key) {
-                        Action::Quit => return Ok(()),
-                        Action::TogglePause => paused = !paused,
-                        Action::SpeedUp => {
-                            sim.params.buoyancy = (sim.params.buoyancy + 0.1).min(3.0)
-                        }
-                        Action::SlowDown => {
-                            sim.params.buoyancy = (sim.params.buoyancy - 0.1).max(0.1)
-                        }
-                        Action::Reset => {
-                            let count = sim.blobs.len();
-                            sim = Simulation::new(sim.params, count, 42);
-                        }
-                        Action::None => {}
-                    },
-                    Event::Resize(new_cols, new_rows) if fixed_dim.is_none() => {
-                        cols = new_cols;
-                        rows = new_rows;
-                        let (new_w, new_h) =
-                            framebuffer_dimensions(cols, rows, &opts.renderer_type);
-                        fb.resize(new_w, new_h, palette.background);
-                    }
-                    _ => {}
-                }
-            }
-
-            if let Some(ref mut sp) = sys_provider {
-                if last_metric_poll.elapsed() >= poll_duration {
-                    current_sys_signals = Some(sp.poll_signals());
-                    last_metric_poll = Instant::now();
-                }
-            }
-
-            if !paused {
-                if let Some(ref mut ap) = audio_provider {
-                    let audio_sig = ap.poll_signals();
-                    sim.step_audio(delta.as_secs_f32(), &audio_sig);
-                } else if let Some(ref signals) = current_sys_signals {
-                    sim.step_reactive(delta.as_secs_f32(), signals);
-                } else {
-                    sim.step(delta.as_secs_f32());
-                }
-            }
-
-            rasterize_simulation(&sim, &mut fb, &palette, opts.threshold);
-
-            renderer
-                .render(&fb, &mut out)
-                .map_err(|e| LavaError::Render(e.to_string()))?;
-            out.flush()?;
-
-            let elapsed = now.elapsed();
-            if elapsed < target_frame_duration {
-                std::thread::sleep(target_frame_duration - elapsed);
-            }
-        }
-    })();
-
-    let _ = execute!(out, LeaveAlternateScreen, cursor::Show);
-    let _ = out.flush();
-    let _ = terminal::disable_raw_mode();
-
-    loop_result
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum InteractiveMode {
+    Fullscreen,
+    Inline { target_height: u16 },
 }
 
-fn run_inline_interactive(
+fn run_event_loop(
     mut sim: Simulation,
     palette: ColorPalette,
     opts: RuntimeOptions,
     fixed_dim: Option<(u16, u16)>,
+    mode: InteractiveMode,
 ) -> Result<()> {
     setup_panic_hook();
+
+    let shutdown_flag = Arc::new(AtomicBool::new(false));
+    setup_signal_handler(Arc::clone(&shutdown_flag));
+
     terminal::enable_raw_mode()?;
     let mut out = BufWriter::with_capacity(64 * 1024, stdout());
-    execute!(out, cursor::Hide)?;
 
-    let (mut cols, mut rows) = match fixed_dim {
-        Some((w, h)) => (w, h),
-        None => {
-            let (w, h) = terminal::size().unwrap_or((80, 10));
-            (w, if h > 12 { 10 } else { h })
+    let is_fullscreen = matches!(mode, InteractiveMode::Fullscreen);
+    if is_fullscreen {
+        execute!(out, EnterAlternateScreen, cursor::Hide)?;
+    } else {
+        execute!(out, cursor::Hide)?;
+    }
+
+    let (term_cols, term_rows) = terminal::size().unwrap_or((80, 24));
+    let (mut cols, mut rows) = match (fixed_dim, mode) {
+        (Some((w, h)), _) => (w, h),
+        (None, InteractiveMode::Fullscreen) => (term_cols, term_rows),
+        (None, InteractiveMode::Inline { target_height }) => {
+            (term_cols, target_height.min(term_rows))
         }
     };
 
@@ -337,6 +259,10 @@ fn run_inline_interactive(
 
     let loop_result = (|| -> Result<()> {
         loop {
+            if shutdown_flag.load(Ordering::Relaxed) {
+                return Ok(());
+            }
+
             let now = Instant::now();
             let delta = now.duration_since(last_instant);
             last_instant = now;
@@ -360,7 +286,12 @@ fn run_inline_interactive(
                     },
                     Event::Resize(new_cols, new_rows) if fixed_dim.is_none() => {
                         cols = new_cols;
-                        rows = if new_rows > 12 { 10 } else { new_rows };
+                        rows = match mode {
+                            InteractiveMode::Fullscreen => new_rows,
+                            InteractiveMode::Inline { target_height } => {
+                                target_height.min(new_rows)
+                            }
+                        };
                         let (new_w, new_h) =
                             framebuffer_dimensions(cols, rows, &opts.renderer_type);
                         fb.resize(new_w, new_h, palette.background);
@@ -387,7 +318,7 @@ fn run_inline_interactive(
                 }
             }
 
-            rasterize_simulation(&sim, &mut fb, &palette, opts.threshold);
+            rasterize_simulation_options(&sim, &mut fb, &palette, opts.threshold, opts.gradient);
 
             renderer
                 .render(&fb, &mut out)
@@ -401,7 +332,11 @@ fn run_inline_interactive(
         }
     })();
 
-    let _ = execute!(out, cursor::Show);
+    if is_fullscreen {
+        let _ = execute!(out, LeaveAlternateScreen, cursor::Show);
+    } else {
+        let _ = execute!(out, cursor::Show);
+    }
     let _ = out.flush();
     let _ = terminal::disable_raw_mode();
 
@@ -458,7 +393,7 @@ fn main() -> std::process::ExitCode {
         buoyancy: config.simulation.buoyancy,
         viscosity: config.simulation.viscosity,
         noise: config.simulation.noise,
-        thermal_transfer_rate: 0.40,
+        thermal_transfer_rate: config.simulation.thermal_transfer_rate,
     };
 
     let palette = if let Some(ref theme_spec) = cli.theme {
@@ -495,20 +430,24 @@ fn main() -> std::process::ExitCode {
     };
 
     let is_compact = should_compact(initial_cols, initial_rows, policy.force_compact);
-    let (blob_count, physics) = if is_compact && policy.adapt_blobs {
+    let (blob_count, physics, profile_opt) = if is_compact && policy.adapt_blobs {
         let profile = CompactScaler::calculate_profile(initial_cols, initial_rows, base_blob_count);
         let adapted_physics = CompactScaler::adapt_physics(&profile, base_physics);
-        (profile.blob_count, adapted_physics)
+        (profile.blob_count, adapted_physics, Some(profile))
     } else {
-        (base_blob_count, base_physics)
+        (base_blob_count, base_physics, None)
     };
 
     let mut sim = Simulation::new(physics, blob_count, 1337);
+    if let Some(profile) = profile_opt {
+        sim.apply_radius_scale(profile.radius_scale);
+    }
 
     let opts = RuntimeOptions {
         renderer_type: renderer_type.clone(),
         fps: policy.target_fps,
         threshold,
+        gradient: config.render.gradient,
         system_reactive,
         audio_reactive,
         poll_interval_ms,
@@ -535,11 +474,26 @@ fn main() -> std::process::ExitCode {
         }
         ExecutionMode::Headless => run_headless(&mut sim, &palette, cli.frames, &opts),
         ExecutionMode::Inline => {
-            run_inline_interactive(sim, palette, opts, policy.explicit_dimensions)
+            let target_height = policy
+                .explicit_dimensions
+                .map(|(_, h)| h)
+                .or(config.widget.height)
+                .unwrap_or(10);
+            run_event_loop(
+                sim,
+                palette,
+                opts,
+                policy.explicit_dimensions,
+                InteractiveMode::Inline { target_height },
+            )
         }
-        ExecutionMode::Interactive | ExecutionMode::Widget => {
-            run_fullscreen_interactive(sim, palette, opts, policy.explicit_dimensions)
-        }
+        ExecutionMode::Interactive | ExecutionMode::Widget => run_event_loop(
+            sim,
+            palette,
+            opts,
+            policy.explicit_dimensions,
+            InteractiveMode::Fullscreen,
+        ),
     };
 
     if let Err(e) = result {

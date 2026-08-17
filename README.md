@@ -315,6 +315,9 @@ noise = 0.15
 # Isosurface scalar field density threshold
 threshold = 1.00
 
+# Thermal transfer rate with chamber boundaries (0.0 to 5.0)
+thermal_transfer_rate = 0.40
+
 [render]
 # Renderer backend: "halfblock" (default), "block", or "braille"
 renderer = "halfblock"
@@ -324,9 +327,6 @@ fps = 30
 
 # Enable smooth multi-stop color gradient interpolation
 gradient = true
-
-# Double buffering diff optimization to reduce terminal redraw bandwidth
-double_buffering = true
 
 [theme]
 # Active theme preset name ("lava", "ocean", "cyberpunk", "synthwave", "nord",
@@ -388,10 +388,10 @@ adapt_blobs = true
 | `[simulation]` | `viscosity` | Float | `0.93` | `0.0..1.0` | Fluid drag damping; higher values mean thicker, slower fluid. |
 | `[simulation]` | `noise` | Float | `0.15` | `0.0..2.0` | Brownian thermal velocity perturbation strength. |
 | `[simulation]` | `threshold`| Float | `1.00` | `0.1..10.0` | Isosurface threshold $T$ defining the boundary of the fluid. |
+| `[simulation]` | `thermal_transfer_rate` | Float | `0.40` | `0.0..5.0` | Rate of thermal transfer with chamber boundaries. |
 | `[render]` | `renderer` | String | `"halfblock"` | `"halfblock"`, `"block"`, `"braille"` | Terminal character rasterization engine. |
 | `[render]` | `fps` | Integer | `30` | `1..240` | Target frame rate capped via precise sleep timers. |
 | `[render]` | `gradient` | Boolean | `true` | `true`, `false` | Enable linear gradient interpolation across temperature anchors. |
-| `[render]` | `double_buffering` | Boolean | `true` | `true`, `false` | Diff consecutive frames to skip unchanged terminal character cells. |
 | `[theme]` | `name` | String | `None` | Preset name, `"auto"`, `"pywal"`, `"wallust"` | Theme preset or dynamic desktop color extractor. |
 | `[theme]` | `path` | String | `None` | Valid file path | Direct path to a custom JSON or TOML theme definition. |
 | `[palette]` | `bottom` | Hex | `"#ff3b00"` | Hex `#rrggbb` | Bottom heating plate color (hottest fluid). |

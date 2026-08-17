@@ -93,10 +93,27 @@ impl Default for ColorPalette {
 }
 
 impl ColorPalette {
-    /// Samples the gradient based on normalized temperature and field intensity.
-    pub fn sample_lava(&self, temp: f32, field_intensity: f32, threshold: f32) -> Rgb {
+    /// Samples the gradient based on normalized temperature, field intensity, and gradient smoothing flag.
+    pub fn sample_lava_stepped(
+        &self,
+        temp: f32,
+        field_intensity: f32,
+        threshold: f32,
+        gradient: bool,
+    ) -> Rgb {
         if field_intensity < threshold {
             return self.background;
+        }
+
+        if !gradient {
+            let t = temp.clamp(0.0, 1.0);
+            return if t < 0.33 {
+                self.top
+            } else if t < 0.66 {
+                self.middle
+            } else {
+                self.bottom
+            };
         }
 
         // Lava color based on temperature: [0.0 = top/cold] -> [0.5 = middle] -> [1.0 = bottom/hot]
@@ -110,6 +127,11 @@ impl ColorPalette {
         // Edge glow / rim highlights where field intensity is near threshold
         let edge_factor = ((field_intensity - threshold) / 0.3).clamp(0.0, 1.0);
         Rgb::lerp(Rgb::new(255, 255, 255), base_color, 0.4 + 0.6 * edge_factor)
+    }
+
+    /// Samples the gradient based on normalized temperature and field intensity using smooth linear interpolation.
+    pub fn sample_lava(&self, temp: f32, field_intensity: f32, threshold: f32) -> Rgb {
+        self.sample_lava_stepped(temp, field_intensity, threshold, true)
     }
 }
 
@@ -139,5 +161,19 @@ mod tests {
 
         assert_eq!(Rgb::lerp(black, white, 0.0), black);
         assert_eq!(Rgb::lerp(black, white, 1.0), white);
+    }
+
+    #[test]
+    fn test_sample_lava_stepped_gradient_flag() {
+        let palette = ColorPalette::default();
+        let background = palette.sample_lava_stepped(0.5, 0.5, 1.0, false);
+        assert_eq!(background, palette.background);
+
+        // Gradient true interpolates smoothly
+        let color_grad = palette.sample_lava_stepped(0.25, 2.0, 1.0, true);
+        // Gradient false quantizes to discrete stops
+        let color_flat = palette.sample_lava_stepped(0.25, 2.0, 1.0, false);
+        assert_eq!(color_flat, palette.top);
+        assert_ne!(color_grad, palette.top);
     }
 }

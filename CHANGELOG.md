@@ -17,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TOML configuration `[widget]` schema supporting `compact`, `fps`, `inline`, `width`, `height`, and `adapt_blobs`.
 - Comprehensive unit and integration test coverage across micro-geometries (`20x1`, `20x2`, `20x3`), compact scaling, and policy validation.
 
+### Fixed & Hardened (v0.10.0 Stabilization)
+- Fixed Arch Linux release packaging CI and local build scripts with native `PKGBUILD` and `makepkg` source tarball packaging.
+- Applied `radius_scale` in `CompactScaler` and `Simulation`, scaling individual blob radii alongside physics parameters in compact mode.
+- Removed `panic = "abort"` in release profile to ensure proper panic hooks and terminal state restoration.
+- Added safe Unix signal handling for `SIGINT` and `SIGTERM`, ensuring raw mode is disabled and cursor restored on external termination.
+- Validated target frame rate in `resolve_policy`, rejecting `fps == 0` with typed `LavaError::Config`.
+- Fixed inline mode terminal resize logic to preserve configured/target height rather than hardcoding 10 rows.
+- Converted `compute_fft` in `src/audio/fft.rs` from panicking `assert!` statements to returning typed `LavaError::Audio` validation errors.
+- Enforced configuration validation on default config fallback paths in `load_config(None)`.
+- Scoped internal Linux `/proc` and `/sys` parsers to `pub(crate)`.
+- Added `$XDG_CONFIG_HOME` discovery support in `default_config_path()`.
+- Added `thermal_transfer_rate` to `SimulationConfig` and wired into runtime physics initialization.
+- Implemented `gradient: bool` support in `rasterize_simulation_options` and removed obsolete `double_buffering` field.
+- Hardened CI and Release GitHub Actions workflows with pinned commit SHAs, restricted permissions, and `cargo-audit` step.
+- Updated `SECURITY.md` supported version table to `0.10.x`.
+
 ## [0.9.0] - 2026-08-16 — Phase 8: Theme Engine & Desktop Ricing
 
 ### Added

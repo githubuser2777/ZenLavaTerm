@@ -25,12 +25,13 @@ pub trait Renderer {
     ) -> std::io::Result<()>;
 }
 
-/// Rasterizes the continuous simulation into the discrete virtual framebuffer using the given palette.
-pub fn rasterize_simulation(
+/// Rasterizes the continuous simulation into the discrete virtual framebuffer using the given palette, threshold, and gradient mode.
+pub fn rasterize_simulation_options(
     sim: &Simulation,
     buffer: &mut VirtualFramebuffer,
     palette: &ColorPalette,
     threshold: f32,
+    gradient: bool,
 ) {
     let width = buffer.width;
     let height = buffer.height;
@@ -47,9 +48,19 @@ pub fn rasterize_simulation(
             let sim_x = (x as f32 + 0.5) / width as f32;
 
             let (field_val, temp) = sim.evaluate_at(sim_x, sim_y);
-            let pixel_color = palette.sample_lava(temp, field_val, threshold);
+            let pixel_color = palette.sample_lava_stepped(temp, field_val, threshold, gradient);
 
             buffer.set_pixel(x, y, pixel_color);
         }
     }
+}
+
+/// Rasterizes the continuous simulation into the discrete virtual framebuffer using smooth gradient interpolation.
+pub fn rasterize_simulation(
+    sim: &Simulation,
+    buffer: &mut VirtualFramebuffer,
+    palette: &ColorPalette,
+    threshold: f32,
+) {
+    rasterize_simulation_options(sim, buffer, palette, threshold, true);
 }
