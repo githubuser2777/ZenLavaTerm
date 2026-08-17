@@ -26,6 +26,9 @@ pub struct Config {
 
     #[serde(default)]
     pub widget: WidgetConfig,
+
+    #[serde(default)]
+    pub interaction: InteractionConfig,
 }
 
 impl Config {
@@ -34,10 +37,55 @@ impl Config {
         if self.simulation.blobs == 0 || self.simulation.blobs > 128 {
             return Err("simulation.blobs must be between 1 and 128".to_string());
         }
-        if self.simulation.thermal_transfer_rate <= 0.0
+        if !self.simulation.gravity.is_finite()
+            || self.simulation.gravity < 0.0
+            || self.simulation.gravity > 5.0
+        {
+            return Err(
+                "simulation.gravity must be a finite number between 0.0 and 5.0".to_string(),
+            );
+        }
+        if !self.simulation.buoyancy.is_finite()
+            || self.simulation.buoyancy < 0.0
+            || self.simulation.buoyancy > 5.0
+        {
+            return Err(
+                "simulation.buoyancy must be a finite number between 0.0 and 5.0".to_string(),
+            );
+        }
+        if !self.simulation.viscosity.is_finite()
+            || self.simulation.viscosity < 0.0
+            || self.simulation.viscosity > 1.0
+        {
+            return Err(
+                "simulation.viscosity must be a finite number between 0.0 and 1.0".to_string(),
+            );
+        }
+        if !self.simulation.noise.is_finite()
+            || self.simulation.noise < 0.0
+            || self.simulation.noise > 2.0
+        {
+            return Err("simulation.noise must be a finite number between 0.0 and 2.0".to_string());
+        }
+        if !self.simulation.threshold.is_finite()
+            || self.simulation.threshold < 0.1
+            || self.simulation.threshold > 10.0
+        {
+            return Err(
+                "simulation.threshold must be a finite number between 0.1 and 10.0".to_string(),
+            );
+        }
+        if !self.simulation.thermal_transfer_rate.is_finite()
+            || self.simulation.thermal_transfer_rate <= 0.0
             || self.simulation.thermal_transfer_rate > 5.0
         {
-            return Err("simulation.thermal_transfer_rate must be between 0.0 and 5.0".to_string());
+            return Err(
+                "simulation.thermal_transfer_rate must be a finite number between > 0.0 and 5.0"
+                    .to_string(),
+            );
+        }
+        if !self.audio.bpm.is_finite() || self.audio.bpm < 20.0 || self.audio.bpm > 300.0 {
+            return Err("audio.bpm must be a finite number between 20.0 and 300.0".to_string());
         }
         if self.render.fps < 1 || self.render.fps > 240 {
             return Err("render.fps must be between 1 and 240".to_string());
@@ -61,6 +109,23 @@ impl Config {
                 "Invalid renderer '{}'. Must be one of: halfblock, block, braille",
                 self.render.renderer
             ));
+        }
+        if !self.interaction.shockwave_force.is_finite()
+            || self.interaction.shockwave_force < 0.1
+            || self.interaction.shockwave_force > 10.0
+        {
+            return Err(
+                "interaction.shockwave_force must be a finite number between 0.1 and 10.0"
+                    .to_string(),
+            );
+        }
+        if !self.interaction.stir_force.is_finite()
+            || self.interaction.stir_force < 0.1
+            || self.interaction.stir_force > 10.0
+        {
+            return Err(
+                "interaction.stir_force must be a finite number between 0.1 and 10.0".to_string(),
+            );
         }
         Ok(())
     }
@@ -337,9 +402,175 @@ impl Default for WidgetConfig {
     }
 }
 
+/// Interactive physics and user input configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InteractionConfig {
+    /// Enable mouse click shockwaves, dragging, and scroll pressure.
+    #[serde(default = "default_interaction_mouse")]
+    pub mouse: bool,
+
+    /// Enable keyboard ripples when typing alphanumeric characters.
+    #[serde(default = "default_interaction_keyboard_ripple")]
+    pub keyboard_ripple: bool,
+
+    /// Multiplier for mouse click shockwave force.
+    #[serde(default = "default_shockwave_force")]
+    pub shockwave_force: f32,
+
+    /// Multiplier for mouse drag stirring force.
+    #[serde(default = "default_stir_force")]
+    pub stir_force: f32,
+}
+
+fn default_interaction_mouse() -> bool {
+    true
+}
+fn default_interaction_keyboard_ripple() -> bool {
+    true
+}
+fn default_shockwave_force() -> f32 {
+    1.0
+}
+fn default_stir_force() -> f32 {
+    1.0
+}
+
+impl Default for InteractionConfig {
+    fn default() -> Self {
+        Self {
+            mouse: default_interaction_mouse(),
+            keyboard_ripple: default_interaction_keyboard_ripple(),
+            shockwave_force: default_shockwave_force(),
+            stir_force: default_stir_force(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_interaction_config_validation_and_parsing() {
+        let toml_str = r##"
+            [interaction]
+            mouse = false
+            keyboard_ripple = true
+            shockwave_force = 2.5
+            stir_force = 1.8
+        "##;
+
+        let config: Config = toml::from_str(toml_str).expect("Valid TOML with interaction");
+        assert!(config.validate().is_ok());
+        assert!(!config.interaction.mouse);
+        assert!(config.interaction.keyboard_ripple);
+        assert!((config.interaction.shockwave_force - 2.5).abs() < 1e-4);
+        assert!((config.interaction.stir_force - 1.8).abs() < 1e-4);
+
+        let mut invalid = config;
+        invalid.interaction.shockwave_force = 0.0;
+        assert!(invalid.validate().is_err());
+
+        invalid.interaction.shockwave_force = 0.09;
+        assert!(invalid.validate().is_err());
+
+        invalid.interaction.shockwave_force = 10.01;
+        assert!(invalid.validate().is_err());
+
+        invalid.interaction.shockwave_force = 1.0;
+        invalid.interaction.stir_force = -0.5;
+        assert!(invalid.validate().is_err());
+
+        invalid.interaction.stir_force = 0.05;
+        assert!(invalid.validate().is_err());
+
+        invalid.interaction.stir_force = 10.5;
+        assert!(invalid.validate().is_err());
+    }
+
+    #[test]
+    fn test_force_boundary_values() {
+        let mut config = Config::default();
+
+        // Exact lower bound 0.1
+        config.interaction.shockwave_force = 0.1;
+        config.interaction.stir_force = 0.1;
+        assert!(config.validate().is_ok());
+
+        // Exact upper bound 10.0
+        config.interaction.shockwave_force = 10.0;
+        config.interaction.stir_force = 10.0;
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_nan_and_infinity_rejection_across_all_fields() {
+        let mut config = Config::default();
+
+        // Test interaction forces with NaN and Infinity
+        config.interaction.shockwave_force = f32::NAN;
+        assert!(config.validate().is_err());
+        config.interaction.shockwave_force = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.interaction.shockwave_force = f32::NEG_INFINITY;
+        assert!(config.validate().is_err());
+        config.interaction.shockwave_force = 1.0;
+
+        config.interaction.stir_force = f32::NAN;
+        assert!(config.validate().is_err());
+        config.interaction.stir_force = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.interaction.stir_force = f32::NEG_INFINITY;
+        assert!(config.validate().is_err());
+        config.interaction.stir_force = 1.0;
+
+        // Test simulation floats with NaN and Infinity
+        config.simulation.gravity = f32::NAN;
+        assert!(config.validate().is_err());
+        config.simulation.gravity = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.simulation.gravity = 0.12;
+
+        config.simulation.buoyancy = f32::NAN;
+        assert!(config.validate().is_err());
+        config.simulation.buoyancy = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.simulation.buoyancy = 0.80;
+
+        config.simulation.viscosity = f32::NAN;
+        assert!(config.validate().is_err());
+        config.simulation.viscosity = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.simulation.viscosity = 0.93;
+
+        config.simulation.noise = f32::NAN;
+        assert!(config.validate().is_err());
+        config.simulation.noise = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.simulation.noise = 0.15;
+
+        config.simulation.threshold = f32::NAN;
+        assert!(config.validate().is_err());
+        config.simulation.threshold = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.simulation.threshold = 1.00;
+
+        config.simulation.thermal_transfer_rate = f32::NAN;
+        assert!(config.validate().is_err());
+        config.simulation.thermal_transfer_rate = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.simulation.thermal_transfer_rate = 0.40;
+
+        // Test audio BPM with NaN and Infinity
+        config.audio.bpm = f32::NAN;
+        assert!(config.validate().is_err());
+        config.audio.bpm = f32::INFINITY;
+        assert!(config.validate().is_err());
+        config.audio.bpm = 120.0;
+
+        // Ensure cleanly restored
+        assert!(config.validate().is_ok());
+    }
 
     #[test]
     fn test_default_config_validity() {

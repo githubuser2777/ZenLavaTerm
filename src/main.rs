@@ -3,15 +3,15 @@
 use clap::Parser;
 use crossterm::{
     cursor,
-    event::{self, Event},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event},
     execute,
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use lavaterm::{
     audio::default_audio_provider,
     config::load_config,
-    core::{PhysicsParams, Simulation},
-    input::{map_key_event, Action},
+    core::{Interaction, PhysicsParams, Simulation},
+    input::{map_key_event_with_ripple, Action, MouseTracker},
     reactive::default_system_provider,
     render::{
         rasterize_simulation_options, BlockRenderer, BrailleRenderer, ColorPalette,
@@ -88,6 +88,22 @@ struct Cli {
     #[arg(long)]
     audio: bool,
 
+    /// Disable mouse click shockwaves, dragging, and scroll pressure
+    #[arg(long)]
+    no_mouse: bool,
+
+    /// Disable keyboard ripples on character keypresses
+    #[arg(long)]
+    no_ripple: bool,
+
+    /// Multiplier for mouse click shockwave force (default: 1.0)
+    #[arg(long, value_name = "FORCE")]
+    shockwave_force: Option<f32>,
+
+    /// Multiplier for mouse drag stirring force (default: 1.0)
+    #[arg(long, value_name = "FORCE")]
+    stir_force: Option<f32>,
+
     /// Run headless simulation without taking over TTY (useful for testing/CI)
     #[arg(long)]
     headless: bool,
@@ -97,8 +113,11 @@ struct Cli {
     frames: usize,
 }
 
-fn restore_terminal(alternate_screen: bool) {
+fn restore_terminal(alternate_screen: bool, mouse_enabled: bool) {
     let _ = terminal::disable_raw_mode();
+    if mouse_enabled {
+        let _ = execute!(stdout(), DisableMouseCapture);
+    }
     if alternate_screen {
         let _ = execute!(stdout(), LeaveAlternateScreen, cursor::Show);
     } else {
@@ -106,10 +125,10 @@ fn restore_terminal(alternate_screen: bool) {
     }
 }
 
-fn setup_panic_hook() {
+fn setup_panic_hook(alternate_screen: bool, mouse_enabled: bool) {
     let original_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic_info| {
-        restore_terminal(true);
+        restore_terminal(alternate_screen, mouse_enabled);
         original_hook(panic_info);
     }));
 }
@@ -131,6 +150,10 @@ struct RuntimeOptions {
     system_reactive: bool,
     audio_reactive: bool,
     poll_interval_ms: u64,
+    mouse_enabled: bool,
+    keyboard_ripple: bool,
+    shockwave_force: f32,
+    stir_force: f32,
 }
 
 fn run_headless(
@@ -206,7 +229,8 @@ fn run_event_loop(
     fixed_dim: Option<(u16, u16)>,
     mode: InteractiveMode,
 ) -> Result<()> {
-    setup_panic_hook();
+    let is_fullscreen = matches!(mode, InteractiveMode::Fullscreen);
+    setup_panic_hook(is_fullscreen, opts.mouse_enabled);
 
     let shutdown_flag = Arc::new(AtomicBool::new(false));
     setup_signal_handler(Arc::clone(&shutdown_flag));
@@ -214,11 +238,14 @@ fn run_event_loop(
     terminal::enable_raw_mode()?;
     let mut out = BufWriter::with_capacity(64 * 1024, stdout());
 
-    let is_fullscreen = matches!(mode, InteractiveMode::Fullscreen);
     if is_fullscreen {
         execute!(out, EnterAlternateScreen, cursor::Hide)?;
     } else {
         execute!(out, cursor::Hide)?;
+    }
+
+    if opts.mouse_enabled {
+        let _ = execute!(out, EnableMouseCapture);
     }
 
     let (term_cols, term_rows) = terminal::size().unwrap_or((80, 24));
@@ -239,6 +266,7 @@ fn run_event_loop(
         _ => Box::new(HalfBlockRenderer::new()),
     };
 
+    let mut mouse_tracker = MouseTracker::new();
     let target_frame_duration = Duration::from_secs_f32(1.0 / opts.fps as f32);
     let mut last_instant = Instant::now();
     let mut paused = false;
@@ -270,23 +298,38 @@ fn run_event_loop(
 
             while event::poll(Duration::from_millis(0))? {
                 match event::read()? {
-                    Event::Key(key) => match map_key_event(key) {
+                    Event::Key(key) => match map_key_event_with_ripple(key, opts.keyboard_ripple) {
                         Action::Quit => return Ok(()),
                         Action::TogglePause => paused = !paused,
                         Action::SpeedUp => {
-                            sim.params.buoyancy = (sim.params.buoyancy + 0.1).min(3.0)
+                            sim.params.buoyancy = (sim.params.buoyancy + 0.1).min(3.0);
                         }
                         Action::SlowDown => {
-                            sim.params.buoyancy = (sim.params.buoyancy - 0.1).max(0.1)
+                            sim.params.buoyancy = (sim.params.buoyancy - 0.1).max(0.1);
                         }
                         Action::Reset => {
                             let count = sim.blobs.len();
                             let radius_scale = sim.radius_scale;
                             sim = Simulation::new(sim.params, count, 42);
                             sim.apply_radius_scale(radius_scale);
+                            mouse_tracker.reset();
+                        }
+                        Action::Ripple(intensity) => {
+                            sim.apply_interaction(&Interaction::Ripple { intensity });
                         }
                         Action::None => {}
                     },
+                    Event::Mouse(mouse_event) if opts.mouse_enabled => {
+                        if let Some(interaction) = mouse_tracker.handle_event(
+                            mouse_event,
+                            cols,
+                            rows,
+                            opts.shockwave_force,
+                            opts.stir_force,
+                        ) {
+                            sim.apply_interaction(&interaction);
+                        }
+                    }
                     Event::Resize(new_cols, new_rows) if fixed_dim.is_none() => {
                         cols = new_cols;
                         rows = match mode {
@@ -298,6 +341,7 @@ fn run_event_loop(
                         let (new_w, new_h) =
                             framebuffer_dimensions(cols, rows, &opts.renderer_type);
                         fb.resize(new_w, new_h, palette.background);
+                        mouse_tracker.reset();
                     }
                     _ => {}
                 }
@@ -335,6 +379,9 @@ fn run_event_loop(
         }
     })();
 
+    if opts.mouse_enabled {
+        let _ = execute!(out, DisableMouseCapture);
+    }
     if is_fullscreen {
         let _ = execute!(out, LeaveAlternateScreen, cursor::Show);
     } else {
@@ -390,6 +437,21 @@ fn main() -> std::process::ExitCode {
     let audio_reactive = cli.audio || config.audio.enabled;
     let poll_interval_ms = config.reactive.poll_interval_ms;
     let threshold = config.simulation.threshold;
+
+    let mouse_enabled = if cli.no_mouse {
+        false
+    } else {
+        config.interaction.mouse
+    };
+    let keyboard_ripple = if cli.no_ripple {
+        false
+    } else {
+        config.interaction.keyboard_ripple
+    };
+    let shockwave_force = cli
+        .shockwave_force
+        .unwrap_or(config.interaction.shockwave_force);
+    let stir_force = cli.stir_force.unwrap_or(config.interaction.stir_force);
 
     let base_physics = PhysicsParams {
         gravity: config.simulation.gravity,
@@ -454,6 +516,10 @@ fn main() -> std::process::ExitCode {
         system_reactive,
         audio_reactive,
         poll_interval_ms,
+        mouse_enabled,
+        keyboard_ripple,
+        shockwave_force,
+        stir_force,
     };
 
     let result = match policy.mode {

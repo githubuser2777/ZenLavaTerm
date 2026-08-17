@@ -484,10 +484,19 @@ Yêu cầu:
 
 Cho phép user tác động vào lava.
 
-Features:
+### Structure
 
 ```text
-mouse click → impact
+Phase 10
+├── 10.1 Mouse click → Shockwave
+├── 10.2 Mouse drag → Stirring
+└── 10.3 Keyboard → Ripple
+```
+
+### Features
+
+```text
+mouse click → impact / shockwave
 mouse drag  → stir
 keyboard    → ripple
 scroll      → pressure
