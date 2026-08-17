@@ -6,11 +6,15 @@ labels: ['enhancement']
 assignees: ''
 ---
 
-## Is your feature request related to a problem? Please describe.
-A clear and concise description of what the problem or desire is. (e.g. I'm always frustrated when...)
+## Problem or opportunity
+Define the problem clearly and why this change is needed.
 
-## Describe the solution you'd like
-A clear and concise description of what you want to happen.
+## Proposed solution
+Describe the solution and expected outcome.
+
+## Current vs expected behavior
+- **Current**:
+- **Expected**:
 
 ## Architecture & Module impact
 - [ ] `core` (simulation / math / physics)
@@ -19,8 +23,35 @@ A clear and concise description of what you want to happen.
 - [ ] `input` (keyboard / signals)
 - [ ] `docs` / `ci`
 
-## Describe alternatives you've considered
-A clear and concise description of any alternative solutions or features you've considered.
+## Alternatives considered
+List alternatives and why they are less suitable.
 
-## Additional context
-Add any other context, sketches, mockups, or screenshots about the feature request here.
+## Scope and impact
+- Affected users/systems:
+- Priority: [low / medium / high]
+- Risks or blockers:
+
+## Suggested acceptance criteria
+- [ ] Clear functional outcome is defined
+- [ ] User-visible behavior is testable
+- [ ] Documentation updates are identified
+
+## Environment (if relevant)
+- OS:
+- Terminal Emulator:
+- LavaTerm Version:
+- Git branch / commit:
+
+## Evidence / references
+Add examples, mockups, logs, links, or data that support this request.
+
+## Related links
+- Related issues/PRs/docs:
+
+## Pre-submission checklist
+- [ ] I searched existing issues and did not find a duplicate
+- [ ] I used the feature template because this is a new capability
+- [ ] I explained the problem, expected behavior, and impact
+- [ ] I included acceptance criteria
+- [ ] I added labels/priority/milestone (or requested triage)
+- [ ] I assigned an owner (if known) or requested triage

@@ -6,13 +6,19 @@ labels: ['bug']
 assignees: ''
 ---
 
-## Description
-A clear and concise description of what the bug is.
+## Problem summary
+Describe what is broken and why it matters.
+
+## Expected vs actual behavior
+- **Expected**:
+- **Actual**:
 
 ## Environment
 - OS: [e.g. Linux (Arch/Ubuntu), macOS, Windows]
 - Terminal Emulator: [e.g. Alacritty, Kitty, WezTerm, Ghostty, Windows Terminal]
-- LavaTerm Version: [e.g. 0.1.0 or commit hash]
+- LavaTerm Version: [e.g. 0.1.0]
+- Git branch / commit: [e.g. `main` / `abc1234`]
+- Runtime mode: [e.g. normal, headless, widget, compact]
 - Rust version: (`rustc --version`)
 
 ## Steps To Reproduce
@@ -20,11 +26,32 @@ A clear and concise description of what the bug is.
 2. Pass arguments '...'
 3. See error
 
-## Expected Behavior
-A clear and concise description of what you expected to happen.
+## Reproducibility
+- Frequency: [always / often / sometimes / once]
+- First observed: [date or version]
 
-## Actual Behavior / Screenshots
-If applicable, add screenshots or logs to help explain your problem.
+## Evidence
+Attach logs, screenshots, stack traces, and sample input/output if available.
 
-## Additional Context
-Add any other context about the problem here.
+## Scope and impact
+- Affected users/systems:
+- Severity: [low / medium / high / critical]
+- Blockers or risks:
+
+## Suggested acceptance criteria
+- [ ] Reproduction steps no longer trigger the bug
+- [ ] Expected behavior is verified
+- [ ] Related tests are updated or added
+
+## Related links
+- Related issues/PRs/docs:
+
+## Pre-submission checklist
+- [ ] I searched existing issues and did not find a duplicate
+- [ ] I used the bug template because this is a defect
+- [ ] I included exact reproduction steps
+- [ ] I included full environment details
+- [ ] I attached supporting evidence or explained why none is available
+- [ ] I added impact/severity details and suggested acceptance criteria
+- [ ] I added labels/priority/milestone (or requested triage)
+- [ ] I assigned an owner (if known) or requested triage
