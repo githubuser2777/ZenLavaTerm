@@ -340,3 +340,64 @@ fn test_phase10_interactive_physics_integration() {
         "Interactive simulation must rasterize active pixels"
     );
 }
+
+#[test]
+fn test_phase10_stress_and_rapid_interaction() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    use lavaterm::input::MouseTracker;
+    use lavaterm::widget::{CompactProfile, CompactScaler};
+
+    let mut sim = Simulation::new(PhysicsParams::default(), 8, 12345);
+    let mut mouse_tracker = MouseTracker::new();
+
+    // 1. Rapid shockwaves across random spots
+    for i in 0..100 {
+        let col = (i * 7) % 80;
+        let row = (i * 13) % 24;
+        let click = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Left),
+            column: col as u16,
+            row: row as u16,
+            modifiers: crossterm::event::KeyModifiers::NONE,
+        };
+        if let Some(inter) = mouse_tracker.handle_event(click, 80, 24, 5.0, 5.0) {
+            sim.apply_interaction(&inter);
+        }
+        sim.step(0.016);
+    }
+
+    // 2. Rapid continuous drag sequences
+    for i in 0..50 {
+        let col = ((i * 3) % 80) as u16;
+        let row = ((i * 5) % 24) as u16;
+        let drag = MouseEvent {
+            kind: MouseEventKind::Drag(MouseButton::Left),
+            column: col,
+            row,
+            modifiers: crossterm::event::KeyModifiers::NONE,
+        };
+        if let Some(inter) = mouse_tracker.handle_event(drag, 80, 24, 5.0, 5.0) {
+            sim.apply_interaction(&inter);
+        }
+        sim.step(0.016);
+    }
+
+    // 3. Compact mode adaptation
+    let compact_profile = CompactProfile {
+        blob_count: 3,
+        radius_scale: 0.5,
+        buoyancy_scale: 1.2,
+        noise_scale: 0.8,
+    };
+    CompactScaler::adapt_simulation(&compact_profile, &mut sim);
+
+    // Verify all blobs remain finite and within physical bounds
+    for blob in &sim.blobs {
+        assert!(blob.x.is_finite() && blob.x >= 0.0 && blob.x <= 1.0);
+        assert!(blob.y.is_finite() && blob.y >= 0.0 && blob.y <= 1.0);
+        assert!(blob.vx.is_finite() && blob.vx >= -2.0 && blob.vx <= 2.0);
+        assert!(blob.vy.is_finite() && blob.vy >= -2.0 && blob.vy <= 2.0);
+        assert!(blob.temperature.is_finite() && blob.temperature >= 0.0 && blob.temperature <= 1.0);
+        assert!(blob.radius.is_finite() && blob.radius > 0.0);
+    }
+}

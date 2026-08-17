@@ -218,15 +218,15 @@ While LavaTerm is running in your terminal, interact directly with the fluid in 
 | <kbd>+</kbd>, <kbd>=</kbd>, <kbd>↑</kbd>, <kbd>→</kbd> | **Speed Up** | Increases upward convective buoyancy ($+0.1$, clamped to $3.0$). |
 | <kbd>-</kbd>, <kbd>_</kbd>, <kbd>↓</kbd>, <kbd>←</kbd> | **Slow Down** | Decreases upward convective buoyancy ($-0.1$, clamped to $0.1$). |
 | <kbd>r</kbd>, <kbd>R</kbd> | **Reset** | Resets all metaball positions, velocities, and temperatures. |
-| <kbd>a</kbd>–<kbd>z</kbd>, <kbd>0</kbd>–<kbd>9</kbd> | **Ripple Wave** | Injects harmonic acoustic ripples and thermal vibrations across the lava fluid. |
+| <kbd>a</kbd>–<kbd>z</kbd>, <kbd>0</kbd>–<kbd>9</kbd>, symbols | **Ripple Wave** | Non-command character keys (without Ctrl/Alt modifiers) inject harmonic acoustic ripples and thermal vibrations. |
 
 #### Mouse Controls
 | Gesture | Action | Description |
 |---|---|---|
 | **Left Click** | **Detonate Shockwave** | Emits a radial explosive impulse from the click coordinates, repelling nearby blobs. |
-| **Left Click + Drag** | **Stir Fluid** | Transfers directional momentum along the drag vector, stirring currents in the chamber. |
-| **Right Click** | **Thermal Pulse** | Injects a concentrated burst of heat at the cursor location. |
-| **Scroll Up / Down** | **Chamber Pressure** | Increases or decreases fluid buoyancy pressure surges. |
+| **Left Click + Drag** | **Stir Fluid** | Transfers directional momentum along the drag displacement vector within the influence radius. |
+| **Right Click** | **Thermal Pulse** | Injects a concentrated burst of heat at the cursor location without modifying drag state. |
+| **Scroll Up / Down** | **Chamber Pressure** | Increases or decreases global convective buoyancy pressure. |
 
 ---
 

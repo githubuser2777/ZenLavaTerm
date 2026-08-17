@@ -125,10 +125,10 @@ fn restore_terminal(alternate_screen: bool, mouse_enabled: bool) {
     }
 }
 
-fn setup_panic_hook(mouse_enabled: bool) {
+fn setup_panic_hook(alternate_screen: bool, mouse_enabled: bool) {
     let original_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic_info| {
-        restore_terminal(true, mouse_enabled);
+        restore_terminal(alternate_screen, mouse_enabled);
         original_hook(panic_info);
     }));
 }
@@ -229,7 +229,8 @@ fn run_event_loop(
     fixed_dim: Option<(u16, u16)>,
     mode: InteractiveMode,
 ) -> Result<()> {
-    setup_panic_hook(opts.mouse_enabled);
+    let is_fullscreen = matches!(mode, InteractiveMode::Fullscreen);
+    setup_panic_hook(is_fullscreen, opts.mouse_enabled);
 
     let shutdown_flag = Arc::new(AtomicBool::new(false));
     setup_signal_handler(Arc::clone(&shutdown_flag));
@@ -237,7 +238,6 @@ fn run_event_loop(
     terminal::enable_raw_mode()?;
     let mut out = BufWriter::with_capacity(64 * 1024, stdout());
 
-    let is_fullscreen = matches!(mode, InteractiveMode::Fullscreen);
     if is_fullscreen {
         execute!(out, EnterAlternateScreen, cursor::Hide)?;
     } else {

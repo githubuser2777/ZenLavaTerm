@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TOML configuration `[interaction]` schema supporting `mouse`, `keyboard_ripple`, `shockwave_force`, and `stir_force`.
 - Comprehensive unit and integration test suite covering coordinate mapping, drag tracking, shockwave propagation, and full interactive pipeline.
 
+### Fixed & Hardened (Phase 10 Review Findings)
+- Enforced strict finite floating-point validation (`is_finite()`) across all configuration fields, rejecting `NaN`, `+Infinity`, and `-Infinity`.
+- Aligned `shockwave_force` and `stir_force` validation with documentation to strictly enforce bounded `[0.1, 10.0]` range.
+- Made panic hook dynamically aware of actual execution mode (`is_fullscreen`), preventing improper `LeaveAlternateScreen` invocations during inline execution.
+- Filtered `KeyModifiers::CONTROL` (except `Ctrl+C`) and `KeyModifiers::ALT` in keyboard mapping to prevent terminal control shortcuts from becoming spurious ripple events.
+- Isolated mouse drag tracking exclusively to left-button interactions, preventing right-click events from perturbing drag vectors.
+- Added stress and regression test suites covering rapid shockwave bursts, continuous drag sequences, compact scaling resets, modifier keys, and floating-point boundary conditions.
+
 ## [0.10.0] - 2026-08-16 — Phase 9: Multiplexer & Widget Mode (tmux / zellij)
 
 ### Added

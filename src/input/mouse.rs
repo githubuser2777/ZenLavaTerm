@@ -40,7 +40,7 @@ impl MouseTracker {
                 })
             }
             MouseEventKind::Down(MouseButton::Right) => {
-                self.last_drag_pos = Some((sim_x, sim_y));
+                // Right click injects thermal pulse and does NOT affect left-button drag tracking
                 Some(Interaction::ThermalPulse {
                     x: sim_x,
                     y: sim_y,
@@ -183,5 +183,32 @@ mod tests {
 
         let down_action = tracker.handle_event(down_event, 80, 24, 1.0, 1.0);
         assert_eq!(down_action, Some(Interaction::Pressure { delta: -1.0 }));
+    }
+
+    #[test]
+    fn test_right_click_does_not_set_drag_position() {
+        let mut tracker = MouseTracker::new();
+
+        // Right click down
+        let right_down = MouseEvent {
+            kind: MouseEventKind::Down(MouseButton::Right),
+            column: 10,
+            row: 10,
+            modifiers: KeyModifiers::NONE,
+        };
+        let _ = tracker.handle_event(right_down, 80, 24, 1.0, 1.0);
+
+        // Immediate left drag without prior left click down should initialize drag position rather than producing phantom delta
+        let left_drag = MouseEvent {
+            kind: MouseEventKind::Drag(MouseButton::Left),
+            column: 20,
+            row: 20,
+            modifiers: KeyModifiers::NONE,
+        };
+        let action = tracker.handle_event(left_drag, 80, 24, 1.0, 1.0);
+        assert_eq!(
+            action, None,
+            "Initial drag after right-click must initialize position and not emit phantom velocity"
+        );
     }
 }
