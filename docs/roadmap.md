@@ -2,7 +2,7 @@
 
 This document outlines the phased milestone progression of LavaTerm. Each phase builds upon the previous phase following strict Definition of Done criteria.
 
-**Current Maintenance State:** v0.10.0 released — Phase 9 Complete (Multiplexer & Widget Mode) — Phase 10 Planned.
+**Current Maintenance State:** v0.11.0 released — Phase 10 Complete (Interactive Physics & Input Mode) — Phase 11 Planned.
 
 ---
 
@@ -29,9 +29,9 @@ Phase 8: Theme Engine (pywal, wallust, ANSI presets) (Complete - v0.9.0)
    │
 Phase 9: Multiplexer & Widget Mode (tmux, zellij) (Complete - v0.10.0)
    │
-Phase 10: Interactive Mode (Mouse, Keyboard Ripple) (Planned - Next)
+Phase 10: Interactive Mode (Mouse, Keyboard Ripple) (Complete - v0.11.0)
    │
-Phase 11: Cross-Platform Hardening (Windows, macOS) (Planned)
+Phase 11: Cross-Platform Hardening (Windows, macOS) (Planned - Next)
    │
 Phase 12: Performance Profiling, Packaging & V1.0 Release (Planned)
 ```
@@ -98,10 +98,15 @@ Phase 12: Performance Profiling, Packaging & V1.0 Release (Planned)
 - Policy resolution engine (`src/widget/policy.rs`) managing precedence, FPS defaults, and conflict validation.
 - CLI flags (`--fps`, `--compact`, `--widget`, `--inline`, `--snapshot`, `--width`, `--height`) and TOML `[widget]` configuration section.
 
-### Phase 10: Interactive Physics (Planned - Next)
-- Mouse click shockwaves, drag stirring, and keyboard ripple interactions.
+### Phase 10: Interactive Physics & Input Mode (Complete - v0.11.0)
+- **10.1 Mouse click → Shockwave**: Left-click radial explosive impulse pushing blobs outward with soft-core inverse-distance falloff and thermal excitation (`apply_shockwave` in `src/core/interaction.rs`).
+- **10.2 Mouse drag → Stirring**: Fluid stirring from mouse drag motion vectors transferring directional velocity within an influence radius (`apply_stir` in `src/core/interaction.rs`, `MouseTracker` in `src/input/mouse.rs`).
+- **10.3 Keyboard → Ripple**: Character keypress detection injecting harmonic acoustic wave ripples and thermal fluctuations (`apply_ripple` in `src/core/interaction.rs`, `map_key_event_with_ripple` in `src/input/keyboard.rs`).
+- **Terminal Coordinate Normalizer**: Inverted coordinate mapper converting terminal grid cells to normalized $[0.0, 1.0]$ simulation coordinates (`src/input/coords.rs`).
+- **Fail-Safe Lifecycle**: Mouse capture initialization with panic hook, error handling, and signal safety (`src/main.rs`).
+- **Configuration & CLI**: CLI flags (`--no-mouse`, `--no-ripple`, `--shockwave-force`, `--stir-force`) and TOML `[interaction]` section.
 
-### Phase 11: Cross-Platform Hardening (Planned)
+### Phase 11: Cross-Platform Hardening (Planned - Next)
 - Windows WASAPI and macOS CoreAudio integration without polluting core simulation.
 
 ### Phase 12: V1.0 Polish & Packaging (Planned)

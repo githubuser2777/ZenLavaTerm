@@ -92,6 +92,16 @@ inline = false
 # height = 12
 # Automatically adapt blob count and physics for small viewports
 adapt_blobs = true
+
+[interaction]
+# Enable mouse click shockwaves, dragging, and scroll pressure
+mouse = true
+# Enable keyboard typing ripples
+keyboard_ripple = true
+# Shockwave force multiplier (0.1 to 10.0)
+shockwave_force = 1.0
+# Drag stirring force multiplier (0.1 to 10.0)
+stir_force = 1.0
 ```
 
 ---
@@ -151,4 +161,12 @@ adapt_blobs = true
 | `width` | integer | `None` | Viewport width constraint |
 | `height` | integer | `None` | Viewport height constraint |
 | `adapt_blobs` | boolean | `true` | Dynamically scale blob count and radii based on geometry |
+
+### `[interaction]`
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `mouse` | boolean | `true` | Enable mouse click shockwaves, dragging, and scroll pressure |
+| `keyboard_ripple` | boolean | `true` | Enable keyboard typing ripples |
+| `shockwave_force` | float | `1.0` | Multiplier for mouse click shockwave force (0.1..10.0) |
+| `stir_force` | float | `1.0` | Multiplier for mouse drag stirring force (0.1..10.0) |
 

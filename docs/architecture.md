@@ -79,20 +79,30 @@ lavaterm (binary: src/main.rs)
   - Gravity ($g$)
   - Viscosity / drag damping ($v \leftarrow v \cdot (1 - \mu \cdot \Delta t)$)
   - Boundary elastic reflection and damping.
+- **`interaction.rs`**: Implements domain interaction dynamics:
+  - Radial shockwaves from mouse clicks with smooth inverse-distance impulse and thermal gain.
+  - Directional momentum transfer from mouse dragging (fluid stirring).
+  - Acoustic harmonic ripples and thermal perturbations from keyboard typing.
+  - Convective pressure and buoyancy modulation from mouse scrolling.
 - **`field.rs`**: Evaluates the cumulative scalar field at any $(x, y)$ coordinate:
   $$F(x, y) = \sum_{i=1}^{N} \frac{R_i^2}{(x - x_i)^2 + (y - y_i)^2 + \epsilon}$$
 - **`simulation.rs`**: Maintains the active blob collection and advances time using explicit $\Delta t$.
 
-### 4.2. Virtual Framebuffer & Color (`src/render/`)
+### 4.2. Input Translation & Coordinates (`src/input/`)
+- **`coords.rs`**: Maps discrete terminal grid cells `(col, row)` to continuous $[0.0, 1.0]$ simulation coordinates with proper vertical inversion.
+- **`mouse.rs`**: Tracks mouse dragging vectors and translates raw crossterm `MouseEvent` into domain `Interaction` types.
+- **`keyboard.rs`**: Maps key commands and optional keyboard wave ripples.
+
+### 4.3. Virtual Framebuffer & Color (`src/render/`)
 - **`framebuffer.rs`**: Holds a 2D grid `Vec<Rgb>` of size `width x height`.
 - **`color.rs`**: Provides `Rgb` structs, linear interpolation (`lerp`), and multi-stop gradient color maps.
 - **`halfblock.rs`**: Half-block renderer packing two vertical virtual pixels $(x, 2y)$ and $(x, 2y + 1)$ into a single character cell `▀` using:
   - Foreground color = top pixel RGB
   - Background color = bottom pixel RGB
 
-### 4.3. Terminal Backend & Lifecycle (`src/main.rs`)
-- Safely initializes raw mode and enters the alternate screen buffer via `crossterm`.
-- Installs a custom panic hook ensuring that even if a panic occurs, the terminal cursor is shown and the alternate screen is exited cleanly.
+### 4.4. Terminal Backend & Lifecycle (`src/main.rs`)
+- Safely initializes raw mode, alternate screen, and mouse capture via `crossterm`.
+- Installs custom panic hooks and Unix signal handlers ensuring that the terminal cursor is restored, alternate screen exited, and mouse capture disabled on all exit paths.
 
 ---
 

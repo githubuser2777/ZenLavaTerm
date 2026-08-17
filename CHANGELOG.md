@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-08-17 — Phase 10: Interactive Physics & Input Mode
+
+### Added
+- Interaction domain model (`Interaction` enum in `src/core/interaction.rs`) supporting radial shockwaves, directional drag stirring, acoustic wave ripples, scroll pressure, and localized thermal pulses.
+- Bounded interaction physics in `Simulation::apply_interaction()` preventing velocity explosion and thermal instability.
+- Terminal-to-simulation coordinate mapper (`src/input/coords.rs`) converting character grid cells to normalized $[0.0, 1.0]$ simulation coordinates with accurate vertical inversion.
+- Stateful `MouseTracker` (`src/input/mouse.rs`) converting mouse clicks to shockwaves, dragging to fluid stirring velocity vectors, right clicks to thermal pulses, and scroll events to buoyancy pressure changes.
+- Keyboard typing acoustic wave ripples (`map_key_event_with_ripple` in `src/input/keyboard.rs`).
+- Fail-safe terminal mouse capture lifecycle (`EnableMouseCapture`/`DisableMouseCapture`) with panic hook and signal handler cleanup.
+- CLI switches: `--no-mouse`, `--no-ripple`, `--shockwave-force <FORCE>`, `--stir-force <FORCE>`.
+- TOML configuration `[interaction]` schema supporting `mouse`, `keyboard_ripple`, `shockwave_force`, and `stir_force`.
+- Comprehensive unit and integration test suite covering coordinate mapping, drag tracking, shockwave propagation, and full interactive pipeline.
+
 ## [0.10.0] - 2026-08-16 — Phase 9: Multiplexer & Widget Mode (tmux / zellij)
 
 ### Added

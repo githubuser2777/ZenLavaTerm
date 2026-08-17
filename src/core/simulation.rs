@@ -170,13 +170,79 @@ impl Simulation {
         self.apply_audio_signals(audio);
         self.step(dt);
     }
+
+    /// Applies a user interaction impulse to the simulation.
+    pub fn apply_interaction(&mut self, interaction: &super::interaction::Interaction) {
+        match *interaction {
+            super::interaction::Interaction::Shockwave { x, y, force } => {
+                super::interaction::apply_shockwave(&mut self.blobs, x, y, force);
+            }
+            super::interaction::Interaction::Stir {
+                x,
+                y,
+                vx,
+                vy,
+                radius,
+            } => {
+                super::interaction::apply_stir(&mut self.blobs, x, y, vx, vy, radius);
+            }
+            super::interaction::Interaction::Ripple { intensity } => {
+                let prng = &mut self.prng;
+                super::interaction::apply_ripple(&mut self.blobs, intensity, || {
+                    prng.next_f32_signed()
+                });
+            }
+            super::interaction::Interaction::Pressure { delta } => {
+                super::interaction::apply_pressure(&mut self.params, delta);
+            }
+            super::interaction::Interaction::ThermalPulse {
+                x,
+                y,
+                temperature_delta,
+                radius,
+            } => {
+                super::interaction::apply_thermal_pulse(
+                    &mut self.blobs,
+                    x,
+                    y,
+                    temperature_delta,
+                    radius,
+                );
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::audio::AudioSignals;
+    use crate::core::interaction::Interaction;
     use crate::reactive::SystemSignals;
+
+    #[test]
+    fn test_simulation_apply_interaction() {
+        let mut sim = Simulation::new(PhysicsParams::default(), 6, 42);
+        let center_blob_idx = 0;
+        let blob_initial_y = sim.blobs[center_blob_idx].y;
+
+        // Apply shockwave near blob
+        sim.apply_interaction(&Interaction::Shockwave {
+            x: sim.blobs[center_blob_idx].x,
+            y: blob_initial_y - 0.1,
+            force: 1.5,
+        });
+
+        assert!(
+            sim.blobs[center_blob_idx].vy > 0.0,
+            "Shockwave below blob must push blob upward"
+        );
+
+        // Apply pressure
+        let prev_buoyancy = sim.params.buoyancy;
+        sim.apply_interaction(&Interaction::Pressure { delta: 1.0 });
+        assert!(sim.params.buoyancy > prev_buoyancy);
+    }
 
     #[test]
     fn test_simulation_step_deterministic() {

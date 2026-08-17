@@ -398,4 +398,72 @@ This document defines the initial set of structured GitHub issues for the LavaTe
   - End-to-end integration tests passing and all quality gates clean.
 - **Dependencies**: Issue 26, Issue 27, Issue 28.
 
+---
+
+## Phase 10: Interactive Physics & Input Mode (v0.11.0)
+
+### Issue 30: Interaction Domain Model & Simulation Physics
+- **Goal**: Implement high-level interaction domain representation and fluid kinetics in `src/core/`.
+- **Context**: Enables real-time kinetic and thermal modulation of metaballs (shockwaves, fluid stirring, ripples, pressure).
+- **Scope**: `src/core/interaction.rs`, `src/core/simulation.rs`, `src/core/mod.rs`.
+- **Non-goals**: Terminal event parsing in core logic.
+- **Acceptance Criteria**:
+  - `Interaction` enum (`Shockwave`, `Stir`, `Ripple`, `Pressure`, `ThermalPulse`).
+  - `apply_shockwave`, `apply_stir`, `apply_ripple`, `apply_pressure`, and `apply_thermal_pulse` with bounded velocities and thermal transfer.
+  - Deterministic unit tests proving radial shockwave falloff, stirring momentum transfer, and buoyancy pressure adjustments.
+- **Dependencies**: None.
+
+---
+
+### Issue 31: Terminal Input Translation & Coordinate Normalizer
+- **Goal**: Implement terminal-to-simulation coordinate mapping and stateful mouse/keyboard event translation.
+- **Context**: Converts discrete terminal grid events (`crossterm::event::MouseEvent` and `KeyEvent`) into continuous domain interactions in $[0.0, 1.0]$.
+- **Scope**: `src/input/coords.rs`, `src/input/mouse.rs`, `src/input/keyboard.rs`, `src/input/mod.rs`.
+- **Non-goals**: Direct terminal I/O inside translation components.
+- **Acceptance Criteria**:
+  - `terminal_to_sim_coords(col, row, cols, rows)` maps cells accurately with vertical inversion (top row $\to$ sim cooling zone).
+  - `MouseTracker` handles left clicks (shockwave), right clicks (thermal pulse), drag motion (stir velocity), and wheel scroll (pressure).
+  - `map_key_event_with_ripple` translates character keypresses into wave ripple actions.
+  - Unit tests verifying drag vector calculation and coordinate edge cases.
+- **Dependencies**: Issue 30.
+
+---
+
+### Issue 32: Terminal Mouse Capture Lifecycle, Panic Hook & Signal Safety
+- **Goal**: Implement safe initialization and guaranteed restoration of terminal mouse capture mode.
+- **Context**: Prevents mouse capture escaping and hanging the user's terminal after application exit or panic.
+- **Scope**: `src/main.rs`.
+- **Non-goals**: Altering headless or snapshot output modes.
+- **Acceptance Criteria**:
+  - `EnableMouseCapture` and `DisableMouseCapture` paired safely.
+  - Panic hook and Unix signal handlers (`SIGINT`/`SIGTERM`) reliably execute `DisableMouseCapture`.
+  - Normal loop termination cleanly restores raw mode and cursor.
+- **Dependencies**: Issue 31.
+
+---
+
+### Issue 33: Configuration `[interaction]`, CLI Integration & Policy Flags
+- **Goal**: Add `[interaction]` TOML configuration section and CLI interaction flags.
+- **Context**: Allows users to customize or disable mouse interaction, toggle keyboard ripples, and tune force multipliers.
+- **Scope**: `src/config/schema.rs`, `src/main.rs`.
+- **Non-goals**: In-app GUI settings menu.
+- **Acceptance Criteria**:
+  - TOML `[interaction]` config supporting `mouse`, `keyboard_ripple`, `shockwave_force`, `stir_force`.
+  - CLI flags `--no-mouse`, `--no-ripple`, `--shockwave-force`, `--stir-force`.
+  - Validation enforcing positive non-zero force multipliers.
+- **Dependencies**: Issue 30, Issue 31, Issue 32.
+
+---
+
+### Issue 34: Phase 10 Comprehensive Test Suite & Documentation
+- **Goal**: Implement end-to-end integration tests and update all documentation for v0.11.0.
+- **Context**: Ensures regression-free release and complete developer/user onboarding.
+- **Scope**: `tests/integration_test.rs`, `docs/architecture.md`, `docs/configuration.md`, `docs/roadmap.md`, `README.md`, `CHANGELOG.md`, `Cargo.toml`.
+- **Non-goals**: Windows WASAPI capture (Phase 11).
+- **Acceptance Criteria**:
+  - End-to-end integration test verifying full interactive event mapping, simulation modulation, and rasterization pipeline.
+  - All documentation updated with interactive controls and configuration reference.
+  - All quality gates pass (`cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`).
+- **Dependencies**: Issue 30, Issue 31, Issue 32, Issue 33.
+
 

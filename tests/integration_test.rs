@@ -267,3 +267,76 @@ fn test_phase9_policy_and_multiplexer_integration() {
     let policy_override = resolve_policy(&input_fps_override).expect("Resolve override");
     assert_eq!(policy_override.target_fps, 45);
 }
+
+#[test]
+fn test_phase10_interactive_physics_integration() {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    use lavaterm::core::Interaction;
+    use lavaterm::input::MouseTracker;
+
+    let mut sim = Simulation::new(PhysicsParams::default(), 6, 888);
+    let palette = ColorPalette::default();
+    let mut fb = VirtualFramebuffer::new(40, 20, palette.background);
+
+    // 1. Test mouse click event mapping and shockwave application
+    let mut mouse_tracker = MouseTracker::new();
+    let click = MouseEvent {
+        kind: MouseEventKind::Down(MouseButton::Left),
+        column: 20,
+        row: 10,
+        modifiers: crossterm::event::KeyModifiers::NONE,
+    };
+    let interaction = mouse_tracker
+        .handle_event(click, 40, 20, 1.5, 1.0)
+        .expect("Emits shockwave");
+    assert!(matches!(interaction, Interaction::Shockwave { .. }));
+    sim.apply_interaction(&interaction);
+
+    // 2. Test mouse drag event mapping and stir velocity application
+    let drag = MouseEvent {
+        kind: MouseEventKind::Drag(MouseButton::Left),
+        column: 25,
+        row: 8,
+        modifiers: crossterm::event::KeyModifiers::NONE,
+    };
+    let drag_interaction = mouse_tracker
+        .handle_event(drag, 40, 20, 1.5, 1.2)
+        .expect("Emits stir");
+    assert!(matches!(drag_interaction, Interaction::Stir { .. }));
+    sim.apply_interaction(&drag_interaction);
+
+    // 3. Test mouse scroll pressure modulation
+    let scroll_up = MouseEvent {
+        kind: MouseEventKind::ScrollUp,
+        column: 20,
+        row: 10,
+        modifiers: crossterm::event::KeyModifiers::NONE,
+    };
+    let pressure = mouse_tracker
+        .handle_event(scroll_up, 40, 20, 1.0, 1.0)
+        .expect("Emits pressure");
+    assert_eq!(pressure, Interaction::Pressure { delta: 1.0 });
+    let initial_buoyancy = sim.params.buoyancy;
+    sim.apply_interaction(&pressure);
+    assert!(sim.params.buoyancy > initial_buoyancy);
+
+    // 4. Test keyboard ripple perturbation
+    sim.apply_interaction(&Interaction::Ripple { intensity: 1.0 });
+
+    // Step and rasterize
+    for _ in 0..10 {
+        sim.step(0.033);
+        rasterize_simulation(&sim, &mut fb, &palette, 1.0);
+    }
+
+    assert!(sim.elapsed_time > 0.0);
+    let active_pixels = fb
+        .as_slice()
+        .iter()
+        .filter(|c| **c != palette.background)
+        .count();
+    assert!(
+        active_pixels > 0,
+        "Interactive simulation must rasterize active pixels"
+    );
+}

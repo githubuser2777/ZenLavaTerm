@@ -83,13 +83,14 @@
   - **Custom Files**: Load custom JSON and TOML 4-anchor color schemes.
 - 📊 **Ambient System Observability (`--system`)**: Zero-clutter hardware monitoring reading Linux `/proc` and `/sys/class/power_supply` without external background daemons. CPU load drives fluid turbulence, RAM usage expands blob volume, and battery charge regulates thermal buoyancy.
 - 🎵 **Audio-Reactive Mode (`--audio`)**: Zero-dependency Cooley-Tukey Radix-2 FFT and Hann-windowed spectrum analyzer isolating Bass ($20-250\text{ Hz}$), Midrange ($250-4000\text{ Hz}$), and Treble ($4-20\text{ kHz}$) into fluid kinematics.
+- 🖱️ **Interactive Physics & Live Modulation**: Click to detonate radial shockwaves, drag to stir fluid currents with momentum transfer, right click for localized thermal pulses, scroll for buoyancy pressure surges, and type characters for acoustic wave ripples.
 - 🪟 **Multiplexer & Widget Integration (`tmux` / `zellij`)**:
   - **Compact Mode (`--compact`)**: Automatically scales particle counts and radii for small split-panes without particle saturation.
   - **Low-Overhead Widget (`--widget`)**: Ambient desktop widget mode running at an efficient 15 FPS.
   - **Inline Mode (`--inline`)**: In-place interactive animation without switching to alternate screens.
   - **Status-Bar Snapshot (`--snapshot`)**: Single-shot ANSI True Color frame serializer for direct embedding in `tmux` status bars (`status-right`), `zellij` plugins, polybar, and scripts.
 - ⚡ **Zero-Allocation Inner Loop & Decoupled Core**: Pure simulation core operates with zero terminal dependencies, enabling deterministic testing, headless execution, and micro-benchmarking.
-- 🛡️ **Fail-Safe Terminal Handling**: Raw mode initialization with custom panic hooks that restore cursor visibility and exit the alternate screen even during unexpected aborts.
+- 🛡️ **Fail-Safe Terminal Handling**: Raw mode initialization with custom panic hooks and signal handlers that restore cursor visibility, disable mouse capture, and exit the alternate screen even during unexpected aborts.
 
 ---
 
@@ -204,18 +205,28 @@ lavaterm --audio --theme synthwave
 
 ---
 
-### Interactive Keybindings
+### Interactive Keybindings & Mouse Gestures
 
-While LavaTerm is running in your terminal, use the following interactive keyboard shortcuts:
+While LavaTerm is running in your terminal, interact directly with the fluid in real-time:
 
+#### Keyboard Controls
 | Keybinding | Action | Description |
 |---|---|---|
-| <kbd>q</kbd>, <kbd>Q</kbd>, <kbd>Esc</kbd> | **Quit** | Cleanly exits LavaTerm, restores terminal raw mode, and shows cursor. |
+| <kbd>q</kbd>, <kbd>Q</kbd>, <kbd>Esc</kbd> | **Quit** | Cleanly exits LavaTerm, restores terminal raw mode, disables mouse capture, and shows cursor. |
 | <kbd>Ctrl</kbd> + <kbd>c</kbd> | **Quit** | Interrupt signal handler for immediate clean exit. |
 | <kbd>Space</kbd>, <kbd>p</kbd>, <kbd>P</kbd> | **Pause / Resume** | Toggles simulation physics stepping on or off. |
 | <kbd>+</kbd>, <kbd>=</kbd>, <kbd>↑</kbd>, <kbd>→</kbd> | **Speed Up** | Increases upward convective buoyancy ($+0.1$, clamped to $3.0$). |
 | <kbd>-</kbd>, <kbd>_</kbd>, <kbd>↓</kbd>, <kbd>←</kbd> | **Slow Down** | Decreases upward convective buoyancy ($-0.1$, clamped to $0.1$). |
 | <kbd>r</kbd>, <kbd>R</kbd> | **Reset** | Resets all metaball positions, velocities, and temperatures. |
+| <kbd>a</kbd>–<kbd>z</kbd>, <kbd>0</kbd>–<kbd>9</kbd> | **Ripple Wave** | Injects harmonic acoustic ripples and thermal vibrations across the lava fluid. |
+
+#### Mouse Controls
+| Gesture | Action | Description |
+|---|---|---|
+| **Left Click** | **Detonate Shockwave** | Emits a radial explosive impulse from the click coordinates, repelling nearby blobs. |
+| **Left Click + Drag** | **Stir Fluid** | Transfers directional momentum along the drag vector, stirring currents in the chamber. |
+| **Right Click** | **Thermal Pulse** | Injects a concentrated burst of heat at the cursor location. |
+| **Scroll Up / Down** | **Chamber Pressure** | Increases or decreases fluid buoyancy pressure surges. |
 
 ---
 
@@ -234,7 +245,7 @@ Starting LavaTerm headless simulation (60 frames, system=false, audio=false)...
   [Frame 021/060] Sim Time: 0.70s | Blobs: 12 | Active pixels in canvas: 912
   [Frame 041/060] Sim Time: 1.37s | Blobs: 12 | Active pixels in canvas: 928
   [Frame 060/060] Sim Time: 2.00s | Blobs: 12 | Active pixels in canvas: 905
-Headless simulation completed successfully.
+  Headless simulation completed successfully.
 ```
 
 ---
@@ -261,6 +272,10 @@ Options:
       --height <ROWS>        Explicit viewport height (rows)
       --system               Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
       --audio                Enable audio-reactive visualizer mode (FFT spectrum analyzer)
+      --no-mouse             Disable mouse click shockwaves, dragging, and scroll pressure
+      --no-ripple            Disable keyboard ripples on character keypresses
+      --shockwave-force <F>  Multiplier for mouse click shockwave force [default: 1.0]
+      --stir-force <F>       Multiplier for mouse drag stirring force [default: 1.0]
       --headless             Run headless simulation without taking over TTY (useful for testing/CI)
       --frames <COUNT>       Number of frames to step when in headless mode [default: 60]
   -h, --help                 Print help information
@@ -374,6 +389,19 @@ inline = false
 
 # Automatically adapt particle count and radius in compact mode
 adapt_blobs = true
+
+[interaction]
+# Enable mouse click shockwaves, dragging, and scroll pressure
+mouse = true
+
+# Enable keyboard typing wave ripples
+keyboard_ripple = true
+
+# Multiplier for mouse click shockwave force (0.1..10.0)
+shockwave_force = 1.0
+
+# Multiplier for mouse drag stirring force (0.1..10.0)
+stir_force = 1.0
 ```
 
 ---
@@ -408,6 +436,10 @@ adapt_blobs = true
 | `[widget]` | `width` | Integer | `None` | `1..1000` | Optional explicit columns width for widget layouts. |
 | `[widget]` | `height` | Integer | `None` | `1..1000` | Optional explicit rows height for widget layouts. |
 | `[widget]` | `adapt_blobs` | Boolean | `true` | `true`, `false` | Scale down blob count in small viewports to prevent saturation. |
+| `[interaction]` | `mouse` | Boolean | `true` | `true`, `false` | Enable mouse click shockwaves, dragging, and scroll pressure. |
+| `[interaction]` | `keyboard_ripple` | Boolean | `true` | `true`, `false` | Enable keyboard typing wave ripples. |
+| `[interaction]` | `shockwave_force` | Float | `1.0` | `0.1..10.0` | Multiplier for mouse click shockwave force. |
+| `[interaction]` | `stir_force` | Float | `1.0` | `0.1..10.0` | Multiplier for mouse drag fluid stirring momentum transfer. |
 
 ---
 

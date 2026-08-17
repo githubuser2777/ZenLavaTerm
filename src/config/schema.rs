@@ -26,6 +26,9 @@ pub struct Config {
 
     #[serde(default)]
     pub widget: WidgetConfig,
+
+    #[serde(default)]
+    pub interaction: InteractionConfig,
 }
 
 impl Config {
@@ -61,6 +64,12 @@ impl Config {
                 "Invalid renderer '{}'. Must be one of: halfblock, block, braille",
                 self.render.renderer
             ));
+        }
+        if self.interaction.shockwave_force <= 0.0 || self.interaction.shockwave_force > 10.0 {
+            return Err("interaction.shockwave_force must be between 0.1 and 10.0".to_string());
+        }
+        if self.interaction.stir_force <= 0.0 || self.interaction.stir_force > 10.0 {
+            return Err("interaction.stir_force must be between 0.1 and 10.0".to_string());
         }
         Ok(())
     }
@@ -337,9 +346,79 @@ impl Default for WidgetConfig {
     }
 }
 
+/// Interactive physics and user input configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InteractionConfig {
+    /// Enable mouse click shockwaves, dragging, and scroll pressure.
+    #[serde(default = "default_interaction_mouse")]
+    pub mouse: bool,
+
+    /// Enable keyboard ripples when typing alphanumeric characters.
+    #[serde(default = "default_interaction_keyboard_ripple")]
+    pub keyboard_ripple: bool,
+
+    /// Multiplier for mouse click shockwave force.
+    #[serde(default = "default_shockwave_force")]
+    pub shockwave_force: f32,
+
+    /// Multiplier for mouse drag stirring force.
+    #[serde(default = "default_stir_force")]
+    pub stir_force: f32,
+}
+
+fn default_interaction_mouse() -> bool {
+    true
+}
+fn default_interaction_keyboard_ripple() -> bool {
+    true
+}
+fn default_shockwave_force() -> f32 {
+    1.0
+}
+fn default_stir_force() -> f32 {
+    1.0
+}
+
+impl Default for InteractionConfig {
+    fn default() -> Self {
+        Self {
+            mouse: default_interaction_mouse(),
+            keyboard_ripple: default_interaction_keyboard_ripple(),
+            shockwave_force: default_shockwave_force(),
+            stir_force: default_stir_force(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_interaction_config_validation_and_parsing() {
+        let toml_str = r##"
+            [interaction]
+            mouse = false
+            keyboard_ripple = true
+            shockwave_force = 2.5
+            stir_force = 1.8
+        "##;
+
+        let config: Config = toml::from_str(toml_str).expect("Valid TOML with interaction");
+        assert!(config.validate().is_ok());
+        assert!(!config.interaction.mouse);
+        assert!(config.interaction.keyboard_ripple);
+        assert!((config.interaction.shockwave_force - 2.5).abs() < 1e-4);
+        assert!((config.interaction.stir_force - 1.8).abs() < 1e-4);
+
+        let mut invalid = config;
+        invalid.interaction.shockwave_force = 0.0;
+        assert!(invalid.validate().is_err());
+
+        invalid.interaction.shockwave_force = 1.0;
+        invalid.interaction.stir_force = -0.5;
+        assert!(invalid.validate().is_err());
+    }
 
     #[test]
     fn test_default_config_validity() {
