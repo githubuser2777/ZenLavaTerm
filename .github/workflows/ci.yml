@@ -75,10 +75,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install and run cargo-audit
-        run: |
-          which cargo-audit || cargo install cargo-audit --locked
-          cargo audit
+      - name: Security audit with RustSec
+        uses: rustsec/audit-check@v1.4.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
