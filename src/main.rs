@@ -19,7 +19,8 @@ use lavaterm::{
     },
     theme::{load_custom_theme_file, resolve_theme},
     widget::{
-        render_snapshot, resolve_policy, should_compact, CompactScaler, ExecutionMode, PolicyInput,
+        render_snapshot_options, resolve_policy, should_compact, CompactScaler, ExecutionMode,
+        PolicyInput,
     },
     LavaError, Result,
 };
@@ -280,7 +281,9 @@ fn run_event_loop(
                         }
                         Action::Reset => {
                             let count = sim.blobs.len();
+                            let radius_scale = sim.radius_scale;
                             sim = Simulation::new(sim.params, count, 42);
+                            sim.apply_radius_scale(radius_scale);
                         }
                         Action::None => {}
                     },
@@ -455,7 +458,7 @@ fn main() -> std::process::ExitCode {
 
     let result = match policy.mode {
         ExecutionMode::Snapshot => {
-            match render_snapshot(
+            match render_snapshot_options(
                 &mut sim,
                 &palette,
                 initial_cols,
@@ -463,6 +466,7 @@ fn main() -> std::process::ExitCode {
                 &renderer_type,
                 threshold,
                 5,
+                config.render.gradient,
             ) {
                 Ok(snapshot_str) => {
                     print!("{snapshot_str}");

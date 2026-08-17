@@ -1,15 +1,39 @@
 //! Single-shot ANSI True Color frame serializer for status bars and external scripts.
 
 use crate::core::Simulation;
-use crate::render::{rasterize_simulation, BrailleRenderer, ColorPalette, VirtualFramebuffer};
+use crate::render::{
+    rasterize_simulation_options, BrailleRenderer, ColorPalette, VirtualFramebuffer,
+};
 use crate::{LavaError, Result};
 use std::io::Write;
 
-/// Serializes a single frame of the simulation into a standalone ANSI True Color string.
-///
-/// This function returns a self-contained ANSI string without modifying terminal raw mode,
-/// emitting cursor relocation escapes, or entering alternate screens.
-pub fn render_snapshot(
+/// Options configuring single-frame snapshot rendering.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SnapshotOptions<'a> {
+    pub cols: u16,
+    pub rows: u16,
+    pub renderer_type: &'a str,
+    pub threshold: f32,
+    pub warmup_steps: usize,
+    pub gradient: bool,
+}
+
+impl<'a> Default for SnapshotOptions<'a> {
+    fn default() -> Self {
+        Self {
+            cols: 80,
+            rows: 24,
+            renderer_type: "halfblock",
+            threshold: 1.0,
+            warmup_steps: 5,
+            gradient: true,
+        }
+    }
+}
+
+/// Serializes a single frame of the simulation into a standalone ANSI True Color string with explicit gradient control.
+#[allow(clippy::too_many_arguments)]
+pub fn render_snapshot_options(
     sim: &mut Simulation,
     palette: &ColorPalette,
     cols: u16,
@@ -17,6 +41,7 @@ pub fn render_snapshot(
     renderer_type: &str,
     threshold: f32,
     warmup_steps: usize,
+    gradient: bool,
 ) -> Result<String> {
     if cols == 0 || rows == 0 {
         return Err(LavaError::Render(
@@ -38,7 +63,7 @@ pub fn render_snapshot(
     };
 
     let mut fb = VirtualFramebuffer::new(v_width, v_height, palette.background);
-    rasterize_simulation(sim, &mut fb, palette, threshold);
+    rasterize_simulation_options(sim, &mut fb, palette, threshold, gradient);
 
     // 3. Serialize into in-memory ANSI string without absolute cursor positioning
     let mut out = Vec::with_capacity(cols as usize * rows as usize * 30);
@@ -118,6 +143,28 @@ pub fn render_snapshot(
     String::from_utf8(out).map_err(|e| LavaError::Render(e.to_string()))
 }
 
+/// Serializes a single frame of the simulation into a standalone ANSI True Color string with smooth gradients.
+pub fn render_snapshot(
+    sim: &mut Simulation,
+    palette: &ColorPalette,
+    cols: u16,
+    rows: u16,
+    renderer_type: &str,
+    threshold: f32,
+    warmup_steps: usize,
+) -> Result<String> {
+    render_snapshot_options(
+        sim,
+        palette,
+        cols,
+        rows,
+        renderer_type,
+        threshold,
+        warmup_steps,
+        true,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -186,5 +233,22 @@ mod tests {
 
         assert!(output.contains('▀'));
         assert_eq!(output.matches('\n').count(), 7);
+    }
+
+    #[test]
+    fn test_snapshot_gradient_option() {
+        let palette = ColorPalette::default();
+        let mut sim1 = create_test_sim();
+        let mut sim2 = create_test_sim();
+
+        let out_grad =
+            render_snapshot_options(&mut sim1, &palette, 20, 6, "halfblock", 1.0, 3, true)
+                .expect("Snapshot with gradient succeeds");
+        let out_flat =
+            render_snapshot_options(&mut sim2, &palette, 20, 6, "halfblock", 1.0, 3, false)
+                .expect("Snapshot without gradient succeeds");
+
+        assert!(out_grad.contains('▀'));
+        assert!(out_flat.contains('▀'));
     }
 }

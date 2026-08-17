@@ -36,7 +36,7 @@ noise = 0.15
 # Isosurface metaball threshold for lava boundary
 threshold = 1.00
 
-# Thermal transfer rate with chamber boundaries (0.0 to 5.0)
+# Thermal transfer rate with chamber boundaries (> 0.0 to 5.0)
 thermal_transfer_rate = 0.40
 
 [render]
@@ -107,7 +107,7 @@ adapt_blobs = true
 | `viscosity` | float | `0.93` | Velocity retention factor per second |
 | `noise` | float | `0.15` | Thermal turbulence and lateral drift amplitude |
 | `threshold` | float | `1.00` | Field intensity isosurface threshold |
-| `thermal_transfer_rate` | float | `0.40` | Rate of heat exchange at chamber boundaries (0.0..5.0) |
+| `thermal_transfer_rate` | float | `0.40` | Rate of heat exchange at chamber boundaries (> 0.0..5.0) |
 
 ### `[render]`
 | Field | Type | Default | Description |
