@@ -50,10 +50,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@a54c7eae9bbab2c131f7689ab4d9887713d73185 # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
@@ -93,7 +93,7 @@ jobs:
           "$hash  ${{ matrix.asset_name }}.zip" | Out-File -Encoding ascii "${{ matrix.asset_name }}.zip.sha256"
 
       - name: Upload release assets to GitHub Release
-        uses: softprops/action-gh-release@c95fe1489396fe8a9ec87405d870fe0eaecb85fa # v2.2.1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             ${{ matrix.asset_name }}.tar.gz
@@ -115,7 +115,7 @@ jobs:
       image: archlinux:base-devel
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -139,7 +139,7 @@ jobs:
           ls -la lavaterm-*.pkg.tar.zst*
 
       - name: Upload Arch Linux package to GitHub Release
-        uses: softprops/action-gh-release@c95fe1489396fe8a9ec87405d870fe0eaecb85fa # v2.2.1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             lavaterm-*.pkg.tar.zst
