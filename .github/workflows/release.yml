@@ -21,21 +21,24 @@ jobs:
       tag: ${{ steps.check-version.outputs.tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Verify Tag matches Cargo.toml
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@a54c7fe93be2c9592dd638e8cb4708c9009ec371 # stable
+
+      - name: Verify Tag matches Cargo metadata package version
         id: check-version
         run: |
           TAG_NAME="${GITHUB_REF#refs/tags/}"
-          CARGO_VERSION=$(grep -m 1 '^version = ' Cargo.toml | awk -F '"' '{print $2}')
+          CARGO_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name=="lavaterm") | .version')
           EXPECTED_TAG="v${CARGO_VERSION}"
 
-          echo "Detected Git Tag:       $TAG_NAME"
-          echo "Detected Cargo Version: $CARGO_VERSION"
-          echo "Expected Git Tag:       $EXPECTED_TAG"
+          echo "Detected Git Tag:             $TAG_NAME"
+          echo "Detected Cargo Package Ver:   $CARGO_VERSION"
+          echo "Expected Git Tag:             $EXPECTED_TAG"
 
           if [ "$TAG_NAME" != "$EXPECTED_TAG" ]; then
-            echo "::error::Tag mismatch! Git tag '$TAG_NAME' does not match Cargo.toml version '$CARGO_VERSION' (expected '$EXPECTED_TAG')."
+            echo "::error::Tag mismatch! Git tag '$TAG_NAME' does not match Cargo.toml package version '$CARGO_VERSION' (expected '$EXPECTED_TAG')."
             exit 1
           fi
 
@@ -98,10 +101,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@a54c7fe93be2c9592dd638e8cb4708c9009ec371 # stable
         with:
           targets: ${{ matrix.target }}
 
@@ -111,7 +114,9 @@ jobs:
 
       - name: Install cross (if required)
         if: matrix.use_cross
-        uses: taiki-e/install-action@cross
+        uses: taiki-e/install-action@b7ec42a8b32e039bf877c865fa3a47da2c8b0e77 # v2
+        with:
+          tool: cross
 
       - name: Build release binary
         run: |
@@ -155,7 +160,7 @@ jobs:
           "$hash  $AssetName.zip" | Out-File -Encoding ascii "$AssetName.zip.sha256"
 
       - name: Upload artifact bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: package-${{ matrix.target }}
           path: |
@@ -172,7 +177,7 @@ jobs:
       image: archlinux:base-devel
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install dependencies
         run: |
@@ -196,7 +201,7 @@ jobs:
           ls -la lavaterm-*.pkg.tar.zst*
 
       - name: Upload Arch Linux artifact bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: package-archlinux
           path: |
@@ -216,31 +221,39 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Download all artifact bundles
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           path: dist
           merge-multiple: true
 
-      - name: Generate consolidated SHA256SUMS.txt and verify integrity
+      - name: Verify independent builder checksums and build consolidated manifest
         working-directory: dist
         run: |
           echo "=== Downloaded Release Assets ==="
           ls -la
 
-          # Compute consolidated SHA-256 for all archives and packages
-          sha256sum *.tar.gz *.zip *.pkg.tar.zst > SHA256SUMS.txt
+          # 1. Independent Integrity Verification: Verify downloaded archives against builder-generated .sha256 files
+          echo "=== Verifying downloaded archives against individual builder checksums ==="
+          for sha_file in *.sha256; do
+            echo "Verifying $sha_file..."
+            sha256sum -c "$sha_file"
+          done
 
-          echo "=== Consolidated SHA256SUMS.txt ==="
+          # 2. Build consolidated manifest from pre-validated builder checksums
+          echo "=== Generating consolidated SHA256SUMS.txt manifest ==="
+          cat *.sha256 | sort -k2 -u > SHA256SUMS.txt
+
+          echo "=== Consolidated Manifest Content ==="
           cat SHA256SUMS.txt
 
-          # Verify integrity of all generated archives against SHA256SUMS.txt
+          # 3. Final verification pass against consolidated manifest
           sha256sum -c SHA256SUMS.txt
 
       - name: Create GitHub Release and Upload Assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
         with:
           tag_name: ${{ needs.verify-tag.outputs.tag }}
           name: LavaTerm ${{ needs.verify-tag.outputs.tag }}

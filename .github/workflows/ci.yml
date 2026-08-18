@@ -23,15 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install Rust stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@a54c7fe93be2c9592dd638e8cb4708c9009ec371 # stable
         with:
           components: rustfmt, clippy
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@82a92a6e8fbeee08c6c4d4b1201c70e28a50619a # v2.7.5
 
       - name: Check code formatting (cargo fmt)
         run: cargo fmt --check
@@ -63,15 +63,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install Rust stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@a54c7fe93be2c9592dd638e8cb4708c9009ec371 # stable
         with:
           targets: ${{ matrix.target }}
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@82a92a6e8fbeee08c6c4d4b1201c70e28a50619a # v2.7.5
         with:
           key: ${{ matrix.target }}
 
@@ -84,14 +84,14 @@ jobs:
       - name: Run unit & integration tests
         run: cargo test --target ${{ matrix.target }} --verbose
 
-      - name: Run headless smoke test (CLI validation)
+      - name: Run headless smoke test (CLI runtime validation)
         run: cargo run --target ${{ matrix.target }} -- --headless --frames 30
 
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }} --verbose
 
   cross-compile-check:
-    name: Cross-Compilation Check (${{ matrix.target }})
+    name: Cross-Compilation Build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -111,10 +111,10 @@ jobs:
             use_cross: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@a54c7fe93be2c9592dd638e8cb4708c9009ec371 # stable
         with:
           targets: ${{ matrix.target }}
 
@@ -124,19 +124,21 @@ jobs:
 
       - name: Install cross (if required)
         if: matrix.use_cross
-        uses: taiki-e/install-action@cross
+        uses: taiki-e/install-action@b7ec42a8b32e039bf877c865fa3a47da2c8b0e77 # v2
+        with:
+          tool: cross
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@82a92a6e8fbeee08c6c4d4b1201c70e28a50619a # v2.7.5
         with:
           key: ${{ matrix.target }}
 
-      - name: Check / Compile target
+      - name: Build release target binary (linking validation)
         run: |
           if [ "${{ matrix.use_cross }}" = "true" ]; then
-            cross check --target ${{ matrix.target }}
+            cross build --release --target ${{ matrix.target }} --verbose
           else
-            cargo check --target ${{ matrix.target }}
+            cargo build --release --target ${{ matrix.target }} --verbose
           fi
         shell: bash
 
@@ -145,9 +147,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Security audit with RustSec
-        uses: rustsec/audit-check@v1.4.1
+        uses: rustsec/audit-check@2e76f827e7f7bbd4ec74a961f6874ebf4bf7834d # v1.4.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

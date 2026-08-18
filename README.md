@@ -894,21 +894,21 @@ cargo run --example minimal_sim
 
 ## Cross-Platform Building & Distribution
 
-### Target Matrix
+### Target Matrix & Validation Levels
 
-LavaTerm compiles natively and cross-compiles across all major desktop operating systems and CPU architectures:
+LavaTerm distinguishes between **Native Runtime Testing** (unit/integration test suite, benchmarks, and headless CLI smoke-run executed natively on the runner) and **Cross-Compilation Build Validation** (full release binary compilation, static/dynamic linking, and packaging checks):
 
-| Platform | Target Triple | Binary Name | Release Archive | Build Mode | Test Validation |
+| Platform | Target Triple | Binary Name | Release Archive | Build Mode | Validation Level |
 |---|---|---|---|---|---|
-| **Linux (glibc x86_64)** | `x86_64-unknown-linux-gnu` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-gnu.tar.gz` | Native (Ubuntu) | Native Unit & Headless Tests |
-| **Linux (glibc aarch64)** | `aarch64-unknown-linux-gnu` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-gnu.tar.gz` | Cross (`cross`) | Build & Typecheck Validation |
-| **Linux (musl x86_64)** | `x86_64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-musl.tar.gz` | Static (`musl-tools`) | Static Linking Validation |
-| **Linux (musl aarch64)** | `aarch64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-musl.tar.gz` | Cross (`cross`) | Build & Typecheck Validation |
-| **macOS (Apple Silicon)** | `aarch64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-aarch64-apple-darwin.tar.gz` | Native (`macos-latest`) | Native Unit & Headless Tests |
-| **macOS (Intel x86_64)** | `x86_64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-x86_64-apple-darwin.tar.gz` | Native (`macos-13`) | Native Unit & Headless Tests |
-| **Windows (MSVC x86_64)** | `x86_64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-x86_64-pc-windows-msvc.zip` | Native (Windows) | Native Unit & Headless Tests |
-| **Windows (MSVC aarch64)** | `aarch64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-aarch64-pc-windows-msvc.zip` | Cross (MSVC ARM64) | Build & Typecheck Validation |
-| **Arch Linux (Native pkg)** | `x86_64` | `lavaterm` | `lavaterm-<VER>-1-x86_64.pkg.tar.zst` | Container (`archlinux`) | Package Creation & makepkg Check |
+| **Linux (glibc x86_64)** | `x86_64-unknown-linux-gnu` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-gnu.tar.gz` | Native (Ubuntu) | **Level 1**: Native Unit & Headless Tests |
+| **Linux (glibc aarch64)** | `aarch64-unknown-linux-gnu` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-gnu.tar.gz` | Cross (`cross`) | **Level 2**: Cross Release Build & Linking |
+| **Linux (musl x86_64)** | `x86_64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-musl.tar.gz` | Static (`musl-tools`) | **Level 2**: Static Release Build & Linking |
+| **Linux (musl aarch64)** | `aarch64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-musl.tar.gz` | Cross (`cross`) | **Level 2**: Cross Release Build & Linking |
+| **macOS (Apple Silicon)** | `aarch64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-aarch64-apple-darwin.tar.gz` | Native (`macos-latest`) | **Level 1**: Native Unit & Headless Tests |
+| **macOS (Intel x86_64)** | `x86_64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-x86_64-apple-darwin.tar.gz` | Native (`macos-13`) | **Level 1**: Native Unit & Headless Tests |
+| **Windows (MSVC x86_64)** | `x86_64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-x86_64-pc-windows-msvc.zip` | Native (Windows) | **Level 1**: Native Unit & Headless Tests |
+| **Windows (MSVC aarch64)** | `aarch64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-aarch64-pc-windows-msvc.zip` | Cross (MSVC ARM64) | **Level 2**: Cross Release Build & Linking |
+| **Arch Linux (Native pkg)** | `x86_64` | `lavaterm` | `lavaterm-<VER>-1-x86_64.pkg.tar.zst` | Container (`archlinux`) | **Level 1**: Container Package & makepkg |
 
 ---
 
