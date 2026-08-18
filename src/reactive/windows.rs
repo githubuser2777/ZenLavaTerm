@@ -69,6 +69,7 @@ extern "system" {
 
 /// Native Windows system metrics provider reading CPU, RAM, Battery, and I/O.
 #[derive(Debug, Default)]
+#[allow(dead_code)]
 pub struct WindowsSystemProvider {
     last_idle: Option<u64>,
     last_kernel_plus_user: Option<u64>,

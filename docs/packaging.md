@@ -112,9 +112,11 @@ In addition to Arch Linux `.pkg.tar.zst` packages, GitHub Actions automatically 
 |---|---|---|---|
 | Linux (glibc x86_64) | `x86_64-unknown-linux-gnu` | `.tar.gz` | `lavaterm-x86_64-unknown-linux-gnu.tar.gz` + `.sha256` |
 | Linux (glibc aarch64) | `aarch64-unknown-linux-gnu` | `.tar.gz` | `lavaterm-aarch64-unknown-linux-gnu.tar.gz` + `.sha256` |
-| Linux (musl static) | `x86_64-unknown-linux-musl` | `.tar.gz` | `lavaterm-x86_64-unknown-linux-musl.tar.gz` + `.sha256` |
+| Linux (musl x86_64 static) | `x86_64-unknown-linux-musl` | `.tar.gz` | `lavaterm-x86_64-unknown-linux-musl.tar.gz` + `.sha256` |
+| Linux (musl aarch64 static) | `aarch64-unknown-linux-musl` | `.tar.gz` | `lavaterm-aarch64-unknown-linux-musl.tar.gz` + `.sha256` |
 | macOS (Apple Silicon) | `aarch64-apple-darwin` | `.tar.gz` | `lavaterm-aarch64-apple-darwin.tar.gz` + `.sha256` |
 | macOS (Intel) | `x86_64-apple-darwin` | `.tar.gz` | `lavaterm-x86_64-apple-darwin.tar.gz` + `.sha256` |
 | Windows (x86_64 MSVC) | `x86_64-pc-windows-msvc` | `.zip` | `lavaterm-x86_64-pc-windows-msvc.zip` + `.sha256` |
+| Windows (aarch64 MSVC) | `aarch64-pc-windows-msvc` | `.zip` | `lavaterm-aarch64-pc-windows-msvc.zip` + `.sha256` |
 | Arch Linux (x86_64) | `x86_64` | `.pkg.tar.zst` | `lavaterm-<ver>-1-x86_64.pkg.tar.zst` + `.sha256` |
 
