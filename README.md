@@ -905,7 +905,6 @@ LavaTerm distinguishes between **Native Runtime Testing** (unit/integration test
 | **Linux (musl x86_64)** | `x86_64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-musl.tar.gz` | Static (`musl-tools`) | **Level 2**: Static Release Build & Linking |
 | **Linux (musl aarch64)** | `aarch64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-musl.tar.gz` | Cross (`cross`) | **Level 2**: Cross Release Build & Linking |
 | **macOS (Apple Silicon)** | `aarch64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-aarch64-apple-darwin.tar.gz` | Native (`macos-latest`) | **Level 1**: Native Unit & Headless Tests |
-| **macOS (Intel x86_64)** | `x86_64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-x86_64-apple-darwin.tar.gz` | Native (`macos-13`) | **Level 1**: Native Unit & Headless Tests |
 | **Windows (MSVC x86_64)** | `x86_64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-x86_64-pc-windows-msvc.zip` | Native (Windows) | **Level 1**: Native Unit & Headless Tests |
 | **Windows (MSVC aarch64)** | `aarch64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-aarch64-pc-windows-msvc.zip` | Cross (MSVC ARM64) | **Level 2**: Cross Release Build & Linking |
 | **Arch Linux (Native pkg)** | `x86_64` | `lavaterm` | `lavaterm-<VER>-1-x86_64.pkg.tar.zst` | Container (`archlinux`) | **Level 1**: Container Package & makepkg |

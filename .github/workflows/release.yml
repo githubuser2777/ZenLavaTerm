@@ -75,12 +75,7 @@ jobs:
             use_cross: true
             archive_type: tar.gz
 
-          # macOS (Intel & Apple Silicon)
-          - target: x86_64-apple-darwin
-            os: macos-13
-            artifact_name: lavaterm
-            use_cross: false
-            archive_type: tar.gz
+          # macOS (Apple Silicon)
           - target: aarch64-apple-darwin
             os: macos-latest
             artifact_name: lavaterm
