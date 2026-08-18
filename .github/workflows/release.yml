@@ -30,6 +30,12 @@ jobs:
             asset_name: lavaterm-x86_64-unknown-linux-musl
             use_cross: true
 
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact_name: lavaterm
+            asset_name: lavaterm-aarch64-unknown-linux-gnu
+            use_cross: true
+
           - target: x86_64-apple-darwin
             os: macos-13
             artifact_name: lavaterm

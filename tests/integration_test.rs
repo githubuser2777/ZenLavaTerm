@@ -147,7 +147,7 @@ fn test_theme_engine_integration() {
 
     // 2. Test custom temporary JSON theme file
     let temp_dir = std::env::temp_dir();
-    let json_theme_path = temp_dir.join("lavaterm_test_theme.json");
+    let json_theme_path = temp_dir.join(format!("lavaterm_test_theme_{}.json", std::process::id()));
     let json_content = r##"{
         "bottom": "#00ffcc",
         "middle": "#0077ff",
@@ -399,5 +399,83 @@ fn test_phase10_stress_and_rapid_interaction() {
         assert!(blob.vy.is_finite() && blob.vy >= -2.0 && blob.vy <= 2.0);
         assert!(blob.temperature.is_finite() && blob.temperature >= 0.0 && blob.temperature <= 1.0);
         assert!(blob.radius.is_finite() && blob.radius > 0.0);
+    }
+}
+
+#[test]
+fn test_phase11_cross_platform_system_provider_contract() {
+    use lavaterm::reactive::default_system_provider;
+
+    let mut provider = default_system_provider();
+    let signals = provider.poll_signals();
+
+    assert!(
+        signals.cpu_load.is_finite() && signals.cpu_load >= 0.0 && signals.cpu_load <= 1.0,
+        "CPU load must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals.memory_usage.is_finite()
+            && signals.memory_usage >= 0.0
+            && signals.memory_usage <= 1.0,
+        "Memory usage must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals.battery_level.is_finite()
+            && signals.battery_level >= 0.0
+            && signals.battery_level <= 1.0,
+        "Battery level must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals.io_activity.is_finite() && signals.io_activity >= 0.0 && signals.io_activity <= 1.0,
+        "IO activity must be normalized within [0.0, 1.0]"
+    );
+}
+
+#[test]
+fn test_phase11_cross_platform_audio_provider_contract() {
+    use lavaterm::audio::default_audio_provider;
+
+    let mut provider = default_audio_provider();
+    let signals = provider.poll_signals();
+
+    assert!(
+        signals.bass.is_finite() && signals.bass >= 0.0 && signals.bass <= 1.0,
+        "Bass signal must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals.mid.is_finite() && signals.mid >= 0.0 && signals.mid <= 1.0,
+        "Mid signal must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals.treble.is_finite() && signals.treble >= 0.0 && signals.treble <= 1.0,
+        "Treble signal must be normalized within [0.0, 1.0]"
+    );
+}
+
+#[test]
+fn test_phase11_cross_platform_headless_execution() {
+    use lavaterm::config::Config;
+    use lavaterm::core::{PhysicsParams, Simulation};
+    use lavaterm::reactive::default_system_provider;
+    use lavaterm::render::{rasterize_simulation, ColorPalette, VirtualFramebuffer};
+
+    let config = Config::default();
+    let physics = PhysicsParams::default();
+    let mut sim = Simulation::new(physics, config.simulation.blobs, 42);
+    let palette = ColorPalette::from(config.palette);
+    let mut fb = VirtualFramebuffer::new(60, 30, palette.background);
+    let mut provider = default_system_provider();
+
+    let dt = 1.0 / 30.0;
+    for _ in 0..30 {
+        let signals = provider.poll_signals();
+        sim.step_reactive(dt, &signals);
+        rasterize_simulation(&sim, &mut fb, &palette, config.simulation.threshold);
+    }
+
+    assert!(sim.elapsed_time > 0.9);
+    for blob in &sim.blobs {
+        assert!(blob.x.is_finite());
+        assert!(blob.y.is_finite());
     }
 }

@@ -101,3 +101,20 @@ When cutting a new release:
    cd packaging/arch && makepkg --printsrcinfo > .SRCINFO
    ```
 4. Push tag `v*` to GitHub to trigger `.github/workflows/release.yml`.
+
+---
+
+## 5. Cross-Platform Binary Distribution Matrix
+
+In addition to Arch Linux `.pkg.tar.zst` packages, GitHub Actions automatically builds release archives for all tier-1 desktop targets:
+
+| Target Platform | Target Triple | Archive Format | Assets |
+|---|---|---|---|
+| Linux (glibc x86_64) | `x86_64-unknown-linux-gnu` | `.tar.gz` | `lavaterm-x86_64-unknown-linux-gnu.tar.gz` + `.sha256` |
+| Linux (glibc aarch64) | `aarch64-unknown-linux-gnu` | `.tar.gz` | `lavaterm-aarch64-unknown-linux-gnu.tar.gz` + `.sha256` |
+| Linux (musl static) | `x86_64-unknown-linux-musl` | `.tar.gz` | `lavaterm-x86_64-unknown-linux-musl.tar.gz` + `.sha256` |
+| macOS (Apple Silicon) | `aarch64-apple-darwin` | `.tar.gz` | `lavaterm-aarch64-apple-darwin.tar.gz` + `.sha256` |
+| macOS (Intel) | `x86_64-apple-darwin` | `.tar.gz` | `lavaterm-x86_64-apple-darwin.tar.gz` + `.sha256` |
+| Windows (x86_64 MSVC) | `x86_64-pc-windows-msvc` | `.zip` | `lavaterm-x86_64-pc-windows-msvc.zip` + `.sha256` |
+| Arch Linux (x86_64) | `x86_64` | `.pkg.tar.zst` | `lavaterm-<ver>-1-x86_64.pkg.tar.zst` + `.sha256` |
+

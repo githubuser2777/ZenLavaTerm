@@ -139,7 +139,32 @@ fn setup_signal_handler(term_flag: Arc<AtomicBool>) {
     let _ = signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&term_flag));
 }
 
-#[cfg(not(unix))]
+#[cfg(windows)]
+fn setup_signal_handler(term_flag: Arc<AtomicBool>) {
+    use std::sync::OnceLock;
+    static GLOBAL_TERM_FLAG: OnceLock<Arc<AtomicBool>> = OnceLock::new();
+    let _ = GLOBAL_TERM_FLAG.set(term_flag);
+
+    unsafe extern "system" fn ctrl_handler(_ctrl_type: u32) -> i32 {
+        if let Some(flag) = GLOBAL_TERM_FLAG.get() {
+            flag.store(true, Ordering::SeqCst);
+        }
+        1
+    }
+
+    extern "system" {
+        fn SetConsoleCtrlHandler(
+            HandlerRoutine: Option<unsafe extern "system" fn(u32) -> i32>,
+            Add: i32,
+        ) -> i32;
+    }
+
+    unsafe {
+        SetConsoleCtrlHandler(Some(ctrl_handler), 1);
+    }
+}
+
+#[cfg(not(any(unix, windows)))]
 fn setup_signal_handler(_term_flag: Arc<AtomicBool>) {}
 
 struct RuntimeOptions {

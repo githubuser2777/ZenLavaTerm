@@ -17,3 +17,9 @@
 # Test & benchmark outputs
 /benchmark_results/
 /coverage/
+
+# Local agent & tooling artifacts
+.aider-desk/
+.continue/
+skills-lock.json
+

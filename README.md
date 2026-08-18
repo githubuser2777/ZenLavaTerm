@@ -81,7 +81,7 @@
   - **Dynamic Wallpaper Extraction**: Integrates seamlessly with **Pywal** (`~/.cache/wal/colors.json`) and **Wallust** (`~/.cache/wallust/colors.json`).
   - **Auto-Detection (`--theme auto`)**: Automatically inspects desktop color caches with smooth fallback.
   - **Custom Files**: Load custom JSON and TOML 4-anchor color schemes.
-- 📊 **Ambient System Observability (`--system`)**: Zero-clutter hardware monitoring reading Linux `/proc` and `/sys/class/power_supply` without external background daemons. CPU load drives fluid turbulence, RAM usage expands blob volume, and battery charge regulates thermal buoyancy.
+- 📊 **Ambient System Observability (`--system`)**: Zero-clutter hardware monitoring reading native operating system telemetry (Linux `/proc` and `/sys`, Windows Win32 API `GetSystemTimes`/`GlobalMemoryStatusEx`/`GetSystemPowerStatus`, and macOS Mach kernel `host_statistics64`/`sysctl`). CPU load drives fluid turbulence, RAM usage expands blob volume, and battery charge regulates thermal buoyancy.
 - 🎵 **Audio-Reactive Mode (`--audio`)**: Zero-dependency Cooley-Tukey Radix-2 FFT and Hann-windowed spectrum analyzer isolating Bass ($20-250\text{ Hz}$), Midrange ($250-4000\text{ Hz}$), and Treble ($4-20\text{ kHz}$) into fluid kinematics.
 - 🖱️ **Interactive Physics & Live Modulation**: Click to detonate radial shockwaves, drag to stir fluid currents with momentum transfer, right click for localized thermal pulses, scroll for buoyancy pressure surges, and type characters for acoustic wave ripples.
 - 🪟 **Multiplexer & Widget Integration (`tmux` / `zellij`)**:
@@ -90,7 +90,7 @@
   - **Inline Mode (`--inline`)**: In-place interactive animation without switching to alternate screens.
   - **Status-Bar Snapshot (`--snapshot`)**: Single-shot ANSI True Color frame serializer for direct embedding in `tmux` status bars (`status-right`), `zellij` plugins, polybar, and scripts.
 - ⚡ **Zero-Allocation Inner Loop & Decoupled Core**: Pure simulation core operates with zero terminal dependencies, enabling deterministic testing, headless execution, and micro-benchmarking.
-- 🛡️ **Fail-Safe Terminal Handling**: Raw mode initialization with custom panic hooks and signal handlers that restore cursor visibility, disable mouse capture, and exit the alternate screen even during unexpected aborts.
+- 🛡️ **Fail-Safe Cross-Platform Terminal Handling**: Raw mode initialization with custom panic hooks, Unix `SIGINT`/`SIGTERM` handlers, and Windows console control routines (`SetConsoleCtrlHandler`) that restore cursor visibility, disable mouse capture, and exit alternate screens cleanly across Linux, macOS, and Windows.
 
 ---
 
@@ -900,11 +900,12 @@ LavaTerm compiles natively across all major desktop operating systems and CPU ar
 
 | Platform | Target Triple | Binary Name | Release Archive |
 |---|---|---|---|
-| **Linux (glibc)** | `x86_64-unknown-linux-gnu` | `lavaterm` | `lavaterm-x86_64-unknown-linux-gnu.tar.gz` |
+| **Linux (glibc x86_64)** | `x86_64-unknown-linux-gnu` | `lavaterm` | `lavaterm-x86_64-unknown-linux-gnu.tar.gz` |
+| **Linux (glibc aarch64)** | `aarch64-unknown-linux-gnu` | `lavaterm` | `lavaterm-aarch64-unknown-linux-gnu.tar.gz` |
 | **Linux (Static musl)** | `x86_64-unknown-linux-musl` | `lavaterm` | `lavaterm-x86_64-unknown-linux-musl.tar.gz` |
 | **macOS (Apple Silicon)** | `aarch64-apple-darwin` | `lavaterm` | `lavaterm-aarch64-apple-darwin.tar.gz` |
 | **macOS (Intel)** | `x86_64-apple-darwin` | `lavaterm` | `lavaterm-x86_64-apple-darwin.tar.gz` |
-| **Windows (MSVC)** | `x86_64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-x86_64-pc-windows-msvc.zip` |
+| **Windows (x86_64 MSVC / GNU)** | `x86_64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-x86_64-pc-windows-msvc.zip` |
 
 ---
 

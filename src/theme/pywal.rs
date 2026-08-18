@@ -113,7 +113,7 @@ pub fn parse_pywal_flat(text: &str) -> Result<ColorPalette, String> {
     })
 }
 
-/// Returns the standard default XDG Pywal cache paths in order of preference.
+/// Returns the standard default Pywal cache paths in order of preference across platforms.
 pub fn default_pywal_paths() -> Vec<PathBuf> {
     let mut paths = Vec::new();
     if let Ok(cache_home) = std::env::var("XDG_CACHE_HOME") {
@@ -123,6 +123,16 @@ pub fn default_pywal_paths() -> Vec<PathBuf> {
     }
     if let Ok(home) = std::env::var("HOME") {
         let p = PathBuf::from(home).join(".cache").join("wal");
+        paths.push(p.join("colors.json"));
+        paths.push(p.join("colors"));
+    }
+    if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
+        let p = PathBuf::from(local_appdata).join("wal");
+        paths.push(p.join("colors.json"));
+        paths.push(p.join("colors"));
+    }
+    if let Ok(userprofile) = std::env::var("USERPROFILE") {
+        let p = PathBuf::from(userprofile).join(".cache").join("wal");
         paths.push(p.join("colors.json"));
         paths.push(p.join("colors"));
     }

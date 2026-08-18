@@ -209,19 +209,24 @@ The terminal must always be restored on normal exit and on handled failures wher
 
 ## Cross-Platform Maintenance
 
-Linux is the primary development target, but keep core portable enough for Windows and macOS.
+Linux is the primary development target, with first-class native support for Windows and macOS.
 
 Use:
 
 ```text
 core API
     ↓
-platform adapter
+platform adapter (Linux / Windows / macOS / Mock)
     ↓
-normalized signal
+normalized signal (SystemSignals, AudioSignals)
 ```
 
-Do not scatter OS-specific logic through simulation code.
+Rules:
+1. Do not scatter OS-specific logic through simulation code.
+2. Keep `core` completely free of OS, hardware, and terminal imports.
+3. Native CI matrices must validate compilation and testing on Linux (`ubuntu-latest`), Windows (`windows-latest`), and macOS (`macos-latest`).
+4. Signal handling and panic recovery must be verified on both Unix (`signal-hook`) and Windows (`SetConsoleCtrlHandler`).
+5. Configuration discovery must support standard XDG, Windows `%APPDATA%` / `%USERPROFILE%`, and macOS `$HOME/Library/Application Support`.
 
 ## Documentation Maintenance
 
