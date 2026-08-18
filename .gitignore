@@ -17,3 +17,7 @@
 # Test & benchmark outputs
 /benchmark_results/
 /coverage/
+
+# Local agent metadata
+.agents/
+skills-lock.json

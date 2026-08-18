@@ -34,11 +34,11 @@ LavaTerm provides two installation tracks for Arch Linux users:
 Every release tag (`v*`) automatically builds a standalone native Arch Linux package:
 
 ```bash
-# 1. Download the latest package from GitHub Releases
-wget https://github.com/githubuser2777/ZenLavaTerm/releases/latest/download/lavaterm-0.10.0-1-x86_64.pkg.tar.zst
+# 1. Download release package (replace <VERSION> with target version, e.g. 0.11.0)
+wget https://github.com/githubuser2777/ZenLavaTerm/releases/download/v<VERSION>/lavaterm-<VERSION>-1-x86_64.pkg.tar.zst
 
 # 2. Install using pacman
-sudo pacman -U lavaterm-0.10.0-1-x86_64.pkg.tar.zst
+sudo pacman -U lavaterm-<VERSION>-1-x86_64.pkg.tar.zst
 ```
 
 ### Method B: Install `lavaterm-bin` via AUR helper
