@@ -407,28 +407,60 @@ fn test_phase11_cross_platform_system_provider_contract() {
     use lavaterm::reactive::default_system_provider;
 
     let mut provider = default_system_provider();
-    let signals = provider.poll_signals();
+    let signals1 = provider.poll_signals();
 
     assert!(
-        signals.cpu_load.is_finite() && signals.cpu_load >= 0.0 && signals.cpu_load <= 1.0,
+        signals1.cpu_load.is_finite() && signals1.cpu_load >= 0.0 && signals1.cpu_load <= 1.0,
         "CPU load must be normalized within [0.0, 1.0]"
     );
     assert!(
-        signals.memory_usage.is_finite()
-            && signals.memory_usage >= 0.0
-            && signals.memory_usage <= 1.0,
+        signals1.memory_usage.is_finite()
+            && signals1.memory_usage >= 0.0
+            && signals1.memory_usage <= 1.0,
         "Memory usage must be normalized within [0.0, 1.0]"
     );
     assert!(
-        signals.battery_level.is_finite()
-            && signals.battery_level >= 0.0
-            && signals.battery_level <= 1.0,
+        signals1.battery_level.is_finite()
+            && signals1.battery_level >= 0.0
+            && signals1.battery_level <= 1.0,
         "Battery level must be normalized within [0.0, 1.0]"
     );
     assert!(
-        signals.io_activity.is_finite() && signals.io_activity >= 0.0 && signals.io_activity <= 1.0,
+        signals1.io_activity.is_finite()
+            && signals1.io_activity >= 0.0
+            && signals1.io_activity <= 1.0,
         "IO activity must be normalized within [0.0, 1.0]"
     );
+
+    // Second poll to exercise delta tick calculations (CPU & I/O)
+    let signals2 = provider.poll_signals();
+    assert!(
+        signals2.cpu_load.is_finite() && signals2.cpu_load >= 0.0 && signals2.cpu_load <= 1.0,
+        "Second poll CPU load must remain normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals2.io_activity.is_finite()
+            && signals2.io_activity >= 0.0
+            && signals2.io_activity <= 1.0,
+        "Second poll IO activity must remain normalized within [0.0, 1.0]"
+    );
+}
+
+#[test]
+fn test_phase11_cross_platform_theme_paths_discovery() {
+    use lavaterm::theme::pywal::default_pywal_paths;
+    use lavaterm::theme::wallust::default_wallust_paths;
+
+    let pywal_candidates = default_pywal_paths();
+    let wallust_candidates = default_wallust_paths();
+
+    // Verify candidate lists contain valid non-empty path buffers
+    for p in pywal_candidates {
+        assert!(!p.as_os_str().is_empty());
+    }
+    for p in wallust_candidates {
+        assert!(!p.as_os_str().is_empty());
+    }
 }
 
 #[test]

@@ -51,7 +51,7 @@ lavaterm (binary: src/main.rs)
    ├── config     (TOML parser, validation, defaults, cross-platform path resolution)
    ├── theme      (Presets, Pywal, Wallust, Auto-detection, Custom theme files)
    ├── audio      (FFT Spectrum Analyzer, PCM capture, synthetic audio generator)
-   ├── reactive   (System metrics collector: Linux procfs/sysfs, Windows Win32 API, macOS Mach/sysctl, normalized signals)
+   ├── reactive   (System metrics collector: Linux procfs/sysfs, Windows Win32 API, macOS Mach kernel, normalized signals)
    ├── render     (Framebuffer, RGB math, Half-block/Block/Braille renderers)
    ├── widget     (Multiplexer detection, compact scaler, snapshot serializer, policy engine)
    └── core       (Pure simulation, Blobs, Physics, Scalar Field, Interactions)
@@ -109,7 +109,7 @@ lavaterm (binary: src/main.rs)
 - **`signals.rs`**: Defines normalized `SystemSignals { cpu_load, memory_usage, battery_level, io_activity }` where each float is in `[0.0, 1.0]`.
 - **`linux.rs`**: Native Linux provider reading `/proc/stat` (CPU ticks), `/proc/meminfo` (RAM usage), `/sys/class/power_supply` (battery), and `/proc/diskstats` (I/O).
 - **`windows.rs`**: Native Windows provider using Win32 APIs (`GetSystemTimes`, `GlobalMemoryStatusEx`, `GetSystemPowerStatus`, `GetProcessIoCounters`).
-- **`macos.rs`**: Native macOS provider using Mach kernel statistics (`host_statistics64`, `HOST_CPU_LOAD_INFO`, `HOST_VM_INFO64`) and `sysctl`.
+- **`macos.rs`**: Native macOS provider using Mach kernel statistics (`host_statistics64`, `HOST_CPU_LOAD_INFO`, `HOST_VM_INFO64`).
 - **`provider.rs`**: `SystemProvider` trait and deterministic `MockSystemProvider`.
 
 ### 4.5. Terminal Backend & Lifecycle (`src/main.rs`)

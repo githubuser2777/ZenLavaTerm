@@ -3,6 +3,7 @@
 use super::provider::SystemProvider;
 use super::signals::SystemSignals;
 
+#[cfg(target_os = "windows")]
 #[repr(C)]
 struct MemoryStatusEx {
     dw_length: u32,
@@ -16,6 +17,7 @@ struct MemoryStatusEx {
     ull_avail_extended_virtual: u64,
 }
 
+#[cfg(target_os = "windows")]
 #[repr(C)]
 struct SystemPowerStatus {
     ac_line_status: u8,
@@ -26,6 +28,7 @@ struct SystemPowerStatus {
     battery_full_life_time: u32,
 }
 
+#[cfg(target_os = "windows")]
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
 struct FileTime {
@@ -33,12 +36,14 @@ struct FileTime {
     dw_high_date_time: u32,
 }
 
+#[cfg(target_os = "windows")]
 impl FileTime {
     fn to_u64(self) -> u64 {
         ((self.dw_high_date_time as u64) << 32) | (self.dw_low_date_time as u64)
     }
 }
 
+#[cfg(target_os = "windows")]
 #[repr(C)]
 struct IoCounters {
     read_operation_count: u64,
@@ -49,6 +54,7 @@ struct IoCounters {
     other_transfer_count: u64,
 }
 
+#[cfg(target_os = "windows")]
 extern "system" {
     fn GlobalMemoryStatusEx(lpBuffer: *mut MemoryStatusEx) -> i32;
     fn GetSystemPowerStatus(lpSystemPowerStatus: *mut SystemPowerStatus) -> i32;
@@ -75,6 +81,7 @@ impl WindowsSystemProvider {
         Self::default()
     }
 
+    #[cfg(target_os = "windows")]
     fn read_cpu_load(&mut self) -> f32 {
         let mut idle_time = FileTime::default();
         let mut kernel_time = FileTime::default();
@@ -116,6 +123,12 @@ impl WindowsSystemProvider {
         0.15 // Graceful fallback
     }
 
+    #[cfg(not(target_os = "windows"))]
+    fn read_cpu_load(&mut self) -> f32 {
+        0.15
+    }
+
+    #[cfg(target_os = "windows")]
     fn read_memory_usage(&self) -> f32 {
         let mut mem_status = MemoryStatusEx {
             dw_length: std::mem::size_of::<MemoryStatusEx>() as u32,
@@ -140,6 +153,12 @@ impl WindowsSystemProvider {
         0.30 // Graceful fallback
     }
 
+    #[cfg(not(target_os = "windows"))]
+    fn read_memory_usage(&self) -> f32 {
+        0.30
+    }
+
+    #[cfg(target_os = "windows")]
     fn read_battery_level(&self) -> f32 {
         let mut power_status = SystemPowerStatus {
             ac_line_status: 255,
@@ -164,6 +183,12 @@ impl WindowsSystemProvider {
         1.0 // Defaults to 100%
     }
 
+    #[cfg(not(target_os = "windows"))]
+    fn read_battery_level(&self) -> f32 {
+        1.0
+    }
+
+    #[cfg(target_os = "windows")]
     fn read_io_activity(&mut self) -> f32 {
         let mut io_counters = IoCounters {
             read_operation_count: 0,
@@ -194,6 +219,11 @@ impl WindowsSystemProvider {
 
         0.05
     }
+
+    #[cfg(not(target_os = "windows"))]
+    fn read_io_activity(&mut self) -> f32 {
+        0.05
+    }
 }
 
 impl SystemProvider for WindowsSystemProvider {
@@ -220,5 +250,10 @@ mod tests {
         assert!(signals.memory_usage >= 0.0 && signals.memory_usage <= 1.0);
         assert!(signals.battery_level >= 0.0 && signals.battery_level <= 1.0);
         assert!(signals.io_activity >= 0.0 && signals.io_activity <= 1.0);
+
+        // Second poll to exercise delta calculation logic
+        let signals2 = provider.poll_signals();
+        assert!(signals2.cpu_load >= 0.0 && signals2.cpu_load <= 1.0);
+        assert!(signals2.io_activity >= 0.0 && signals2.io_activity <= 1.0);
     }
 }

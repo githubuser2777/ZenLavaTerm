@@ -126,6 +126,12 @@ pub fn default_wallust_paths() -> Vec<PathBuf> {
         paths.push(p.join("nix-colors.json"));
         paths.push(p.join("colors"));
     }
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        let p = PathBuf::from(appdata).join("wallust");
+        paths.push(p.join("colors.json"));
+        paths.push(p.join("nix-colors.json"));
+        paths.push(p.join("colors"));
+    }
     if let Ok(userprofile) = std::env::var("USERPROFILE") {
         let p = PathBuf::from(userprofile).join(".cache").join("wallust");
         paths.push(p.join("colors.json"));

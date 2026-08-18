@@ -131,6 +131,11 @@ pub fn default_pywal_paths() -> Vec<PathBuf> {
         paths.push(p.join("colors.json"));
         paths.push(p.join("colors"));
     }
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        let p = PathBuf::from(appdata).join("wal");
+        paths.push(p.join("colors.json"));
+        paths.push(p.join("colors"));
+    }
     if let Ok(userprofile) = std::env::var("USERPROFILE") {
         let p = PathBuf::from(userprofile).join(".cache").join("wal");
         paths.push(p.join("colors.json"));

@@ -189,5 +189,10 @@ mod tests {
         assert!(signals.memory_usage >= 0.0 && signals.memory_usage <= 1.0);
         assert!(signals.battery_level >= 0.0 && signals.battery_level <= 1.0);
         assert!(signals.io_activity >= 0.0 && signals.io_activity <= 1.0);
+
+        // Second poll to exercise delta calculation logic
+        let signals2 = provider.poll_signals();
+        assert!(signals2.cpu_load >= 0.0 && signals2.cpu_load <= 1.0);
+        assert!(signals2.io_activity >= 0.0 && signals2.io_activity <= 1.0);
     }
 }
