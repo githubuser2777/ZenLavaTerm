@@ -18,6 +18,8 @@
 /benchmark_results/
 /coverage/
 
-# Local agent metadata
+# Local agent & tooling artifacts
 .agents/
+.aider-desk/
+.continue/
 skills-lock.json
