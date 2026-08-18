@@ -8,45 +8,93 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  build-release:
+  verify-tag:
+    name: Verify Tag & Version Consistency
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check-version.outputs.version }}
+      tag: ${{ steps.check-version.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Tag matches Cargo.toml
+        id: check-version
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          CARGO_VERSION=$(grep -m 1 '^version = ' Cargo.toml | awk -F '"' '{print $2}')
+          EXPECTED_TAG="v${CARGO_VERSION}"
+
+          echo "Detected Git Tag:       $TAG_NAME"
+          echo "Detected Cargo Version: $CARGO_VERSION"
+          echo "Expected Git Tag:       $EXPECTED_TAG"
+
+          if [ "$TAG_NAME" != "$EXPECTED_TAG" ]; then
+            echo "::error::Tag mismatch! Git tag '$TAG_NAME' does not match Cargo.toml version '$CARGO_VERSION' (expected '$EXPECTED_TAG')."
+            exit 1
+          fi
+
+          echo "version=${CARGO_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+
+  build-binary-artifacts:
     name: Build & Package (${{ matrix.target }})
+    needs: verify-tag
     runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
+          # Linux GNU & musl (x86_64, aarch64)
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             artifact_name: lavaterm
-            asset_name: lavaterm-x86_64-unknown-linux-gnu
             use_cross: false
-
+            archive_type: tar.gz
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact_name: lavaterm
+            use_cross: true
+            archive_type: tar.gz
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             artifact_name: lavaterm
-            asset_name: lavaterm-x86_64-unknown-linux-musl
+            use_cross: false
+            archive_type: tar.gz
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            artifact_name: lavaterm
             use_cross: true
+            archive_type: tar.gz
 
+          # macOS (Intel & Apple Silicon)
           - target: x86_64-apple-darwin
             os: macos-13
             artifact_name: lavaterm
-            asset_name: lavaterm-x86_64-apple-darwin
             use_cross: false
-
+            archive_type: tar.gz
           - target: aarch64-apple-darwin
             os: macos-latest
             artifact_name: lavaterm
-            asset_name: lavaterm-aarch64-apple-darwin
             use_cross: false
+            archive_type: tar.gz
 
+          # Windows (x86_64 & aarch64)
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             artifact_name: lavaterm.exe
-            asset_name: lavaterm-x86_64-pc-windows-msvc
             use_cross: false
+            archive_type: zip
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            artifact_name: lavaterm.exe
+            use_cross: false
+            archive_type: zip
 
     steps:
       - name: Checkout repository
@@ -57,9 +105,13 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Install musl-tools (if x86_64 musl on Ubuntu)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
       - name: Install cross (if required)
         if: matrix.use_cross
-        run: cargo install cross --version 0.2.5 --locked
+        uses: taiki-e/install-action@cross
 
       - name: Build release binary
         run: |
@@ -70,47 +122,52 @@ jobs:
           fi
         shell: bash
 
-      - name: Package artifacts (Unix)
-        if: matrix.os != 'windows-latest'
+      - name: Package artifacts (Unix tar.gz)
+        if: matrix.archive_type == 'tar.gz'
+        env:
+          VERSION: ${{ needs.verify-tag.outputs.version }}
+          TARGET: ${{ matrix.target }}
+          BIN_NAME: ${{ matrix.artifact_name }}
         run: |
-          staging="staging"
-          mkdir -p "$staging"
-          cp "target/${{ matrix.target }}/release/${{ matrix.artifact_name }}" "$staging/"
-          cp README.md LICENSE "$staging/"
-          tar -czf "${{ matrix.asset_name }}.tar.gz" -C "$staging" .
-          shasum -a 256 "${{ matrix.asset_name }}.tar.gz" > "${{ matrix.asset_name }}.tar.gz.sha256"
+          ASSET_NAME="lavaterm-v${VERSION}-${TARGET}"
+          STAGING="staging/${ASSET_NAME}"
+          mkdir -p "$STAGING"
+          cp "target/${TARGET}/release/${BIN_NAME}" "$STAGING/"
+          cp README.md LICENSE CHANGELOG.md "$STAGING/"
+          tar -czf "${ASSET_NAME}.tar.gz" -C staging "${ASSET_NAME}"
+          shasum -a 256 "${ASSET_NAME}.tar.gz" > "${ASSET_NAME}.tar.gz.sha256"
         shell: bash
 
-      - name: Package artifacts (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          $staging = "staging"
-          New-Item -ItemType Directory -Force -Path $staging
-          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.artifact_name }}" -Destination $staging
-          Copy-Item "README.md", "LICENSE" -Destination $staging
-          Compress-Archive -Path "$staging/*" -DestinationPath "${{ matrix.asset_name }}.zip"
-          $hash = (Get-FileHash -Algorithm SHA256 "${{ matrix.asset_name }}.zip").Hash.ToLower()
-          "$hash  ${{ matrix.asset_name }}.zip" | Out-File -Encoding ascii "${{ matrix.asset_name }}.zip.sha256"
-
-      - name: Upload release assets to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ matrix.asset_name }}.tar.gz
-            ${{ matrix.asset_name }}.tar.gz.sha256
-            ${{ matrix.asset_name }}.zip
-            ${{ matrix.asset_name }}.zip.sha256
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+      - name: Package artifacts (Windows zip)
+        if: matrix.archive_type == 'zip'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.verify-tag.outputs.version }}
+          TARGET: ${{ matrix.target }}
+          BIN_NAME: ${{ matrix.artifact_name }}
+        run: |
+          $AssetName = "lavaterm-v$env:VERSION-$env:TARGET"
+          $Staging = "staging/$AssetName"
+          New-Item -ItemType Directory -Force -Path $Staging
+          Copy-Item "target/$env:TARGET/release/$env:BIN_NAME" -Destination $Staging
+          Copy-Item "README.md", "LICENSE", "CHANGELOG.md" -Destination $Staging
+          Compress-Archive -Path $Staging -DestinationPath "$AssetName.zip"
+          $hash = (Get-FileHash -Algorithm SHA256 "$AssetName.zip").Hash.ToLower()
+          "$hash  $AssetName.zip" | Out-File -Encoding ascii "$AssetName.zip.sha256"
+
+      - name: Upload artifact bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.target }}
+          path: |
+            lavaterm-v${{ needs.verify-tag.outputs.version }}-${{ matrix.target }}.${{ matrix.archive_type }}
+            lavaterm-v${{ needs.verify-tag.outputs.version }}-${{ matrix.target }}.${{ matrix.archive_type }}.sha256
+          if-no-files-found: error
+          retention-days: 7
 
   build-archlinux-package:
     name: Build & Package (Arch Linux x86_64)
+    needs: verify-tag
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     container:
       image: archlinux:base-devel
     steps:
@@ -138,11 +195,59 @@ jobs:
           cp target/arch_pkg/lavaterm-*.pkg.tar.zst* .
           ls -la lavaterm-*.pkg.tar.zst*
 
-      - name: Upload Arch Linux package to GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload Arch Linux artifact bundle
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: package-archlinux
+          path: |
             lavaterm-*.pkg.tar.zst
             lavaterm-*.pkg.tar.zst.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-release:
+    name: Publish GitHub Release
+    needs:
+      - verify-tag
+      - build-binary-artifacts
+      - build-archlinux-package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifact bundles
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate consolidated SHA256SUMS.txt and verify integrity
+        working-directory: dist
+        run: |
+          echo "=== Downloaded Release Assets ==="
+          ls -la
+
+          # Compute consolidated SHA-256 for all archives and packages
+          sha256sum *.tar.gz *.zip *.pkg.tar.zst > SHA256SUMS.txt
+
+          echo "=== Consolidated SHA256SUMS.txt ==="
+          cat SHA256SUMS.txt
+
+          # Verify integrity of all generated archives against SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.verify-tag.outputs.tag }}
+          name: LavaTerm ${{ needs.verify-tag.outputs.tag }}
+          files: |
+            dist/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,13 +9,25 @@ license=('MIT')
 depends=('gcc-libs')
 provides=('lavaterm')
 conflicts=('lavaterm' 'lavaterm-git')
-source=("$pkgname-$pkgver.tar.gz::$url/releases/download/v$pkgver/lavaterm-x86_64-unknown-linux-gnu.tar.gz")
+source=("$pkgname-$pkgver.tar.gz::$url/releases/download/v$pkgver/lavaterm-v$pkgver-x86_64-unknown-linux-gnu.tar.gz")
 # Note: sha256sums is set to 'SKIP' in repo template. When publishing a release to AUR,
 # run `updpkgsums` or replace 'SKIP' with the SHA-256 hash of the release artifact tarball.
 sha256sums=('SKIP')
 
 package() {
-  install -Dm755 "lavaterm" "$pkgdir/usr/bin/lavaterm"
-  install -Dm644 "README.md" "$pkgdir/usr/share/doc/lavaterm/README.md"
-  install -Dm644 "LICENSE" "$pkgdir/usr/share/licenses/lavaterm/LICENSE"
+  local bin_path
+  bin_path=$(find "$srcdir" -maxdepth 2 -type f -name "lavaterm" -perm -111 | head -n 1)
+  if [[ -z "$bin_path" ]]; then
+    bin_path="$srcdir/lavaterm"
+  fi
+  install -Dm755 "$bin_path" "$pkgdir/usr/bin/lavaterm"
+
+  local doc_dir
+  doc_dir=$(dirname "$bin_path")
+  if [[ -f "$doc_dir/README.md" ]]; then
+    install -Dm644 "$doc_dir/README.md" "$pkgdir/usr/share/doc/lavaterm/README.md"
+  fi
+  if [[ -f "$doc_dir/LICENSE" ]]; then
+    install -Dm644 "$doc_dir/LICENSE" "$pkgdir/usr/share/licenses/lavaterm/LICENSE"
+  fi
 }

@@ -896,27 +896,31 @@ cargo run --example minimal_sim
 
 ### Target Matrix
 
-LavaTerm compiles natively across all major desktop operating systems and CPU architectures:
+LavaTerm compiles natively and cross-compiles across all major desktop operating systems and CPU architectures:
 
-| Platform | Target Triple | Binary Name | Release Archive |
-|---|---|---|---|
-| **Linux (glibc)** | `x86_64-unknown-linux-gnu` | `lavaterm` | `lavaterm-x86_64-unknown-linux-gnu.tar.gz` |
-| **Linux (Static musl)** | `x86_64-unknown-linux-musl` | `lavaterm` | `lavaterm-x86_64-unknown-linux-musl.tar.gz` |
-| **macOS (Apple Silicon)** | `aarch64-apple-darwin` | `lavaterm` | `lavaterm-aarch64-apple-darwin.tar.gz` |
-| **macOS (Intel)** | `x86_64-apple-darwin` | `lavaterm` | `lavaterm-x86_64-apple-darwin.tar.gz` |
-| **Windows (MSVC)** | `x86_64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-x86_64-pc-windows-msvc.zip` |
+| Platform | Target Triple | Binary Name | Release Archive | Build Mode | Test Validation |
+|---|---|---|---|---|---|
+| **Linux (glibc x86_64)** | `x86_64-unknown-linux-gnu` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-gnu.tar.gz` | Native (Ubuntu) | Native Unit & Headless Tests |
+| **Linux (glibc aarch64)** | `aarch64-unknown-linux-gnu` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-gnu.tar.gz` | Cross (`cross`) | Build & Typecheck Validation |
+| **Linux (musl x86_64)** | `x86_64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-musl.tar.gz` | Static (`musl-tools`) | Static Linking Validation |
+| **Linux (musl aarch64)** | `aarch64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-musl.tar.gz` | Cross (`cross`) | Build & Typecheck Validation |
+| **macOS (Apple Silicon)** | `aarch64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-aarch64-apple-darwin.tar.gz` | Native (`macos-latest`) | Native Unit & Headless Tests |
+| **macOS (Intel x86_64)** | `x86_64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-x86_64-apple-darwin.tar.gz` | Native (`macos-13`) | Native Unit & Headless Tests |
+| **Windows (MSVC x86_64)** | `x86_64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-x86_64-pc-windows-msvc.zip` | Native (Windows) | Native Unit & Headless Tests |
+| **Windows (MSVC aarch64)** | `aarch64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-aarch64-pc-windows-msvc.zip` | Cross (MSVC ARM64) | Build & Typecheck Validation |
+| **Arch Linux (Native pkg)** | `x86_64` | `lavaterm` | `lavaterm-<VER>-1-x86_64.pkg.tar.zst` | Container (`archlinux`) | Package Creation & makepkg Check |
 
 ---
 
 ### Building Static Linux Binaries (musl)
 
-For a fully static, standalone Linux binary with zero runtime dependencies (works on Alpine, Arch, Ubuntu, Debian, Fedora, NixOS):
+For a fully static, standalone Linux binary with zero runtime glibc dependencies (works seamlessly on Alpine, Arch, Ubuntu, Debian, Fedora, NixOS, Void):
 
 ```bash
-# Install musl target
+# 1. Install musl target toolchain
 rustup target add x86_64-unknown-linux-musl
 
-# Build static release binary
+# 2. Build static release binary
 cargo build --release --target x86_64-unknown-linux-musl
 ```
 
@@ -924,16 +928,32 @@ The resulting binary `target/x86_64-unknown-linux-musl/release/lavaterm` can be 
 
 ---
 
-### GitHub Actions Release Pipeline
+### Release Verification & Integrity
 
-Automated multi-platform builds and SHA-256 checksum generation are handled by `.github/workflows/release.yml`. Creating and pushing a git tag triggers the release pipeline:
+Every official release tag (`v*`) triggers an automated build pipeline that compiles all 8 target architectures plus native Arch Linux packages. Each release asset is packaged with `README.md`, `LICENSE`, and `CHANGELOG.md`, accompanied by individual `.sha256` checksum files and a consolidated `SHA256SUMS.txt`.
+
+#### Verifying Release Integrity:
 
 ```bash
-git tag -a v0.10.0 -m "Release v0.10.0"
-git push origin v0.10.0
+# Linux / macOS (verify single asset)
+shasum -a 256 -c lavaterm-v0.11.0-x86_64-unknown-linux-gnu.tar.gz.sha256
+
+# Linux (verify all assets via consolidated checksum file)
+sha256sum -c SHA256SUMS.txt --ignore-missing
+
+# Windows PowerShell
+Get-FileHash -Algorithm SHA256 lavaterm-v0.11.0-x86_64-pc-windows-msvc.zip
 ```
 
-The workflow automatically builds binaries for all 5 target architectures, packages `.tar.gz` and `.zip` archives, computes SHA-256 checksums, and uploads assets directly to the GitHub Release.
+#### Triggering a Release (Maintainers):
+
+```bash
+# 1. Ensure Cargo.toml version matches the target tag
+git tag -a v0.11.0 -m "Release v0.11.0"
+git push origin v0.11.0
+```
+
+The release pipeline automatically enforces tag/version consistency, executes parallel cross-platform builds, generates atomic GitHub Releases, and attaches all verified assets.
 
 ---
 
