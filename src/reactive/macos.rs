@@ -3,6 +3,54 @@
 use super::provider::SystemProvider;
 use super::signals::SystemSignals;
 
+#[cfg(target_os = "macos")]
+#[repr(C)]
+#[derive(Default, Clone, Copy)]
+struct HostCpuLoadInfo {
+    cpu_ticks: [u32; 4], // CPU_STATE_USER, CPU_STATE_SYSTEM, CPU_STATE_IDLE, CPU_STATE_NICE
+}
+
+#[cfg(target_os = "macos")]
+#[repr(C)]
+#[derive(Default, Clone, Copy)]
+struct VmStatistics64 {
+    free_count: u32,
+    active_count: u32,
+    inactive_count: u32,
+    wire_count: u32,
+    zero_fill_count: u64,
+    reactivations: u64,
+    pageins: u64,
+    pageouts: u64,
+    faults: u64,
+    cow_faults: u64,
+    lookups: u64,
+    hits: u64,
+    purges: u64,
+    purgeable_count: u32,
+    speculative_count: u32,
+    decompressions: u64,
+    compressions: u64,
+    swapins: u64,
+    swapouts: u64,
+    compressor_page_count: u32,
+    throttled_count: u32,
+    external_page_count: u32,
+    internal_page_count: u32,
+    total_uncompressed_pages_in_compressor: u64,
+}
+
+#[cfg(target_os = "macos")]
+extern "C" {
+    fn mach_host_self() -> u32;
+    fn host_statistics64(
+        host_priv: u32,
+        flavor: i32,
+        host_info_out: *mut i32,
+        host_info_outCnt: *mut u32,
+    ) -> i32;
+}
+
 /// Native macOS system metrics provider.
 #[derive(Debug, Default)]
 #[allow(dead_code)]
@@ -19,22 +67,6 @@ impl MacOSSystemProvider {
 
     #[cfg(target_os = "macos")]
     fn read_cpu_load(&mut self) -> f32 {
-        #[repr(C)]
-        #[derive(Default, Clone, Copy)]
-        struct HostCpuLoadInfo {
-            cpu_ticks: [u32; 4], // CPU_STATE_USER, CPU_STATE_SYSTEM, CPU_STATE_IDLE, CPU_STATE_NICE
-        }
-
-        extern "C" {
-            fn mach_host_self() -> u32;
-            fn host_statistics64(
-                host_priv: u32,
-                flavor: i32,
-                host_info_out: *mut HostCpuLoadInfo,
-                host_info_outCnt: *mut u32,
-            ) -> i32;
-        }
-
         const HOST_CPU_LOAD_INFO: i32 = 3;
         let mut cpu_info = HostCpuLoadInfo::default();
         let mut count =
@@ -44,7 +76,7 @@ impl MacOSSystemProvider {
             host_statistics64(
                 mach_host_self(),
                 HOST_CPU_LOAD_INFO,
-                &mut cpu_info as *mut _,
+                &mut cpu_info as *mut HostCpuLoadInfo as *mut i32,
                 &mut count as *mut _,
             )
         };
@@ -81,45 +113,6 @@ impl MacOSSystemProvider {
 
     #[cfg(target_os = "macos")]
     fn read_memory_usage(&self) -> f32 {
-        #[repr(C)]
-        #[derive(Default, Clone, Copy)]
-        struct VmStatistics64 {
-            free_count: u32,
-            active_count: u32,
-            inactive_count: u32,
-            wire_count: u32,
-            zero_fill_count: u64,
-            reactivations: u64,
-            pageins: u64,
-            pageouts: u64,
-            faults: u64,
-            cow_faults: u64,
-            lookups: u64,
-            hits: u64,
-            purges: u64,
-            purgeable_count: u32,
-            speculative_count: u32,
-            decompressions: u64,
-            compressions: u64,
-            swapins: u64,
-            swapouts: u64,
-            compressor_page_count: u32,
-            throttled_count: u32,
-            external_page_count: u32,
-            internal_page_count: u32,
-            total_uncompressed_pages_in_compressor: u64,
-        }
-
-        extern "C" {
-            fn mach_host_self() -> u32;
-            fn host_statistics64(
-                host_priv: u32,
-                flavor: i32,
-                host_info_out: *mut VmStatistics64,
-                host_info_outCnt: *mut u32,
-            ) -> i32;
-        }
-
         const HOST_VM_INFO64: i32 = 4;
         let mut vm_stat = VmStatistics64::default();
         let mut count = (std::mem::size_of::<VmStatistics64>() / std::mem::size_of::<i32>()) as u32;
@@ -128,7 +121,7 @@ impl MacOSSystemProvider {
             host_statistics64(
                 mach_host_self(),
                 HOST_VM_INFO64,
-                &mut vm_stat as *mut _,
+                &mut vm_stat as *mut VmStatistics64 as *mut i32,
                 &mut count as *mut _,
             )
         };
