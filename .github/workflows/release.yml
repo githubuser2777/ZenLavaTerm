@@ -37,9 +37,9 @@ jobs:
             exit 1
           fi
 
-          # Accept only strict production SemVer ^v[0-9]+\.[0-9]+\.[0-9]+$
-          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Tag '$TAG_NAME' is not a valid production SemVer tag (must match ^v[0-9]+\.[0-9]+\.[0-9]+$)."
+          # Accept only strict production SemVer ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$
+          if [[ ! "$TAG_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Tag '$TAG_NAME' is not a valid production SemVer tag (must match ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ without leading zeros)."
             exit 1
           fi
 
@@ -285,9 +285,13 @@ jobs:
           name: ZenLavaTerm ${{ needs.verify-tag.outputs.tag }}
           files: |
             dist/*.AppImage
+            dist/*.AppImage.sha256
             dist/*.deb
+            dist/*.deb.sha256
             dist/*.msi
+            dist/*.msi.sha256
             dist/*.dmg
+            dist/*.dmg.sha256
             dist/SHA256SUMS.txt
           draft: false
           prerelease: false
