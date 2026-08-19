@@ -1,103 +1,175 @@
-# LavaTerm Arch Linux Packaging & Distribution Guide
+# ZenLavaTerm Packaging & Installation Guide
 
-This document outlines how LavaTerm is packaged, distributed, and installed on **Arch Linux** and Arch-based distributions (Manjaro, EndeavourOS, Garuda, etc.).
-
----
-
-## 1. Distribution Channels
-
-LavaTerm provides two installation tracks for Arch Linux users:
-
-```text
-┌──────────────────────────────────────────────────────────────┐
-│                    Arch Linux Distribution                   │
-└──────────────┬────────────────────────────────┬──────────────┘
-               │                                │
-               ▼                                ▼
-┌──────────────────────────────┐ ┌──────────────────────────────┐
-│  Track 1: Pre-built Package  │ │   Track 2: Build From Source │
-│    (Tải về dùng ngay)        │ │       (Tự biên dịch)         │
-├──────────────────────────────┤ ├──────────────────────────────┤
-│ • .pkg.tar.zst từ Release    │ │ • AUR package: lavaterm      │
-│ • AUR package: lavaterm-bin  │ │ • makepkg -si                │
-│ • Cài đặt trong 1s           │ │ • cargo install / local pkg  │
-│ • Không cần Rust toolchain   │ │ • Tối ưu theo vi kiến trúc   │
-└──────────────────────────────┘ └──────────────────────────────┘
-```
+This document outlines the official installation methods, supported package formats, and the maintainer release process for **ZenLavaTerm**.
 
 ---
 
-## 2. Track 1: Pre-built Binary Packages (Tải về dùng ngay)
+## 1. Official Desktop Release Matrix
 
-### Method A: Download `.pkg.tar.zst` from GitHub Releases
+ZenLavaTerm provides official desktop installers for all tier-1 supported operating systems:
 
-Every release tag (`v*`) automatically builds a standalone native Arch Linux package:
+| Operating System | Package Format | Architecture | Canonical Artifact Name | Primary Distribution |
+|---|---|---|---|---|
+| **Linux** | `.AppImage` | `x86_64` | `ZenLavaTerm-v<VERSION>-linux-x86_64.AppImage` | Standalone portable executable |
+| **Linux** | `.deb` | `x86_64` (amd64) | `ZenLavaTerm-v<VERSION>-linux-x86_64.deb` | Debian / Ubuntu package manager |
+| **Windows** | `.msi` | `x86_64` | `ZenLavaTerm-v<VERSION>-windows-x86_64.msi` | Windows Installer with PATH registration |
+| **macOS** | `.dmg` | Universal (`arm64` + `x86_64`) | `ZenLavaTerm-v<VERSION>-macos-universal.dmg` | Apple Silicon & Intel Universal Bundle |
 
-```bash
-# 1. Download release package (replace <VERSION> with target version, e.g. 0.11.0)
-wget https://github.com/githubuser2777/ZenLavaTerm/releases/download/v<VERSION>/lavaterm-<VERSION>-1-x86_64.pkg.tar.zst
-
-# 2. Install using pacman
-sudo pacman -U lavaterm-<VERSION>-1-x86_64.pkg.tar.zst
-```
-
-### Method B: Install `lavaterm-bin` via AUR helper
-
-Using `yay` or `paru`:
-
-```bash
-# With yay
-yay -S lavaterm-bin
-
-# With paru
-paru -S lavaterm-bin
-```
+Every official release includes a consolidated `SHA256SUMS.txt` and SLSA build provenance attestations.
 
 ---
 
-## 3. Track 2: Build From Source (Tự biên dịch)
+## 2. User Installation Instructions
 
-### Method A: Build from Source via AUR helper
+### Linux
 
-```bash
-yay -S lavaterm
-```
+#### Option A: Portable AppImage (Universal Linux)
 
-### Method B: Build using `makepkg` & PKGBUILD
+The AppImage runs on any modern Linux distribution without requiring root privileges or package managers.
 
-```bash
-git clone https://github.com/githubuser2777/ZenLavaTerm.git
-cd ZenLavaTerm/packaging/arch
-makepkg -si
-```
+1. **Download** the latest `ZenLavaTerm-v<VERSION>-linux-x86_64.AppImage` from [GitHub Releases](https://github.com/githubuser2777/ZenLavaTerm/releases).
+2. **Make it executable**:
+   ```bash
+   chmod +x ZenLavaTerm-v*-linux-x86_64.AppImage
+   ```
+3. **Run**:
+   ```bash
+   ./ZenLavaTerm-v*-linux-x86_64.AppImage
+   ```
 
-### Method C: Local automated packaging script
+#### Option B: Debian / Ubuntu Package (`.deb`)
 
-The repository provides a helper script `scripts/package_arch.sh`:
+The `.deb` package installs the `lavaterm` binary system-wide to `/usr/bin/lavaterm`, registers desktop integration, and installs documentation and licenses.
 
-```bash
-# Build the .pkg.tar.zst package in target/arch_pkg/
-./scripts/package_arch.sh
+1. **Download** the latest `ZenLavaTerm-v<VERSION>-linux-x86_64.deb` from [GitHub Releases](https://github.com/githubuser2777/ZenLavaTerm/releases).
+2. **Install using `apt` or `dpkg`**:
+   ```bash
+   # Using apt (automatically resolves any dependencies)
+   sudo apt install ./ZenLavaTerm-v*-linux-x86_64.deb
 
-# Build and install immediately
-./scripts/package_arch.sh --install
-```
+   # Or using dpkg
+   sudo dpkg -i ZenLavaTerm-v*-linux-x86_64.deb
+   ```
+3. **Launch**:
+   ```bash
+   lavaterm
+   ```
 
-### Method D: Install via Cargo
+---
+
+### Windows
+
+#### Windows Installer (`.msi`)
+
+The `.msi` installer provides a standard Windows installation experience.
+
+1. **Download** `ZenLavaTerm-v<VERSION>-windows-x86_64.msi` from [GitHub Releases](https://github.com/githubuser2777/ZenLavaTerm/releases).
+2. **Run the installer**: Double-click the `.msi` file and follow the setup wizard.
+3. **Features**:
+   - Installs `lavaterm.exe` to `Program Files\ZenLavaTerm`.
+   - Adds the installation directory to system `PATH` for immediate use from Windows Terminal, PowerShell, or Command Prompt.
+   - Registers standard Add/Remove Programs entry for clean uninstallation.
+4. **Launch**: Open Windows Terminal or PowerShell and run:
+   ```powershell
+   lavaterm
+   ```
+
+---
+
+### macOS
+
+#### Apple Disk Image (`.dmg`)
+
+The `.dmg` contains a universal application bundle supporting both Apple Silicon (M1/M2/M3/M4) and Intel Macs.
+
+1. **Download** `ZenLavaTerm-v<VERSION>-macos-universal.dmg` from [GitHub Releases](https://github.com/githubuser2777/ZenLavaTerm/releases).
+2. **Mount the disk image**: Double-click the `.dmg` file.
+3. **Install**: Drag the **ZenLavaTerm** application icon into the **Applications** folder shortcut.
+4. **Launch**: Run `ZenLavaTerm` from Applications or execute the binary directly from your terminal:
+   ```bash
+   /Applications/ZenLavaTerm.app/Contents/MacOS/lavaterm
+   ```
+
+> **Note on Signing & Notarization:** Official macOS builds are currently unsigned community binaries. On macOS Ventura/Sonoma/Sequoia, if Gatekeeper warns about an unidentified developer, open **System Settings → Privacy & Security** and click **Open Anyway**, or run `xattr -cr /Applications/ZenLavaTerm.app`.
+
+---
+
+## 3. Build From Source
+
+Users who prefer building locally or are using other distributions (such as Arch Linux, Fedora, NixOS, Alpine) can build directly with Cargo:
+
+### Using Cargo (Recommended for Rust Users)
 
 ```bash
 cargo install --locked --git https://github.com/githubuser2777/ZenLavaTerm.git
 ```
 
+### Manual Compilation from Git Clone
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/githubuser2777/ZenLavaTerm.git
+cd ZenLavaTerm
+
+# 2. Build optimized release binary
+cargo build --release
+
+# 3. Binary location
+./target/release/lavaterm
+```
+
+### Arch Linux (AUR / PKGBUILD)
+
+Arch Linux users can build using `makepkg` or an AUR helper:
+
+```bash
+# Clone repository and build via PKGBUILD
+cd packaging/arch
+makepkg -si
+```
+
 ---
 
-## 4. Package Maintenance & AUR Release Checklist
+## 4. Maintainer Release Process
 
-When cutting a new release:
-1. Bump `version = "x.y.z"` in `Cargo.toml`.
-2. Update `pkgver=x.y.z` in `packaging/arch/PKGBUILD` and `packaging/arch/PKGBUILD.bin`.
-3. Regenerate `.SRCINFO`:
+The ZenLavaTerm CI/CD architecture follows a strict three-tier lifecycle:
+1. **Tier 1: Pull Request CI (`.github/workflows/ci.yml`)**: Fast developer validation (fmt, clippy, unit/integration test suites, headless smoke runs, and cross-platform compilation).
+2. **Tier 2: Packaging Validation (`.github/workflows/package.yml`)**: Release Candidate testing triggered manually via `workflow_dispatch` or `v*-rc*` tags. Builds and validates all 4 official desktop installers without publishing a public release.
+3. **Tier 3: Production Release (`.github/workflows/release.yml`)**: Triggered strictly on production `vX.Y.Z` release tags to build installers, generate checksum manifests and SLSA provenance attestations, and publish the GitHub Release.
+
+### Cutting a New Release:
+
+1. **Update Version**:
+   Update `version = "X.Y.Z"` in `Cargo.toml` and document changes in `CHANGELOG.md`.
+
+2. **Validate Locally**:
    ```bash
-   cd packaging/arch && makepkg --printsrcinfo > .SRCINFO
+   cargo fmt --check
+   cargo clippy --all-targets --all-features -- -D warnings
+   cargo test
+   cargo build --release
    ```
-4. Push tag `v*` to GitHub to trigger `.github/workflows/release.yml`.
+
+3. **Optional: Validate Packaging via Release Candidate Tag**:
+   ```bash
+   git tag -a "vX.Y.Z-rc.1" -m "Release Candidate vX.Y.Z-rc.1"
+   git push origin vX.Y.Z-rc.1
+   ```
+   Or trigger the `Packaging Validation` workflow manually in GitHub Actions (`workflow_dispatch`).
+
+4. **Publish Production Tag**:
+   ```bash
+   git commit -am "chore(release): bump version to vX.Y.Z"
+   git tag -a "vX.Y.Z" -m "Release vX.Y.Z"
+   git push origin main --tags
+   ```
+
+5. **Automated Release Pipeline Execution**:
+   The `.github/workflows/release.yml` workflow triggers on `vX.Y.Z`:
+   - Validates that the git tag strictly matches the `Cargo.toml` package version.
+   - Builds native Linux x86_64 release binary and packages `.AppImage` and `.deb`.
+   - Builds Windows x86_64 release binary and packages `.msi` via WiX.
+   - Builds macOS Apple Silicon and Intel targets, merges them into a universal binary, and packages `.dmg`.
+   - Generates independent builder checksums and consolidated `SHA256SUMS.txt`.
+   - Generates SLSA build provenance attestations.
+   - Creates GitHub Release and publishes all 4 verified installer assets.

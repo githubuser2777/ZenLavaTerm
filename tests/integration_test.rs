@@ -147,7 +147,7 @@ fn test_theme_engine_integration() {
 
     // 2. Test custom temporary JSON theme file
     let temp_dir = std::env::temp_dir();
-    let json_theme_path = temp_dir.join("lavaterm_test_theme.json");
+    let json_theme_path = temp_dir.join(format!("lavaterm_test_theme_{}.json", std::process::id()));
     let json_content = r##"{
         "bottom": "#00ffcc",
         "middle": "#0077ff",
@@ -400,4 +400,190 @@ fn test_phase10_stress_and_rapid_interaction() {
         assert!(blob.temperature.is_finite() && blob.temperature >= 0.0 && blob.temperature <= 1.0);
         assert!(blob.radius.is_finite() && blob.radius > 0.0);
     }
+}
+
+#[test]
+fn test_phase11_cross_platform_system_provider_contract() {
+    use lavaterm::reactive::default_system_provider;
+
+    let mut provider = default_system_provider();
+    let signals1 = provider.poll_signals();
+
+    assert!(
+        signals1.cpu_load.is_finite() && signals1.cpu_load >= 0.0 && signals1.cpu_load <= 1.0,
+        "CPU load must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals1.memory_usage.is_finite()
+            && signals1.memory_usage >= 0.0
+            && signals1.memory_usage <= 1.0,
+        "Memory usage must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals1.battery_level.is_finite()
+            && signals1.battery_level >= 0.0
+            && signals1.battery_level <= 1.0,
+        "Battery level must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals1.io_activity.is_finite()
+            && signals1.io_activity >= 0.0
+            && signals1.io_activity <= 1.0,
+        "IO activity must be normalized within [0.0, 1.0]"
+    );
+
+    // Second poll to exercise delta tick calculations (CPU & I/O)
+    let signals2 = provider.poll_signals();
+    assert!(
+        signals2.cpu_load.is_finite() && signals2.cpu_load >= 0.0 && signals2.cpu_load <= 1.0,
+        "Second poll CPU load must remain normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals2.io_activity.is_finite()
+            && signals2.io_activity >= 0.0
+            && signals2.io_activity <= 1.0,
+        "Second poll IO activity must remain normalized within [0.0, 1.0]"
+    );
+}
+
+#[test]
+fn test_phase11_cross_platform_theme_paths_discovery() {
+    use lavaterm::theme::pywal::default_pywal_paths;
+    use lavaterm::theme::wallust::default_wallust_paths;
+
+    let pywal_candidates = default_pywal_paths();
+    let wallust_candidates = default_wallust_paths();
+
+    // Verify candidate lists contain valid non-empty path buffers
+    for p in pywal_candidates {
+        assert!(!p.as_os_str().is_empty());
+    }
+    for p in wallust_candidates {
+        assert!(!p.as_os_str().is_empty());
+    }
+}
+
+#[test]
+fn test_phase11_cross_platform_audio_provider_contract() {
+    use lavaterm::audio::default_audio_provider;
+
+    let mut provider = default_audio_provider();
+    let signals = provider.poll_signals();
+
+    assert!(
+        signals.bass.is_finite() && signals.bass >= 0.0 && signals.bass <= 1.0,
+        "Bass signal must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals.mid.is_finite() && signals.mid >= 0.0 && signals.mid <= 1.0,
+        "Mid signal must be normalized within [0.0, 1.0]"
+    );
+    assert!(
+        signals.treble.is_finite() && signals.treble >= 0.0 && signals.treble <= 1.0,
+        "Treble signal must be normalized within [0.0, 1.0]"
+    );
+}
+
+#[test]
+fn test_phase11_cross_platform_headless_execution() {
+    use lavaterm::config::Config;
+    use lavaterm::core::{PhysicsParams, Simulation};
+    use lavaterm::reactive::default_system_provider;
+    use lavaterm::render::{rasterize_simulation, ColorPalette, VirtualFramebuffer};
+
+    let config = Config::default();
+    let physics = PhysicsParams::default();
+    let mut sim = Simulation::new(physics, config.simulation.blobs, 42);
+    let palette = ColorPalette::from(config.palette);
+    let mut fb = VirtualFramebuffer::new(60, 30, palette.background);
+    let mut provider = default_system_provider();
+
+    let dt = 1.0 / 30.0;
+    for _ in 0..30 {
+        let signals = provider.poll_signals();
+        sim.step_reactive(dt, &signals);
+        rasterize_simulation(&sim, &mut fb, &palette, config.simulation.threshold);
+    }
+
+    assert!(sim.elapsed_time > 0.9);
+    for blob in &sim.blobs {
+        assert!(blob.x.is_finite());
+        assert!(blob.y.is_finite());
+    }
+}
+
+#[test]
+fn test_phase11_signal_shutdown_lifecycle_transition() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+
+    let shutdown_flag = Arc::new(AtomicBool::new(false));
+    let flag_clone = Arc::clone(&shutdown_flag);
+
+    let mut loop_iterations = 0;
+    // Simulate event loop checking shutdown_flag
+    while !flag_clone.load(Ordering::SeqCst) {
+        loop_iterations += 1;
+        if loop_iterations == 5 {
+            // Signal arrives
+            shutdown_flag.store(true, Ordering::SeqCst);
+        }
+        if loop_iterations > 100 {
+            panic!("Shutdown flag failed to terminate loop");
+        }
+    }
+
+    assert_eq!(loop_iterations, 5);
+    assert!(shutdown_flag.load(Ordering::SeqCst));
+}
+
+#[test]
+fn test_phase11_linux_provider_delta_transition() {
+    use lavaterm::reactive::linux::LinuxSystemProvider;
+    use lavaterm::reactive::provider::SystemProvider;
+    use std::fs;
+
+    let temp_dir = std::env::temp_dir();
+    let test_prefix = format!("lavaterm_delta_test_{}", std::process::id());
+    let stat_file = temp_dir.join(format!("{}_stat", test_prefix));
+    let mem_file = temp_dir.join(format!("{}_mem", test_prefix));
+    let bat_dir = temp_dir.join(format!("{}_bat", test_prefix));
+    let disk_file = temp_dir.join(format!("{}_disk", test_prefix));
+
+    let _ = fs::create_dir_all(&bat_dir);
+    let _ = fs::write(&stat_file, "cpu  1000 200 300 8000 100 0 0 0 0 0\n");
+    let _ = fs::write(
+        &mem_file,
+        "MemTotal:       16000000 kB\nMemAvailable:    8000000 kB\n",
+    );
+    let _ = fs::write(&disk_file, "   8       0 sda 100 0 2000 50 0 0 0 0 0 0 0\n");
+
+    let mut provider =
+        LinuxSystemProvider::new_with_paths(&stat_file, &mem_file, &bat_dir, &disk_file);
+
+    // Initial baseline poll
+    let s1 = provider.poll_signals();
+    assert_eq!(s1.cpu_load, 0.15); // Fallback on first sample before delta
+    assert_eq!(s1.memory_usage, 0.50);
+
+    // Second poll with higher CPU & disk activity
+    let _ = fs::write(&stat_file, "cpu  1500 200 300 8500 100 0 0 0 0 0\n"); // 500 active delta, 1000 total delta -> 50%
+    let _ = fs::write(
+        &disk_file,
+        "   8       0 sda 200 0 4000 100 0 0 0 0 0 0 0\n",
+    ); // 2000 sector delta
+    let s2 = provider.poll_signals();
+
+    assert!(
+        (s2.cpu_load - 0.50).abs() < 0.05,
+        "CPU load delta should calculate ~0.50, got {}",
+        s2.cpu_load
+    );
+    assert!(s2.io_activity > 0.0, "IO activity delta should be non-zero");
+
+    // Cleanup
+    let _ = fs::remove_file(&stat_file);
+    let _ = fs::remove_file(&mem_file);
+    let _ = fs::remove_file(&disk_file);
+    let _ = fs::remove_dir_all(&bat_dir);
 }
