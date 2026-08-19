@@ -917,8 +917,11 @@ Every release asset is accompanied by individual `.sha256` checksum files, a con
 #### Verifying Release Integrity:
 
 ```bash
-# Linux / macOS (verify single asset)
+# Linux (verify single asset)
 sha256sum -c ZenLavaTerm-v0.11.0-linux-x86_64.AppImage.sha256
+
+# macOS (verify single asset using native shasum)
+shasum -a 256 -c ZenLavaTerm-v0.11.0-macos-universal.dmg.sha256
 
 # Linux (verify all assets via consolidated checksum file)
 sha256sum -c SHA256SUMS.txt --ignore-missing

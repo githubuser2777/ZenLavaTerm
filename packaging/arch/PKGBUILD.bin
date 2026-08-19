@@ -15,7 +15,10 @@ source=("$pkgname-$pkgver.deb::$url/releases/download/v$pkgver/ZenLavaTerm-v$pkg
 sha256sums=('SKIP')
 
 package() {
-  # Extract data archive from deb
-  bsdtar -xf "$srcdir/$pkgname-$pkgver.deb" data.tar.gz
-  bsdtar -xf data.tar.gz -C "$pkgdir/"
+  # Extract data archive from deb (handles data.tar.gz, data.tar.xz, data.tar.zst)
+  bsdtar -xf "$srcdir/$pkgname-$pkgver.deb"
+  local data_archive=(data.tar.*)
+  if [[ -f "${data_archive[0]}" ]]; then
+    bsdtar -xf "${data_archive[0]}" -C "$pkgdir/"
+  fi
 }

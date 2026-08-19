@@ -143,7 +143,7 @@ fn setup_signal_handler(term_flag: Arc<AtomicBool>) {
 fn setup_signal_handler(term_flag: Arc<AtomicBool>) {
     use std::sync::OnceLock;
     static GLOBAL_TERM_FLAG: OnceLock<Arc<AtomicBool>> = OnceLock::new();
-    let _ = GLOBAL_TERM_FLAG.set(term_flag);
+    let _ = GLOBAL_TERM_FLAG.get_or_init(|| term_flag);
 
     unsafe extern "system" fn ctrl_handler(_ctrl_type: u32) -> i32 {
         if let Some(flag) = GLOBAL_TERM_FLAG.get() {
@@ -160,7 +160,10 @@ fn setup_signal_handler(term_flag: Arc<AtomicBool>) {
     }
 
     unsafe {
-        SetConsoleCtrlHandler(Some(ctrl_handler), 1);
+        let ret = SetConsoleCtrlHandler(Some(ctrl_handler), 1);
+        if ret == 0 {
+            eprintln!("Warning: Failed to register Windows console control handler");
+        }
     }
 }
 
