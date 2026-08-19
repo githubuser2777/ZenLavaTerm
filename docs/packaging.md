@@ -132,7 +132,12 @@ makepkg -si
 
 ## 4. Maintainer Release Process
 
-To cut a new official release:
+The ZenLavaTerm CI/CD architecture follows a strict three-tier lifecycle:
+1. **Tier 1: Pull Request CI (`.github/workflows/ci.yml`)**: Fast developer validation (fmt, clippy, unit/integration test suites, headless smoke runs, and cross-platform compilation).
+2. **Tier 2: Packaging Validation (`.github/workflows/package.yml`)**: Release Candidate testing triggered manually via `workflow_dispatch` or `v*-rc*` tags. Builds and validates all 4 official desktop installers without publishing a public release.
+3. **Tier 3: Production Release (`.github/workflows/release.yml`)**: Triggered strictly on production `vX.Y.Z` release tags to build installers, generate checksum manifests and SLSA provenance attestations, and publish the GitHub Release.
+
+### Cutting a New Release:
 
 1. **Update Version**:
    Update `version = "X.Y.Z"` in `Cargo.toml` and document changes in `CHANGELOG.md`.
@@ -145,19 +150,26 @@ To cut a new official release:
    cargo build --release
    ```
 
-3. **Commit & Tag**:
+3. **Optional: Validate Packaging via Release Candidate Tag**:
+   ```bash
+   git tag -a "vX.Y.Z-rc.1" -m "Release Candidate vX.Y.Z-rc.1"
+   git push origin vX.Y.Z-rc.1
+   ```
+   Or trigger the `Packaging Validation` workflow manually in GitHub Actions (`workflow_dispatch`).
+
+4. **Publish Production Tag**:
    ```bash
    git commit -am "chore(release): bump version to vX.Y.Z"
    git tag -a "vX.Y.Z" -m "Release vX.Y.Z"
    git push origin main --tags
    ```
 
-4. **Automated CI/CD Release Pipeline**:
-   The `.github/workflows/release.yml` workflow triggers on `v*` tags:
-   - Validates that the git tag strictly matches the `Cargo.toml` version.
+5. **Automated Release Pipeline Execution**:
+   The `.github/workflows/release.yml` workflow triggers on `vX.Y.Z`:
+   - Validates that the git tag strictly matches the `Cargo.toml` package version.
    - Builds native Linux x86_64 release binary and packages `.AppImage` and `.deb`.
    - Builds Windows x86_64 release binary and packages `.msi` via WiX.
    - Builds macOS Apple Silicon and Intel targets, merges them into a universal binary, and packages `.dmg`.
-   - Generates independent and consolidated `SHA256SUMS.txt`.
+   - Generates independent builder checksums and consolidated `SHA256SUMS.txt`.
    - Generates SLSA build provenance attestations.
-   - Creates GitHub Release and publishes all verified assets.
+   - Creates GitHub Release and publishes all 4 verified installer assets.
