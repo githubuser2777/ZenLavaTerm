@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ZenLavaTerm
+Exec=lavaterm
+Icon=zenlavaterm
+Comment=A high-performance, terminal-native ambient lava lamp and metaball visualizer
+Terminal=true
+Categories=Utility;Graphics;ConsoleOnly;
+Keywords=terminal;lava-lamp;metaball;visualizer;ambient;

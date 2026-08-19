@@ -45,55 +45,10 @@ jobs:
           echo "version=${CARGO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG_NAME}" >> "$GITHUB_OUTPUT"
 
-  build-binary-artifacts:
-    name: Build & Package (${{ matrix.target }})
+  package-linux:
+    name: Package Linux (AppImage & DEB x86_64)
     needs: verify-tag
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Linux GNU & musl (x86_64, aarch64)
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            artifact_name: lavaterm
-            use_cross: false
-            archive_type: tar.gz
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            artifact_name: lavaterm
-            use_cross: true
-            archive_type: tar.gz
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-            artifact_name: lavaterm
-            use_cross: false
-            archive_type: tar.gz
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
-            artifact_name: lavaterm
-            use_cross: true
-            archive_type: tar.gz
-
-          # macOS (Apple Silicon)
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            artifact_name: lavaterm
-            use_cross: false
-            archive_type: tar.gz
-
-          # Windows (x86_64 & aarch64)
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            artifact_name: lavaterm.exe
-            use_cross: false
-            archive_type: zip
-          - target: aarch64-pc-windows-msvc
-            os: windows-latest
-            artifact_name: lavaterm.exe
-            use_cross: false
-            archive_type: zip
-
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -101,107 +56,142 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
         with:
-          targets: ${{ matrix.target }}
+          targets: x86_64-unknown-linux-gnu
 
-      - name: Install musl-tools (if x86_64 musl on Ubuntu)
-        if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
-
-      - name: Install cross (if required)
-        if: matrix.use_cross
-        uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532 # v2
-        with:
-          tool: cross
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
 
       - name: Build release binary
-        run: |
-          if [ "${{ matrix.use_cross }}" = "true" ]; then
-            cross build --release --target ${{ matrix.target }} --verbose
-          else
-            cargo build --release --target ${{ matrix.target }} --verbose
-          fi
-        shell: bash
+        run: cargo build --release --target x86_64-unknown-linux-gnu --verbose
 
-      - name: Package artifacts (Unix tar.gz)
-        if: matrix.archive_type == 'tar.gz'
+      - name: Build Linux packages (.AppImage & .deb)
         env:
           VERSION: ${{ needs.verify-tag.outputs.version }}
-          TARGET: ${{ matrix.target }}
-          BIN_NAME: ${{ matrix.artifact_name }}
         run: |
-          ASSET_NAME="lavaterm-v${VERSION}-${TARGET}"
-          STAGING="staging/${ASSET_NAME}"
-          mkdir -p "$STAGING"
-          cp "target/${TARGET}/release/${BIN_NAME}" "$STAGING/"
-          cp README.md LICENSE CHANGELOG.md "$STAGING/"
-          tar -czf "${ASSET_NAME}.tar.gz" -C staging "${ASSET_NAME}"
-          shasum -a 256 "${ASSET_NAME}.tar.gz" > "${ASSET_NAME}.tar.gz.sha256"
-        shell: bash
+          ./scripts/package_linux.sh target/x86_64-unknown-linux-gnu/release/lavaterm dist
 
-      - name: Package artifacts (Windows zip)
-        if: matrix.archive_type == 'zip'
+      - name: Validate Linux packages & generate checksums
+        working-directory: dist
         env:
           VERSION: ${{ needs.verify-tag.outputs.version }}
-          TARGET: ${{ matrix.target }}
-          BIN_NAME: ${{ matrix.artifact_name }}
         run: |
-          $AssetName = "lavaterm-v$env:VERSION-$env:TARGET"
-          $Staging = "staging/$AssetName"
-          New-Item -ItemType Directory -Force -Path $Staging
-          Copy-Item "target/$env:TARGET/release/$env:BIN_NAME" -Destination $Staging
-          Copy-Item "README.md", "LICENSE", "CHANGELOG.md" -Destination $Staging
-          Compress-Archive -Path $Staging -DestinationPath "$AssetName.zip"
-          $hash = (Get-FileHash -Algorithm SHA256 "$AssetName.zip").Hash.ToLower()
-          "$hash  $AssetName.zip" | Out-File -Encoding ascii "$AssetName.zip.sha256"
+          APPIMAGE="ZenLavaTerm-v${VERSION}-linux-x86_64.AppImage"
+          DEB="ZenLavaTerm-v${VERSION}-linux-x86_64.deb"
 
-      - name: Upload artifact bundle
+          test -s "$APPIMAGE" || { echo "::error::AppImage is missing or empty"; exit 1; }
+          test -x "$APPIMAGE" || { echo "::error::AppImage is not executable"; exit 1; }
+          test -s "$DEB" || { echo "::error::DEB package is missing or empty"; exit 1; }
+
+          dpkg-deb -I "$DEB"
+          dpkg-deb -c "$DEB"
+
+          sha256sum "$APPIMAGE" > "${APPIMAGE}.sha256"
+          sha256sum "$DEB" > "${DEB}.sha256"
+
+      - name: Upload Linux artifact bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: package-${{ matrix.target }}
+          name: package-linux
           path: |
-            lavaterm-v${{ needs.verify-tag.outputs.version }}-${{ matrix.target }}.${{ matrix.archive_type }}
-            lavaterm-v${{ needs.verify-tag.outputs.version }}-${{ matrix.target }}.${{ matrix.archive_type }}.sha256
+            dist/ZenLavaTerm-v${{ needs.verify-tag.outputs.version }}-linux-x86_64.AppImage
+            dist/ZenLavaTerm-v${{ needs.verify-tag.outputs.version }}-linux-x86_64.AppImage.sha256
+            dist/ZenLavaTerm-v${{ needs.verify-tag.outputs.version }}-linux-x86_64.deb
+            dist/ZenLavaTerm-v${{ needs.verify-tag.outputs.version }}-linux-x86_64.deb.sha256
           if-no-files-found: error
           retention-days: 7
 
-  build-archlinux-package:
-    name: Build & Package (Arch Linux x86_64)
+  package-windows:
+    name: Package Windows (MSI x86_64)
     needs: verify-tag
-    runs-on: ubuntu-latest
-    container:
-      image: archlinux:base-devel
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Install dependencies
-        run: |
-          pacman -Syu --noconfirm git rust cargo zstd binutils
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+        with:
+          targets: x86_64-pc-windows-msvc
 
-      - name: Configure build environment
-        run: |
-          git config --global --add safe.directory '*' || true
-          useradd -m -s /bin/bash builduser || true
-          su builduser -c "git config --global --add safe.directory '*'" || true
-          chown -R builduser:builduser "$PWD"
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
 
-      - name: Build Arch Linux package with makepkg
-        run: |
-          su builduser -c "export GIT_DISCOVERY_ACROSS_FILESYSTEM=1 && ./scripts/package_arch.sh"
-        working-directory: .
+      - name: Build release binary
+        run: cargo build --release --target x86_64-pc-windows-msvc --verbose
 
-      - name: Prepare release assets
+      - name: Build Windows MSI Package
         run: |
-          cp target/arch_pkg/lavaterm-*.pkg.tar.zst* .
-          ls -la lavaterm-*.pkg.tar.zst*
+          powershell -ExecutionPolicy Bypass -File scripts/package_windows.ps1 -SourceBinaryDir "target\x86_64-pc-windows-msvc\release" -OutputDir "dist"
 
-      - name: Upload Arch Linux artifact bundle
+      - name: Validate Windows MSI & generate checksum
+        shell: bash
+        working-directory: dist
+        env:
+          VERSION: ${{ needs.verify-tag.outputs.version }}
+        run: |
+          MSI="ZenLavaTerm-v${VERSION}-windows-x86_64.msi"
+          test -s "$MSI" || { echo "::error::MSI installer is missing or empty"; exit 1; }
+          sha256sum "$MSI" > "${MSI}.sha256"
+
+      - name: Upload Windows artifact bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: package-archlinux
+          name: package-windows
           path: |
-            lavaterm-*.pkg.tar.zst
-            lavaterm-*.pkg.tar.zst.sha256
+            dist/ZenLavaTerm-v${{ needs.verify-tag.outputs.version }}-windows-x86_64.msi
+            dist/ZenLavaTerm-v${{ needs.verify-tag.outputs.version }}-windows-x86_64.msi.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  package-macos:
+    name: Package macOS (Universal DMG)
+    needs: verify-tag
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Rust toolchain & targets
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+
+      - name: Build release binaries (Apple Silicon & Intel)
+        run: |
+          cargo build --release --target aarch64-apple-darwin --verbose
+          cargo build --release --target x86_64-apple-darwin --verbose
+
+      - name: Create Universal Binary
+        run: |
+          mkdir -p target/universal/release
+          lipo -create -output target/universal/release/lavaterm \
+            target/aarch64-apple-darwin/release/lavaterm \
+            target/x86_64-apple-darwin/release/lavaterm
+          lipo -info target/universal/release/lavaterm
+
+      - name: Build macOS DMG package
+        run: |
+          ./scripts/package_macos.sh universal target/universal/release/lavaterm dist
+
+      - name: Validate macOS DMG & generate checksum
+        working-directory: dist
+        env:
+          VERSION: ${{ needs.verify-tag.outputs.version }}
+        run: |
+          DMG="ZenLavaTerm-v${VERSION}-macos-universal.dmg"
+          test -s "$DMG" || { echo "::error::DMG image is missing or empty"; exit 1; }
+          shasum -a 256 "$DMG" > "${DMG}.sha256"
+
+      - name: Upload macOS artifact bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: package-macos
+          path: |
+            dist/ZenLavaTerm-v${{ needs.verify-tag.outputs.version }}-macos-universal.dmg
+            dist/ZenLavaTerm-v${{ needs.verify-tag.outputs.version }}-macos-universal.dmg.sha256
           if-no-files-found: error
           retention-days: 7
 
@@ -209,8 +199,9 @@ jobs:
     name: Publish GitHub Release
     needs:
       - verify-tag
-      - build-binary-artifacts
-      - build-archlinux-package
+      - package-linux
+      - package-windows
+      - package-macos
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -232,8 +223,8 @@ jobs:
           echo "=== Downloaded Release Assets ==="
           ls -la
 
-          # 1. Independent Integrity Verification: Verify downloaded archives against builder-generated .sha256 files
-          echo "=== Verifying downloaded archives against individual builder checksums ==="
+          # 1. Independent Integrity Verification
+          echo "=== Verifying downloaded installers against builder checksums ==="
           for sha_file in *.sha256; do
             echo "Verifying $sha_file..."
             sha256sum -c "$sha_file"
@@ -253,22 +244,21 @@ jobs:
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-path: |
-            dist/*.tar.gz
-            dist/*.zip
-            dist/*.pkg.tar.zst
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.msi
+            dist/*.dmg
 
       - name: Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ needs.verify-tag.outputs.tag }}
-          name: LavaTerm ${{ needs.verify-tag.outputs.tag }}
+          name: ZenLavaTerm ${{ needs.verify-tag.outputs.tag }}
           files: |
-            dist/*.tar.gz
-            dist/*.tar.gz.sha256
-            dist/*.zip
-            dist/*.zip.sha256
-            dist/*.pkg.tar.zst
-            dist/*.pkg.tar.zst.sha256
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.msi
+            dist/*.dmg
             dist/SHA256SUMS.txt
           draft: false
           prerelease: false

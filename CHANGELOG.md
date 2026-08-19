@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Native Windows console control signal handler (`setup_signal_handler` with `SetConsoleCtrlHandler`) catching `CTRL_C_EVENT` and `CTRL_CLOSE_EVENT` to cleanly disable raw mode, restore alternate screen, and show the cursor before exit.
 - Cross-platform configuration path discovery (`src/config/mod.rs`) supporting standard XDG (`$XDG_CONFIG_HOME`), Windows `%APPDATA%\lavaterm\config.toml`, Windows `%USERPROFILE%`, macOS `$HOME/Library/Application Support/lavaterm/config.toml`, and Unix `~/.config/lavaterm/config.toml`.
 - Cross-platform desktop theme cache discovery in Pywal and Wallust supporting `LOCALAPPDATA`, `APPDATA`, `USERPROFILE`, `XDG_CACHE_HOME`, and `HOME`.
-- Expanded GitHub Actions Release pipeline matrix with `aarch64-unknown-linux-gnu` alongside `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-pc-windows-msvc`, and Arch Linux `.pkg.tar.zst`.
+- Official desktop release packaging pipeline producing native installers: Linux AppImage (`x86_64`), Linux DEB (`x86_64`), Windows MSI (`x86_64`), and macOS Universal DMG (`arm64` + `x86_64`) with automated SHA-256 manifest and SLSA build provenance attestations.
 - Comprehensive cross-platform unit and integration test suite covering system provider contracts, audio provider contracts, headless execution across platforms, and configuration discovery across all OS path layouts.
 
 ## [0.11.0] - 2026-08-17 — Phase 10: Interactive Physics & Input Mode

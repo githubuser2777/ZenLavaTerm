@@ -19,8 +19,8 @@
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
 - [Installation & Quick Start](#installation--quick-start)
-  - [Quick Start (Recommended)](#quick-start-recommended)
-  - [Direct Git Installation](#direct-git-installation)
+  - [Desktop Installers (Recommended)](#desktop-installers-recommended)
+  - [Build from Source via Cargo](#build-from-source-via-cargo)
 - [Usage](#usage)
   - [Standard Mode](#standard-mode)
   - [Running with Aesthetic Themes](#running-with-aesthetic-themes)
@@ -55,10 +55,9 @@
   - [Running Tests](#running-tests)
   - [Running Performance Benchmarks](#running-performance-benchmarks)
   - [Running Standalone Examples](#running-standalone-examples)
-- [Cross-Platform Building & Distribution](#cross-platform-building--distribution)
-  - [Target Matrix](#target-matrix)
-  - [Building Static Linux Binaries (musl)](#building-static-linux-binaries-musl)
-  - [GitHub Actions Release Pipeline](#github-actions-release-pipeline)
+- [Cross-Platform Packaging & Distribution](#cross-platform-packaging--distribution)
+  - [Official Desktop Release Matrix](#official-desktop-release-matrix)
+  - [Release Verification & Integrity](#release-verification--integrity)
 - [Troubleshooting](#troubleshooting)
   - [Colors Appear Washed Out or Broken](#colors-appear-washed-out-or-broken)
   - [Terminal Cursor Disappears or Garbled Output on Exit](#terminal-cursor-disappears-or-garbled-output-on-exit)
@@ -124,31 +123,35 @@ Before building or running LavaTerm, ensure your environment meets the following
 
 ## Installation & Quick Start
 
-### Quick Start (Recommended)
+### Desktop Installers (Recommended)
 
-Clone the repository and install the `lavaterm` binary directly into your Cargo binary directory:
+Pre-built standalone installers and packages are available on the [GitHub Releases](https://github.com/githubuser2777/ZenLavaTerm/releases) page for each official release:
+
+- **Linux**:
+  - **AppImage (Portable)**: Download `ZenLavaTerm-v<VERSION>-linux-x86_64.AppImage`, run `chmod +x`, and execute directly.
+  - **DEB (Debian/Ubuntu)**: Download `ZenLavaTerm-v<VERSION>-linux-x86_64.deb` and install via `sudo apt install ./ZenLavaTerm-v*-linux-x86_64.deb`.
+- **Windows**:
+  - **MSI Installer**: Download `ZenLavaTerm-v<VERSION>-windows-x86_64.msi` and run the installer to set up `lavaterm` in `Program Files` and register system `PATH`.
+- **macOS**:
+  - **Universal DMG**: Download `ZenLavaTerm-v<VERSION>-macos-universal.dmg`, open the disk image, and drag `ZenLavaTerm` to your Applications folder.
+
+For detailed platform-specific installation steps, see the [Packaging & Installation Guide](docs/packaging.md).
+
+### Build from Source via Cargo
+
+For developers or distributions without pre-compiled binaries:
 
 ```bash
-# 1. Clone the repository
+# Install directly via Cargo
+cargo install --locked --git https://github.com/githubuser2777/ZenLavaTerm.git
+
+# Or build from local clone
 git clone https://github.com/githubuser2777/ZenLavaTerm.git
 cd ZenLavaTerm
-
-# 2. Install the binary globally
 cargo install --path .
-
-# 3. Launch LavaTerm from anywhere
-lavaterm
 ```
 
-> **Note:** `cargo install --path .` compiles the optimized release binary and installs `lavaterm` into your standard Cargo bin directory (`$HOME/.cargo/bin` on Linux/macOS or `%USERPROFILE%\.cargo\bin` on Windows). Once installed, you can launch `lavaterm` directly from any terminal prompt without using `cargo` each time.
-
-### Direct Git Installation
-
-You can also install `lavaterm` in a single command without manually cloning:
-
-```bash
-cargo install --locked --git https://github.com/githubuser2777/ZenLavaTerm.git
-```
+> **Note:** `cargo install` compiles the release binary and installs `lavaterm` into `$HOME/.cargo/bin` (Linux/macOS) or `%USERPROFILE%\.cargo\bin` (Windows). Ensure this directory is in your `PATH`.
 
 ---
 
@@ -892,56 +895,36 @@ cargo run --example minimal_sim
 
 ---
 
-## Cross-Platform Building & Distribution
+## Cross-Platform Packaging & Distribution
 
-### Target Matrix & Validation Levels
+### Official Desktop Release Matrix
 
-LavaTerm distinguishes between **Native Runtime Testing** (unit/integration test suite, benchmarks, and headless CLI smoke-run executed natively on the runner) and **Cross-Compilation Build Validation** (full release binary compilation, static/dynamic linking, and packaging checks):
+ZenLavaTerm provides official, minimal desktop installers and packages built automatically via GitHub Actions:
 
-| Platform | Target Triple | Binary Name | Release Archive | Build Mode | Validation Level |
-|---|---|---|---|---|---|
-| **Linux (glibc x86_64)** | `x86_64-unknown-linux-gnu` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-gnu.tar.gz` | Native (Ubuntu) | **Level 1**: Native Unit & Headless Tests |
-| **Linux (glibc aarch64)** | `aarch64-unknown-linux-gnu` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-gnu.tar.gz` | Cross (`cross`) | **Level 2**: Cross Release Build & Linking |
-| **Linux (musl x86_64)** | `x86_64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-x86_64-unknown-linux-musl.tar.gz` | Static (`musl-tools`) | **Level 2**: Static Release Build & Linking |
-| **Linux (musl aarch64)** | `aarch64-unknown-linux-musl` | `lavaterm` | `lavaterm-v<VER>-aarch64-unknown-linux-musl.tar.gz` | Cross (`cross`) | **Level 2**: Cross Release Build & Linking |
-| **macOS (Apple Silicon)** | `aarch64-apple-darwin` | `lavaterm` | `lavaterm-v<VER>-aarch64-apple-darwin.tar.gz` | Native (`macos-latest`) | **Level 1**: Native Unit & Headless Tests |
-| **Windows (MSVC x86_64)** | `x86_64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-x86_64-pc-windows-msvc.zip` | Native (Windows) | **Level 1**: Native Unit & Headless Tests |
-| **Windows (MSVC aarch64)** | `aarch64-pc-windows-msvc` | `lavaterm.exe` | `lavaterm-v<VER>-aarch64-pc-windows-msvc.zip` | Cross (MSVC ARM64) | **Level 2**: Cross Release Build & Linking |
-| **Arch Linux (Native pkg)** | `x86_64` | `lavaterm` | `lavaterm-<VER>-1-x86_64.pkg.tar.zst` | Container (`archlinux`) | **Level 1**: Container Package & makepkg |
+| Platform | Format | Architecture | Canonical Asset Name | Description |
+|---|---|---|---|---|
+| **Linux** | `.AppImage` | `x86_64` | `ZenLavaTerm-v<VERSION>-linux-x86_64.AppImage` | Standalone portable executable with embedded runtime |
+| **Linux** | `.deb` | `x86_64` (amd64) | `ZenLavaTerm-v<VERSION>-linux-x86_64.deb` | Native Debian/Ubuntu installer package |
+| **Windows** | `.msi` | `x86_64` | `ZenLavaTerm-v<VERSION>-windows-x86_64.msi` | Windows Installer package with PATH registration |
+| **macOS** | `.dmg` | Universal (`arm64` + `x86_64`) | `ZenLavaTerm-v<VERSION>-macos-universal.dmg` | Apple Silicon & Intel Universal Application Bundle |
 
----
-
-### Building Static Linux Binaries (musl)
-
-For a fully static, standalone Linux binary with zero runtime glibc dependencies (works seamlessly on Alpine, Arch, Ubuntu, Debian, Fedora, NixOS, Void):
-
-```bash
-# 1. Install musl target toolchain
-rustup target add x86_64-unknown-linux-musl
-
-# 2. Build static release binary
-cargo build --release --target x86_64-unknown-linux-musl
-```
-
-The resulting binary `target/x86_64-unknown-linux-musl/release/lavaterm` can be distributed as a single standalone executable.
+Every release asset is accompanied by individual `.sha256` checksum files, a consolidated `SHA256SUMS.txt`, and SLSA build provenance attestations.
 
 ---
 
 ### Release Verification & Integrity
 
-Every official release tag (`v*`) triggers an automated build pipeline that compiles all 8 target architectures plus native Arch Linux packages. Each release asset is packaged with `README.md`, `LICENSE`, and `CHANGELOG.md`, accompanied by individual `.sha256` checksum files and a consolidated `SHA256SUMS.txt`.
-
 #### Verifying Release Integrity:
 
 ```bash
 # Linux / macOS (verify single asset)
-shasum -a 256 -c lavaterm-v0.11.0-x86_64-unknown-linux-gnu.tar.gz.sha256
+sha256sum -c ZenLavaTerm-v0.11.0-linux-x86_64.AppImage.sha256
 
 # Linux (verify all assets via consolidated checksum file)
 sha256sum -c SHA256SUMS.txt --ignore-missing
 
 # Windows PowerShell
-Get-FileHash -Algorithm SHA256 lavaterm-v0.11.0-x86_64-pc-windows-msvc.zip
+Get-FileHash -Algorithm SHA256 ZenLavaTerm-v0.11.0-windows-x86_64.msi
 ```
 
 #### Triggering a Release (Maintainers):
@@ -952,7 +935,7 @@ git tag -a v0.11.0 -m "Release v0.11.0"
 git push origin v0.11.0
 ```
 
-The release pipeline automatically enforces tag/version consistency, executes parallel cross-platform builds, generates atomic GitHub Releases, and attaches all verified assets.
+The release pipeline automatically enforces tag/version consistency, executes cross-platform packaging, generates atomic GitHub Releases, and attaches all verified assets.
 
 ---
 
