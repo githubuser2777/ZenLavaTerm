@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — Phase 11: Cross-Platform Expansion
+
+### Added
+- Native Windows system metrics provider (`WindowsSystemProvider` in `src/reactive/windows.rs`) using zero-dependency Win32 APIs: `GetSystemTimes` for CPU tick deltas, `GlobalMemoryStatusEx` for RAM utilization, `GetSystemPowerStatus` for battery and AC line status, and `GetProcessIoCounters` for I/O activity.
+- Native macOS system metrics provider (`MacOSSystemProvider` in `src/reactive/macos.rs`) using Mach kernel subsystem APIs: `host_statistics64` with `HOST_CPU_LOAD_INFO` for CPU load and `HOST_VM_INFO64` for memory pages.
+- Dynamic cross-platform system provider factory (`default_system_provider()`) instantiating the platform-appropriate provider on Linux, Windows, macOS, or `MockSystemProvider` on other platforms with guaranteed graceful degradation.
+- Native Windows console control signal handler (`setup_signal_handler` with `SetConsoleCtrlHandler`) catching `CTRL_C_EVENT` and `CTRL_CLOSE_EVENT` to cleanly disable raw mode, restore alternate screen, and show the cursor before exit.
+- Cross-platform configuration path discovery (`src/config/mod.rs`) supporting standard XDG (`$XDG_CONFIG_HOME`), Windows `%APPDATA%\lavaterm\config.toml`, Windows `%USERPROFILE%`, macOS `$HOME/Library/Application Support/lavaterm/config.toml`, and Unix `~/.config/lavaterm/config.toml`.
+- Cross-platform desktop theme cache discovery in Pywal and Wallust supporting `LOCALAPPDATA`, `APPDATA`, `USERPROFILE`, `XDG_CACHE_HOME`, and `HOME`.
+- Official desktop release packaging pipeline producing native installers: Linux AppImage (`x86_64`), Linux DEB (`x86_64`), Windows MSI (`x86_64`), and macOS Universal DMG (`arm64` + `x86_64`) with automated SHA-256 manifest and SLSA build provenance attestations.
+- Comprehensive cross-platform unit and integration test suite covering system provider contracts, audio provider contracts, headless execution across platforms, and configuration discovery across all OS path layouts.
+
 ## [0.11.0] - 2026-08-17 — Phase 10: Interactive Physics & Input Mode
 
 ### Added
