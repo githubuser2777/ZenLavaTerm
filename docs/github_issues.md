@@ -459,11 +459,108 @@ This document defines the initial set of structured GitHub issues for the LavaTe
 - **Goal**: Implement end-to-end integration tests and update all documentation for v0.11.0.
 - **Context**: Ensures regression-free release and complete developer/user onboarding.
 - **Scope**: `tests/integration_test.rs`, `docs/architecture.md`, `docs/configuration.md`, `docs/roadmap.md`, `README.md`, `CHANGELOG.md`, `Cargo.toml`.
-- **Non-goals**: Windows WASAPI capture (Phase 11).
+- **Non-goals**: Cross-platform system telemetry expansion (Phase 11).
 - **Acceptance Criteria**:
   - End-to-end integration test verifying full interactive event mapping, simulation modulation, and rasterization pipeline.
   - All documentation updated with interactive controls and configuration reference.
   - All quality gates pass (`cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`).
 - **Dependencies**: Issue 30, Issue 31, Issue 32, Issue 33.
+
+---
+
+## Phase 11: Cross-Platform Expansion & Hardening (v0.11.0)
+
+### Issue 35: Native Windows System Metrics Provider
+- **Goal**: Implement zero-dependency native Windows telemetry collector via Win32 kernel APIs.
+- **Context**: Enable ambient hardware telemetry on Windows platforms without pulling in external C libraries or heavy WMI daemons.
+- **Scope**: `src/reactive/windows.rs`.
+- **Non-goals**: Polling Windows registry or WMI COM interfaces.
+- **Acceptance Criteria**:
+  - `WindowsSystemProvider` implements `SystemProvider`.
+  - Reads CPU delta ticks via `GetSystemTimes`.
+  - Reads physical RAM memory pressure via `GlobalMemoryStatusEx`.
+  - Reads battery percentage and AC line state via `GetSystemPowerStatus`.
+  - Reads active process I/O activity via `GetProcessIoCounters`.
+  - Unit tests verifying bounded signals and safe zero-initialization on non-Windows platforms.
+- **Dependencies**: None.
+
+---
+
+### Issue 36: Native macOS System Metrics Provider
+- **Goal**: Implement zero-dependency native macOS telemetry collector using Mach kernel FFI subsystem.
+- **Context**: Enable ambient hardware telemetry on Darwin platforms (Apple Silicon and Intel).
+- **Scope**: `src/reactive/macos.rs`.
+- **Non-goals**: Linking against heavy Cocoa/Objective-C frameworks.
+- **Acceptance Criteria**:
+  - `MacOSSystemProvider` implements `SystemProvider`.
+  - Queries `host_statistics64` with `HOST_CPU_LOAD_INFO` for CPU tick deltas.
+  - Queries `host_statistics64` with `HOST_VM_INFO64` for active vs total memory page pressure.
+  - Unit tests verifying signal bounding and graceful error handling.
+- **Dependencies**: None.
+
+---
+
+### Issue 37: Dynamic Cross-Platform Provider Factory & Graceful Fallback
+- **Goal**: Implement central provider factory dynamically instantiating the host platform's native provider.
+- **Context**: Guarantees that simulation always receives valid telemetry without OS-specific branching in runtime loops.
+- **Scope**: `src/reactive/mod.rs`, `src/reactive/provider.rs`.
+- **Non-goals**: Modifying core simulation physics.
+- **Acceptance Criteria**:
+  - `default_system_provider()` conditionally compiles and returns `LinuxSystemProvider` on Linux, `WindowsSystemProvider` on Windows, `MacOSSystemProvider` on macOS, and `MockSystemProvider` on other/fallback targets.
+  - Unit and integration tests verifying provider contract compliance across all targets.
+- **Dependencies**: Issue 35, Issue 36.
+
+---
+
+### Issue 38: Native Windows Console Signal Handling & Teardown Lifecycle
+- **Goal**: Implement Windows console control signal handling and unify terminal state restoration across operating systems.
+- **Context**: Prevents corrupted terminal states or stranded mouse capture on Windows when exiting via Ctrl+C or closing the terminal window.
+- **Scope**: `src/main.rs`.
+- **Non-goals**: Writing custom Windows console rendering backends.
+- **Acceptance Criteria**:
+  - Registers `SetConsoleCtrlHandler` on Windows catching `CTRL_C_EVENT` and `CTRL_CLOSE_EVENT`.
+  - Paired with Unix `signal-hook` for unified cross-platform clean shutdown.
+  - Panic hook dynamically checks execution mode to avoid improper `LeaveAlternateScreen` calls during inline mode.
+- **Dependencies**: Issue 37.
+
+---
+
+### Issue 39: Cross-Platform Configuration & Theme Cache Path Discovery
+- **Goal**: Implement multi-platform configuration and desktop theme cache path discovery.
+- **Context**: Follow platform conventions on Linux (XDG), macOS (`~/Library/Application Support`), and Windows (`%APPDATA%`, `%USERPROFILE%`).
+- **Scope**: `src/config/mod.rs`, `src/theme/pywal.rs`, `src/theme/wallust.rs`.
+- **Non-goals**: Cloud configuration syncing.
+- **Acceptance Criteria**:
+  - `default_config_path()` discovers configuration files following exact platform precedence.
+  - Pywal and Wallust theme loaders inspect `LOCALAPPDATA`, `APPDATA`, `USERPROFILE`, `XDG_CACHE_HOME`, and `HOME`.
+  - Comprehensive unit tests covering path resolution across mock environment variables for Linux, macOS, and Windows.
+- **Dependencies**: None.
+
+---
+
+### Issue 40: Minimal Official Desktop Release Packaging & Three-Tier CI/CD Architecture
+- **Goal**: Implement production packaging scripts and GitHub Actions workflows for the tier-1 desktop matrix.
+- **Context**: Streamline release distribution to 4 canonical standalone desktop installers.
+- **Scope**: `scripts/`, `wix/`, `packaging/`, `.github/workflows/`.
+- **Non-goals**: Publishing to third-party proprietary app stores.
+- **Acceptance Criteria**:
+  - PR CI (`ci.yml`): Fast developer lint, test, and cross-compilation validation across Linux, macOS, and Windows.
+  - Packaging Validation (`package.yml`): Validates all 4 installers on RC tags or manual trigger.
+  - Production Release (`release.yml`): Builds and publishes Linux AppImage (`x86_64`), Linux DEB (`x86_64`), Windows MSI (`x86_64`), and macOS Universal DMG (`arm64` + `x86_64`) with SHA-256 manifest and SLSA build provenance attestations.
+- **Dependencies**: Issue 38, Issue 39.
+
+---
+
+### Issue 41: Phase 11 Integration Test Suite, Documentation & Release Verification
+- **Goal**: Finalize end-to-end integration tests, verify all quality gates, and synchronize documentation for Phase 11 (v0.11.0).
+- **Context**: Complete Definition of Done and ensure zero documentation drift.
+- **Scope**: `tests/integration_test.rs`, `docs/`, `README.md`, `CHANGELOG.md`.
+- **Non-goals**: Hardware audio device capture (Phase 12).
+- **Acceptance Criteria**:
+  - Cross-platform provider contract integration tests passing.
+  - Headless smoke execution verified across platforms.
+  - All documentation updated and synchronized across all subsystems.
+  - Quality gates pass (`cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`).
+- **Dependencies**: Issue 35, Issue 36, Issue 37, Issue 38, Issue 39, Issue 40.
 
 

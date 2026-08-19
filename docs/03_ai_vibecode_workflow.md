@@ -264,7 +264,22 @@ Không nhất thiết snapshot terminal ngay từ đầu.
 
 ---
 
-# 10. Documentation rules
+# 10. Documentation rules & Synchronization
+
+Quy trình phát triển qua các bước:
+
+```text
+planning
+→ issue creation
+→ implementation
+→ tests
+→ audit
+→ PR
+→ review
+→ documentation synchronization
+→ merge
+→ release
+```
 
 Nếu thay đổi:
 
@@ -274,11 +289,13 @@ config
 CLI
 architecture
 renderer behavior
+supported platforms
+packaging / CI/CD
 ```
 
-thì update documentation trong cùng issue.
+thì **bắt buộc update documentation trong cùng PR/issue**.
 
-Không để docs mô tả behavior đã không còn tồn tại.
+Không bao giờ để docs mô tả behavior đã không còn tồn tại hoặc để roadmap ghi "Planned" khi feature đã được merge và release.
 
 ---
 

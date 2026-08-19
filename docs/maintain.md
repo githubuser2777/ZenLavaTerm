@@ -227,6 +227,7 @@ Rules:
 3. Native CI matrices must validate compilation and testing on Linux (`ubuntu-latest`), Windows (`windows-latest`), and macOS (`macos-latest`).
 4. Signal handling and panic recovery must be verified on both Unix (`signal-hook`) and Windows (`SetConsoleCtrlHandler`).
 5. Configuration discovery must support standard XDG, Windows `%APPDATA%` / `%USERPROFILE%`, and macOS `$HOME/Library/Application Support`.
+6. Packaging validation must verify all 4 official desktop installers (Linux AppImage, Linux DEB, Windows MSI, macOS Universal DMG) via the 3-tier CI/CD architecture (`ci.yml`, `package.yml`, `release.yml`).
 
 ## Documentation Maintenance
 

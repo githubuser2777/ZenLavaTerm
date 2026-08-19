@@ -295,14 +295,21 @@ LavaTerm resolves configuration in the following order of precedence:
 
 1. **CLI Flags**: Arguments passed via command line (e.g. `--theme`, `--fps`, `--renderer`) always take highest priority.
 2. **Custom File (`-c / --config <PATH>`)**: Explicit configuration path supplied at runtime.
-3. **User Default Path**: `~/.config/lavaterm/config.toml` (if it exists on Unix/Linux/macOS).
+3. **Platform Default Configuration Path**:
+   - **Linux / Unix**: `$XDG_CONFIG_HOME/lavaterm/config.toml` (defaults to `~/.config/lavaterm/config.toml`).
+   - **macOS**: `$HOME/Library/Application Support/lavaterm/config.toml` (fallback to `~/.config/lavaterm/config.toml` or `$XDG_CONFIG_HOME`).
+   - **Windows**: `%APPDATA%\lavaterm\config.toml` (fallback to `%USERPROFILE%\AppData\Roaming\lavaterm\config.toml` or `%USERPROFILE%\.config\lavaterm\config.toml`).
 4. **Built-in Hardcoded Defaults**: Safe fallback values when no configuration file is present.
 
 To generate your personal config file:
 
 ```bash
+# Linux / macOS
 mkdir -p ~/.config/lavaterm
 cp docs/configuration.md ~/.config/lavaterm/config.toml # Or create your custom config
+
+# Windows (PowerShell)
+New-Item -ItemType Directory -Force -Path "$env:APPDATA\lavaterm"
 ```
 
 ---
@@ -542,7 +549,9 @@ LavaTerm transforms background operating system hardware metrics into soothing, 
 ┌─────────────────────────────────────────────────────────────┐
 │                 System Metric Providers                     │
 │  - LinuxSystemProvider (/proc/stat, /proc/meminfo, /sys)    │
-│  - MockSystemProvider (unit & integration testing)          │
+│  - WindowsSystemProvider (GetSystemTimes, GlobalMemory)     │
+│  - MacOSSystemProvider (host_statistics64 Mach kernel)      │
+│  - MockSystemProvider (unit & integration testing/fallback) │
 └──────────────────────────────┬──────────────────────────────┘
                                │ Polls OS telemetry every N ms
                                ▼
@@ -563,12 +572,12 @@ LavaTerm transforms background operating system hardware metrics into soothing, 
 
 #### Physical Metric Mappings
 
-| System Metric | Telemetry Source (Linux) | Signal Range | Lava Physical Effect |
-|---|---|:---:|---|
-| **CPU Utilization** | `/proc/stat` active vs total ticks | `[0.0, 1.0]` | Modulates Brownian thermal noise & turbulence: $\text{noise} = 0.15 \times (1.0 + 2.5 \times \text{cpu})$. |
-| **RAM Usage** | `/proc/meminfo` (`MemTotal` vs `MemAvailable`) | `[0.0, 1.0]` | Dynamically scales blob volume: $R = R_0 \times (0.85 + 0.40 \times \text{ram})$. |
-| **Battery Level** | `/sys/class/power_supply/BAT*/capacity` | `[0.0, 1.0]` | Regulates thermal convection: $\text{buoyancy} = 0.50 + 0.60 \times \text{bat}$. |
-| **Disk Storage I/O**| `/proc/diskstats` delta sectors | `[0.0, 1.0]` | Imparts subtle micro-perturbations during active reads/writes. |
+| System Metric | Telemetry Source (Linux) | Telemetry Source (Windows) | Telemetry Source (macOS) | Signal Range | Lava Physical Effect |
+|---|---|---|---|:---:|---|
+| **CPU Utilization** | `/proc/stat` delta ticks | `GetSystemTimes` (idle vs total) | `host_statistics64` (`HOST_CPU_LOAD_INFO`) | `[0.0, 1.0]` | Modulates Brownian thermal noise & turbulence: $\text{noise} = 0.15 \times (1.0 + 2.5 \times \text{cpu})$. |
+| **RAM Usage** | `/proc/meminfo` (`MemTotal` vs `MemAvailable`) | `GlobalMemoryStatusEx` (`ullTotalPhys` vs `ullAvailPhys`) | `host_statistics64` (`HOST_VM_INFO64`) | `[0.0, 1.0]` | Dynamically scales blob volume: $R = R_0 \times (0.85 + 0.40 \times \text{ram})$. |
+| **Battery Level** | `/sys/class/power_supply/BAT*/capacity` | `GetSystemPowerStatus` (`BatteryLifePercent`) | Neutral baseline (`1.0`) | `[0.0, 1.0]` | Regulates thermal convection: $\text{buoyancy} = 0.50 + 0.60 \times \text{bat}$. |
+| **Disk Storage I/O**| `/proc/diskstats` delta sectors | `GetProcessIoCounters` delta transfer bytes | Baseline (`0.05`) | `[0.0, 1.0]` | Imparts subtle micro-perturbations during active I/O operations. |
 
 ---
 
@@ -661,7 +670,9 @@ ZenLavaTerm/
 │   │   ├── mod.rs              # SystemProvider factory
 │   │   ├── signals.rs          # SystemSignals normalized DTO
 │   │   ├── provider.rs         # SystemProvider trait & Mock provider
-│   │   └── linux.rs            # Linux /proc & /sys parser
+│   │   ├── linux.rs            # Linux /proc & /sys parser
+│   │   ├── windows.rs          # Windows Win32 API provider
+│   │   └── macos.rs            # macOS Mach kernel provider
 │   ├── audio/                  # Audio FFT & spectrum analysis
 │   │   ├── mod.rs              # AudioProvider factory
 │   │   ├── signals.rs          # AudioSignals normalized DTO
@@ -844,7 +855,7 @@ cargo run -- --headless --frames 60 --theme cyberpunk
 | `cargo build` | Compile the debug binary in `target/debug/lavaterm`. |
 | `cargo build --release` | Compile the production binary with LTO, opt-level 3, and stripped symbols. |
 | `cargo run --release` | Build and immediately execute LavaTerm. |
-| `cargo test` | Run the complete test suite (51 unit tests + 4 integration tests). |
+| `cargo test` | Run the complete test suite (105 unit tests + 15 integration tests = 120 tests total). |
 | `cargo test --test integration_test` | Run integration tests only. |
 | `cargo bench` | Run Criterion micro-benchmarks for field math and renderers. |
 | `cargo run --example minimal_sim` | Execute the minimal standalone simulation example. |
@@ -1008,11 +1019,12 @@ The release pipeline automatically enforces tag/version consistency, executes cr
 
 **Symptom:** Running `lavaterm --system` displays constant, unchanging fluid turbulence.
 
-**Cause:** LavaTerm is running on macOS or Windows (where `/proc` and `/sys` are unavailable), or running inside a restricted container without `/proc` access.
+**Cause:** LavaTerm is running in a permission-restricted environment (such as a locked container without `/proc` access or restricted API access), or on an unsupported fallback operating system.
 
 **Solution:**
-- On non-Linux platforms, LavaTerm gracefully degrades to deterministic simulated signals without crashing.
-- On Linux containers (Docker), ensure `/proc` is mounted:
+- On Linux, Windows, and macOS, LavaTerm automatically initializes the platform-native telemetry provider (`LinuxSystemProvider`, `WindowsSystemProvider`, or `MacOSSystemProvider`).
+- On unsupported platforms or restricted sandboxes, LavaTerm gracefully degrades to deterministic simulated signals (`MockSystemProvider`) without crashing.
+- In Linux containers (Docker), ensure `/proc` is mounted:
   ```bash
   docker run -it --rm -v /proc:/proc:ro lavaterm
   ```

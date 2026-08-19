@@ -506,60 +506,40 @@ Chỉ bắt đầu phase này khi rendering và simulation đã ổn định.
 
 ---
 
-# Phase 11 — Cross-platform
+# Phase 11 — Cross-Platform Expansion (Completed - v0.11.0)
 
-### Linux
+### Mục tiêu
+Hỗ trợ native first-class trên Linux, Windows, macOS với zero external runtime C dependencies và graceful degradation.
 
-Primary target:
-
-- PipeWire.
-- Linux system metrics.
-
-### Windows
-
-Target:
-
-- terminal rendering;
-- WASAPI audio;
-- Windows system metrics.
-
-### macOS
-
-Optional later:
-
-- CoreAudio;
-- system metrics.
-
-Không làm platform-specific abstraction trước khi core API ổn định.
+### Deliverables đã hoàn thành:
+1. **Native Windows Provider** (`WindowsSystemProvider` in `src/reactive/windows.rs`): `GetSystemTimes`, `GlobalMemoryStatusEx`, `GetSystemPowerStatus`, `GetProcessIoCounters`.
+2. **Native macOS Provider** (`MacOSSystemProvider` in `src/reactive/macos.rs`): Mach kernel `host_statistics64` (`HOST_CPU_LOAD_INFO`, `HOST_VM_INFO64`).
+3. **Dynamic Provider Factory** (`default_system_provider()` in `src/reactive/mod.rs`): Linux, Windows, macOS, and `MockSystemProvider` fallback.
+4. **Cross-Platform Signal Handling**: Windows `SetConsoleCtrlHandler` (`CTRL_C_EVENT`, `CTRL_CLOSE_EVENT`), Unix `signal-hook` (`SIGINT`, `SIGTERM`), and mode-aware panic hooks.
+5. **Multi-Platform Config & Theme Discovery**: XDG (`$XDG_CONFIG_HOME`), Windows `%APPDATA%` / `%USERPROFILE%`, macOS `$HOME/Library/Application Support`, Unix `~/.config`.
+6. **Three-Tier CI/CD & Desktop Packaging**: Linux AppImage (`x86_64`), Linux DEB (`x86_64`), Windows MSI (`x86_64` via WiX), macOS Universal DMG (`arm64` + `x86_64`).
 
 ---
 
-# Phase 12 — Polish / V1.0
+# Phase 12 — Performance Optimization, Native Audio Capture & V1.0 Release (Planned - Next)
 
-Issues:
+### Mục tiêu
+Hoàn thiện capture audio phần cứng, tối ưu hóa hiệu năng và đóng băng API chuẩn bị cho bản phát hành 1.0.
 
-- performance profiling;
-- startup latency;
-- memory usage;
-- renderer benchmark;
-- documentation;
-- examples;
-- config migration;
-- error messages;
-- release builds;
-- packaging.
+### Scope dự kiến:
+1. **Native Live Audio Capture**: Implement hardware audio capture backends (WASAPI loopback trên Windows, CoreAudio tap trên macOS, PipeWire stream trên Linux) đưa sample vào `SpectrumAnalyzer` / `PcmRingBuffer`.
+2. **Field & Rasterization Optimization**: Tối ưu hóa scalar field evaluation bằng SIMD / Rayon data-parallelization và giảm bộ nhớ.
+3. **Package Manager Distribution**: Đưa ZenLavaTerm lên Homebrew formula, AUR repository, và Windows Scoop/Winget.
+4. **V1.0 Stabilization**: Long-term API freeze, configuration migration validation, và production readiness audit.
 
-Release criteria:
-
+### Release criteria:
 ```text
 cargo test
-cargo clippy
+cargo clippy --all-targets --all-features -- -D warnings
 cargo fmt --check
+cargo bench
 ```
-
-pass.
-
-Không có known critical bug.
+Pass toàn bộ không có regression hay critical bug.
 
 ---
 
