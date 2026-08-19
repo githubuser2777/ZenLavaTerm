@@ -217,14 +217,14 @@ mod tests {
         let xdg_config_dir = test_xdg.join("lavaterm");
         let home_config_dir = test_home.join(".config").join("lavaterm");
 
-        let _ = fs::create_dir_all(&xdg_config_dir);
-        let _ = fs::create_dir_all(&home_config_dir);
+        fs::create_dir_all(&xdg_config_dir).expect("failed to create xdg test dir");
+        fs::create_dir_all(&home_config_dir).expect("failed to create home test dir");
 
         let xdg_file = xdg_config_dir.join("config.toml");
         let home_file = home_config_dir.join("config.toml");
 
-        let _ = fs::write(&xdg_file, "# xdg config");
-        let _ = fs::write(&home_file, "# home config");
+        fs::write(&xdg_file, "# xdg config").expect("failed to write xdg config");
+        fs::write(&home_file, "# home config").expect("failed to write home config");
 
         let mut env = HashMap::new();
         env.insert("XDG_CONFIG_HOME", test_xdg.to_string_lossy().to_string());
@@ -256,14 +256,15 @@ mod tests {
             .join("lavaterm");
         let dotconfig_dir = test_home.join(".config").join("lavaterm");
 
-        let _ = fs::create_dir_all(&app_support_dir);
-        let _ = fs::create_dir_all(&dotconfig_dir);
+        fs::create_dir_all(&app_support_dir).expect("failed to create app support test dir");
+        fs::create_dir_all(&dotconfig_dir).expect("failed to create dotconfig test dir");
 
         let app_support_file = app_support_dir.join("config.toml");
         let dotconfig_file = dotconfig_dir.join("config.toml");
 
-        let _ = fs::write(&app_support_file, "# macos native app support config");
-        let _ = fs::write(&dotconfig_file, "# macos unix dotconfig");
+        fs::write(&app_support_file, "# macos native app support config")
+            .expect("failed to write app support config");
+        fs::write(&dotconfig_file, "# macos unix dotconfig").expect("failed to write dotconfig");
 
         let mut env = HashMap::new();
         env.insert("HOME", test_home.to_string_lossy().to_string());
@@ -297,17 +298,18 @@ mod tests {
             .join("lavaterm");
         let xdg_config_dir = test_xdg.join("lavaterm");
 
-        let _ = fs::create_dir_all(&appdata_config_dir);
-        let _ = fs::create_dir_all(&userprofile_roaming);
-        let _ = fs::create_dir_all(&xdg_config_dir);
+        fs::create_dir_all(&appdata_config_dir).expect("failed to create appdata test dir");
+        fs::create_dir_all(&userprofile_roaming).expect("failed to create userprofile test dir");
+        fs::create_dir_all(&xdg_config_dir).expect("failed to create xdg test dir");
 
         let appdata_file = appdata_config_dir.join("config.toml");
         let userprofile_file = userprofile_roaming.join("config.toml");
         let xdg_file = xdg_config_dir.join("config.toml");
 
-        let _ = fs::write(&appdata_file, "# appdata config");
-        let _ = fs::write(&userprofile_file, "# userprofile config");
-        let _ = fs::write(&xdg_file, "# xdg config");
+        fs::write(&appdata_file, "# appdata config").expect("failed to write appdata config");
+        fs::write(&userprofile_file, "# userprofile config")
+            .expect("failed to write userprofile config");
+        fs::write(&xdg_file, "# xdg config").expect("failed to write xdg config");
 
         let mut env = HashMap::new();
         env.insert("APPDATA", test_appdata.to_string_lossy().to_string());

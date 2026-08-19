@@ -28,7 +28,7 @@
         <MediaTemplate EmbedCab='yes' />
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
-            <Directory Id='ProgramFiles64Folder' Name='PFiles'>
+            <Directory Id='ProgramFiles64Folder'>
                 <Directory Id='INSTALLDIR' Name='ZenLavaTerm'>
                     <Component Id='MainExecutable' Guid='8C751F2A-D9A3-41E9-96A5-1F928A649E82' Win64='yes'>
                         <File Id='ZenLavaTermEXE' Name='lavaterm.exe' DiskId='1' Source='$(var.SourceDir)\lavaterm.exe' KeyPath='yes' />

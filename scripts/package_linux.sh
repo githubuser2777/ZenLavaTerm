@@ -93,8 +93,10 @@ if command -v appimagetool >/dev/null 2>&1; then
 elif [[ -f "$ROOT_DIR/appimagetool" ]]; then
     ARCH="$TARGET_ARCH" "$ROOT_DIR/appimagetool" "$APPDIR" "$OUTPUT_DIR/$APPIMAGE_NAME"
 else
-    echo "==> Downloading appimagetool..."
-    curl -fsSL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -o "$ROOT_DIR/target/appimagetool"
+    echo "==> Downloading appimagetool (v13)..."
+    APPIMAGETOOL_URL="https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage"
+    curl -fsSL "$APPIMAGETOOL_URL" -o "$ROOT_DIR/target/appimagetool" || \
+        curl -fsSL "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -o "$ROOT_DIR/target/appimagetool"
     chmod +x "$ROOT_DIR/target/appimagetool"
     (cd "$ROOT_DIR/target" && ./appimagetool --appimage-extract >/dev/null 2>&1 || true)
     if [[ -d "$ROOT_DIR/target/squashfs-root" ]]; then
