@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+*'
+      - 'v*'
 
 permissions:
   contents: read
@@ -19,7 +19,6 @@ jobs:
     outputs:
       version: ${{ steps.check-version.outputs.version }}
       tag: ${{ steps.check-version.outputs.tag }}
-      is_release: ${{ steps.check-version.outputs.is_release }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -32,11 +31,16 @@ jobs:
         run: |
           TAG_NAME="${GITHUB_REF#refs/tags/}"
 
-          # Filter pre-release tags (which are validated via package.yml)
+          # Reject any pre-release candidate tags (-rc, -beta, -alpha, etc.)
           if [[ "$TAG_NAME" =~ -rc|-beta|-alpha ]]; then
-            echo "Tag '$TAG_NAME' is a pre-release candidate tag. Skipping production release publication."
-            echo "is_release=false" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "::error::Tag '$TAG_NAME' is a pre-release candidate tag. Production releases only accept strict SemVer tags (e.g. v1.2.3). Use .github/workflows/package.yml for packaging validation."
+            exit 1
+          fi
+
+          # Accept only strict production SemVer ^v[0-9]+\.[0-9]+\.[0-9]+$
+          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG_NAME' is not a valid production SemVer tag (must match ^v[0-9]+\.[0-9]+\.[0-9]+$)."
+            exit 1
           fi
 
           CARGO_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name=="lavaterm") | .version')
@@ -53,12 +57,10 @@ jobs:
 
           echo "version=${CARGO_VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG_NAME}" >> "$GITHUB_OUTPUT"
-          echo "is_release=true" >> "$GITHUB_OUTPUT"
 
   package-linux:
     name: Package Linux (AppImage & DEB x86_64)
     needs: verify-tag
-    if: needs.verify-tag.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -114,7 +116,6 @@ jobs:
   package-windows:
     name: Package Windows (MSI x86_64)
     needs: verify-tag
-    if: needs.verify-tag.outputs.is_release == 'true'
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -127,6 +128,22 @@ jobs:
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+
+      - name: Ensure WiX Toolset is available
+        shell: pwsh
+        run: |
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue) -or -not (Get-Command light.exe -ErrorAction SilentlyContinue)) {
+            $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+            if (-not (Test-Path "$wixPath\candle.exe")) {
+              $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+            }
+            if (Test-Path "$wixPath\candle.exe") {
+              echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            } else {
+              choco install wixtoolset --no-progress
+              echo "C:\Program Files (x86)\WiX Toolset v3.11\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            }
+          }
 
       - name: Build release binary
         run: cargo build --release --target x86_64-pc-windows-msvc --verbose
@@ -158,7 +175,6 @@ jobs:
   package-macos:
     name: Package macOS (Universal DMG)
     needs: verify-tag
-    if: needs.verify-tag.outputs.is_release == 'true'
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -215,7 +231,6 @@ jobs:
       - package-linux
       - package-windows
       - package-macos
-    if: needs.verify-tag.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
