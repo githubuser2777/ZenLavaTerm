@@ -28,6 +28,16 @@ impl LiveAudioProvider {
     pub fn ring_buffer(&self) -> &PcmRingBuffer {
         &self.ring_buffer
     }
+
+    /// Returns the active sample rate of the spectrum analyzer.
+    pub fn sample_rate(&self) -> u32 {
+        self.analyzer.sample_rate
+    }
+
+    /// Returns the FFT window size of the spectrum analyzer.
+    pub fn window_size(&self) -> usize {
+        self.analyzer.window_size
+    }
 }
 
 impl AudioProvider for LiveAudioProvider {
@@ -40,6 +50,14 @@ impl AudioProvider for LiveAudioProvider {
             self.analyzer.analyze(&self.sample_buf)
         }
     }
+
+    fn is_live(&self) -> bool {
+        true
+    }
+
+    fn provider_name(&self) -> &'static str {
+        "live"
+    }
 }
 
 #[cfg(test)]
@@ -51,6 +69,11 @@ mod tests {
         let ring = PcmRingBuffer::new(1024);
         let analyzer = SpectrumAnalyzer::new(44100, 256);
         let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+        assert!(provider.is_live());
+        assert_eq!(provider.provider_name(), "live");
+        assert_eq!(provider.sample_rate(), 44100);
+        assert_eq!(provider.window_size(), 256);
 
         // Push silence
         ring.push_slice(&vec![0.0f32; 256]);

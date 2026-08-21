@@ -587,3 +587,38 @@ fn test_phase11_linux_provider_delta_transition() {
     let _ = fs::remove_file(&disk_file);
     let _ = fs::remove_dir_all(&bat_dir);
 }
+
+#[test]
+fn test_phase12_native_audio_architecture_and_resampling() {
+    use lavaterm::audio::{AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer};
+
+    let ring = PcmRingBuffer::new(2048);
+    let analyzer = SpectrumAnalyzer::new(44100, 512);
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+    assert!(provider.is_live());
+    assert_eq!(provider.provider_name(), "live");
+    assert_eq!(provider.sample_rate(), 44100);
+
+    // 1. Ingest 48kHz stereo signal resampled to 44.1kHz
+    let mut stereo_48k = Vec::with_capacity(960);
+    for i in 0..480 {
+        let sample = (2.0 * std::f32::consts::PI * 80.0 * (i as f32) / 48000.0).sin();
+        stereo_48k.push(sample); // L
+        stereo_48k.push(sample); // R
+    }
+
+    // Downmix to mono and resample to 44.1kHz
+    let mut mono_48k = Vec::with_capacity(480);
+    for chunk in stereo_48k.chunks_exact(2) {
+        mono_48k.push((chunk[0] + chunk[1]) * 0.5);
+    }
+    ring.push_resampled(&mono_48k, 48000, 44100);
+
+    let signals = provider.poll_signals();
+    assert!(
+        signals.bass > 0.0,
+        "80Hz pulse resampled from 48kHz should register bass energy"
+    );
+    assert!(signals.volume > 0.0, "Volume should be non-zero");
+}

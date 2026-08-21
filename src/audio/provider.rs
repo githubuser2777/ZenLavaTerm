@@ -2,10 +2,29 @@
 
 use super::signals::AudioSignals;
 
-/// Trait implemented by audio capture providers (PipeWire, mock, synthetic).
+/// Trait implemented by audio capture providers (PipeWire, WASAPI, CoreAudio, mock, synthetic).
 pub trait AudioProvider: Send {
     /// Polls latest normalized frequency signals.
     fn poll_signals(&mut self) -> AudioSignals;
+
+    /// Returns true if this provider is consuming from a live hardware audio stream.
+    fn is_live(&self) -> bool {
+        false
+    }
+
+    /// Returns the provider backend name (e.g. "synthetic", "mock", "live", "wasapi", "pipewire", "coreaudio").
+    fn provider_name(&self) -> &'static str {
+        "unknown"
+    }
+}
+
+/// Metadata description for an enumerated audio input or loopback device.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AudioDeviceInfo {
+    /// Device identifier or name.
+    pub name: String,
+    /// Whether this is the system default audio capture/render device.
+    pub is_default: bool,
 }
 
 /// Deterministic mock audio provider for unit testing.
@@ -24,6 +43,14 @@ impl MockAudioProvider {
 impl AudioProvider for MockAudioProvider {
     fn poll_signals(&mut self) -> AudioSignals {
         self.signals
+    }
+
+    fn is_live(&self) -> bool {
+        false
+    }
+
+    fn provider_name(&self) -> &'static str {
+        "mock"
     }
 }
 
@@ -65,6 +92,14 @@ impl AudioProvider for SyntheticAudioGenerator {
     fn poll_signals(&mut self) -> AudioSignals {
         self.step(1.0 / 30.0)
     }
+
+    fn is_live(&self) -> bool {
+        false
+    }
+
+    fn provider_name(&self) -> &'static str {
+        "synthetic"
+    }
 }
 
 #[cfg(test)]
@@ -76,11 +111,15 @@ mod tests {
         let expected = AudioSignals::new(0.9, 0.4, 0.2, 0.8);
         let mut provider = MockAudioProvider::new(expected);
         assert_eq!(provider.poll_signals(), expected);
+        assert_eq!(provider.provider_name(), "mock");
+        assert!(!provider.is_live());
     }
 
     #[test]
     fn test_synthetic_audio_generator_produces_dynamic_signals() {
         let mut gen = SyntheticAudioGenerator::new(120.0);
+        assert_eq!(gen.provider_name(), "synthetic");
+        assert!(!gen.is_live());
         let s1 = gen.step(0.1);
         let s2 = gen.step(0.2);
         assert!(s1.bass >= 0.0 && s1.bass <= 1.0);

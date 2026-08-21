@@ -8,8 +8,8 @@ pub mod signals;
 
 pub use capture::LiveAudioProvider;
 pub use fft::SpectrumAnalyzer;
-pub use provider::{AudioProvider, MockAudioProvider, SyntheticAudioGenerator};
-pub use ring_buffer::PcmRingBuffer;
+pub use provider::{AudioDeviceInfo, AudioProvider, MockAudioProvider, SyntheticAudioGenerator};
+pub use ring_buffer::{resample_linear, PcmRingBuffer};
 pub use signals::AudioSignals;
 
 /// Creates a default audio provider (synthetic beat generator or live capture fallback).
