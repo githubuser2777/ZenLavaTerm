@@ -3,6 +3,7 @@
 pub mod capture;
 pub mod fft;
 pub mod linux;
+pub mod macos;
 pub mod provider;
 pub mod ring_buffer;
 pub mod signals;
