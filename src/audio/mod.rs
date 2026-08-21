@@ -67,20 +67,32 @@ pub fn create_live_audio_provider(device_name: Option<&str>) -> Result<LiveAudio
     let analyzer = SpectrumAnalyzer::new(44100, 1024);
 
     #[cfg(target_os = "windows")]
-    {
+    let backend: Option<Box<dyn std::any::Any + Send + Sync>> = {
         let mut capture = windows::WindowsAudioCapture::new(ring_buffer.clone(), device_name)?;
         capture.start()?;
-    }
+        Some(Box::new(capture))
+    };
+
     #[cfg(target_os = "macos")]
-    {
+    let backend: Option<Box<dyn std::any::Any + Send + Sync>> = {
         let mut capture = macos::MacOSAudioCapture::new(ring_buffer.clone(), device_name)?;
         capture.start()?;
-    }
+        Some(Box::new(capture))
+    };
+
     #[cfg(target_os = "linux")]
-    {
+    let backend: Option<Box<dyn std::any::Any + Send + Sync>> = {
         let mut capture = linux::LinuxAudioCapture::new(ring_buffer.clone(), device_name)?;
         capture.start()?;
-    }
+        Some(Box::new(capture))
+    };
 
-    Ok(LiveAudioProvider::new(ring_buffer, analyzer))
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    let backend: Option<Box<dyn std::any::Any + Send + Sync>> = None;
+
+    Ok(LiveAudioProvider::with_backend(
+        ring_buffer,
+        analyzer,
+        backend,
+    ))
 }

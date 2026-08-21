@@ -1,4 +1,4 @@
-//! macOS CoreAudio native audio input stream capture provider.
+//! macOS CoreAudio audio stream capture worker and device provider.
 
 use super::provider::AudioDeviceInfo;
 use super::ring_buffer::PcmRingBuffer;
@@ -7,7 +7,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 
-/// Native macOS CoreAudio capture engine.
+/// macOS audio capture streaming engine.
+
 #[derive(Debug)]
 pub struct MacOSAudioCapture {
     ring_buffer: PcmRingBuffer,

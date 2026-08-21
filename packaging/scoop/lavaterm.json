@@ -9,8 +9,10 @@
             "hash": "0000000000000000000000000000000000000000000000000000000000000000"
         }
     },
+    "innosetup": false,
     "bin": "lavaterm.exe",
     "checkver": "github",
+
     "autoupdate": {
         "architecture": {
             "64bit": {

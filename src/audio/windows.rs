@@ -1,4 +1,4 @@
-//! Windows WASAPI native audio loopback and stream capture provider.
+//! Windows audio stream capture worker and device enumeration provider.
 
 use super::provider::AudioDeviceInfo;
 use super::ring_buffer::PcmRingBuffer;
@@ -7,7 +7,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 
-/// Native Windows WASAPI audio capture engine.
+/// Windows audio capture streaming engine.
+
 #[derive(Debug)]
 pub struct WindowsAudioCapture {
     ring_buffer: PcmRingBuffer,

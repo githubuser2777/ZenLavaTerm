@@ -39,10 +39,13 @@ The audio pipeline follows a decoupled producer-consumer model:
 
 ### Runtime Providers
 
-- **Windows WASAPI Capture (`WindowsAudioCapture`)**: Captures default render loopback (speakers/headphones output mix) and microphone streams via Win32 MMDevice / WASAPI.
-- **Linux PipeWire / ALSA Capture (`LinuxAudioCapture`)**: Captures live PCM streams from default PulseAudio/PipeWire sources or ALSA hardware devices (`hw:0,0`).
-- **macOS CoreAudio Capture (`MacOSAudioCapture`)**: Captures default input device streams via CoreAudio HAL with graceful permission handling.
-- **Synthetic Fallback (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio hardware is absent, disabled, or permissions are denied.
+- **Windows Stream Capture (`WindowsAudioCapture`)**: Background streaming capture worker managing device selection (render loopback / input stream), ingesting PCM chunks into the lock-free ring buffer.
+- **Linux Stream Capture (`LinuxAudioCapture`)**: Background streaming capture worker supporting PipeWire / PulseAudio / ALSA stream device enumeration and ring buffer ingestion.
+- **macOS Stream Capture (`MacOSAudioCapture`)**: Background streaming capture worker managing CoreAudio device enumeration and ring buffer ingestion with graceful permission fallback.
+- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is disabled, headless/CI environments are detected, or hardware capture is unavailable.
+- **Spectrum Analyzer (`SpectrumAnalyzer`)**: Implements an in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral band integration.
+- **Sample Rate Converter (`resample_linear`)**: High-performance linear interpolation resampler supporting dynamic sample rate conversion (e.g. 48,000 Hz <-> 44,100 Hz).
+
 
 ## Frequency Band Mappings
 

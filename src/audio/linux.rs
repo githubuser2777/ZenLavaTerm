@@ -1,4 +1,4 @@
-//! Linux PipeWire and ALSA native audio stream capture provider.
+//! Linux PipeWire and ALSA audio stream capture worker and device provider.
 
 use super::provider::AudioDeviceInfo;
 use super::ring_buffer::PcmRingBuffer;
@@ -7,7 +7,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 
-/// Native Linux audio capture engine supporting PipeWire and ALSA streams.
+/// Linux audio capture streaming engine supporting PipeWire and ALSA streams.
+
 #[derive(Debug)]
 pub struct LinuxAudioCapture {
     ring_buffer: PcmRingBuffer,
