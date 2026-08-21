@@ -5,19 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-08-21 — Phase 12: Native Audio, High Performance & V1.0 Production Release
+## [1.0.0] - 2026-08-21 — Phase 12: Audio Architecture, High Performance & V1.0 Release Candidate
 
 ### Added
-- Native Windows WASAPI loopback and stream capture provider (`WindowsAudioCapture` in `src/audio/windows.rs`) supporting default render loopback and microphone inputs.
-- Native Linux PipeWire and ALSA stream capture provider (`LinuxAudioCapture` in `src/audio/linux.rs`) for low-latency live PCM ingestion.
-- Native macOS CoreAudio input stream capture provider (`MacOSAudioCapture` in `src/audio/macos.rs`) with graceful permission handling.
-- Unified cross-platform audio provider factory (`create_audio_provider`, `create_live_audio_provider`, and `list_audio_devices` in `src/audio/mod.rs`).
+- Decoupled cross-platform audio streaming architecture (`LiveAudioProvider` in `src/audio/capture.rs`) with background streaming capture workers for Windows (`WindowsAudioCapture`), Linux (`LinuxAudioCapture`), and macOS (`MacOSAudioCapture`).
+- Unified cross-platform audio provider factory (`create_audio_provider`, `create_live_audio_provider`, and `list_audio_devices` in `src/audio/mod.rs`) with guaranteed lifetime retention of active stream backends and graceful synthetic fallback.
 - CLI audio flags: `--audio-device <DEVICE>` for selecting specific capture devices and `--list-audio-devices` for enumerating available endpoints.
 - TOML configuration `[audio]` schema extension with `device: Option<String>`.
 - Multi-channel PCM audio ingestion, stereo-to-mono downmixing, 16-bit integer PCM normalization, and linear sample-rate resampling (`48kHz` <-> `44.1kHz`) in `PcmRingBuffer`.
 - Public API freeze and backward-compatible TOML configuration migration engine (`src/config/migrate.rs`) automatically upgrading legacy schemas (`num_blobs`, `renderer_type`, `target_fps`, `smooth_gradient`, `tempo`, `compact_mode`).
 - Community package manager manifests and recipes: Homebrew Formula (`packaging/homebrew/lavaterm.rb`), Arch Linux AUR (`packaging/aur/PKGBUILD` and `.SRCINFO`), Scoop (`packaging/scoop/lavaterm.json`), and Windows Package Manager Winget (`packaging/winget/`).
+- Fail-closed package manager manifest release synchronization tooling (`scripts/update_package_manifests.sh`).
 - Comprehensive micro-benchmark suite (`benches/field_and_render.rs`) with Criterion profiling across scalar field math, multi-resolution rasterization, renderers, Radix-2 FFT window sizes (512, 1024, 2048), linear resampling, and simulation pipeline.
+
 
 ### Optimized & Hardened
 - Optimized scalar field potential evaluation and weighted temperature calculations in `src/core/field.rs` with loop invariant hoisting and vectorization-friendly math.
