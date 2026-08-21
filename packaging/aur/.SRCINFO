@@ -1,0 +1,18 @@
+pkgbase = lavaterm
+	pkgdesc = A terminal-native ambient lava lamp and metaball visualizer
+	pkgver = 1.0.0
+	pkgrel = 1
+	url = https://github.com/githubuser2777/ZenLavaTerm
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	makedepends = cargo
+	makedepends = git
+	depends = gcc-libs
+	provides = lavaterm
+	conflicts = lavaterm-bin
+	conflicts = lavaterm-git
+	source = lavaterm-1.0.0.tar.gz::https://github.com/githubuser2777/ZenLavaTerm/archive/refs/tags/v1.0.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = lavaterm
