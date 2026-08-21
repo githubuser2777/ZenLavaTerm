@@ -128,8 +128,20 @@ Phase 12: Performance Optimization, Native Audio Capture & V1.0 Release (Planned
 - **Remaining Limitations**:
   - Live hardware audio capture backends (WASAPI capture on Windows, CoreAudio on macOS, native PipeWire on Linux) remain synthetic/stream-based and are scheduled for Phase 12.
 
-### Phase 12: Performance Optimization, Native Audio Capture & V1.0 Release (Planned - Next)
-- **Native Live Audio Capture**: Hardware capture providers for Windows (WASAPI loopback), macOS (CoreAudio tap), and Linux (PipeWire/ALSA stream capture) feeding the existing `SpectrumAnalyzer` and `PcmRingBuffer`.
-- **Field & Rasterization Optimizations**: SIMD / Rayon data-parallel scalar field evaluation and memory footprint minimization.
-- **Package Manager Distribution**: Community submission of Homebrew formula, AUR package maintenance, and Scoop/Winget manifests.
-- **V1.0 Stabilization**: Long-term API freeze, configuration migration guards, and final production readiness audit.
+### Phase 12: Performance Optimization, Native Audio Capture & V1.0 Release (In Progress — Milestone #1)
+- **Objective**: Implement native live audio capture across Windows, Linux, and macOS, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
+- **GitHub Milestone**: `Phase 12 — Performance, Native Audio & V1.0` (Milestone #1)
+- **Issue Breakdown**:
+  - `Issue 12.0` (#45): Architecture, Performance Baseline & Phase 12 Inception
+  - `Issue 12.1` (#46): Native Audio Architecture, Dynamic Provider Contract & Ring Buffer Hardening
+  - `Issue 12.2` (#47): Windows Native Audio Capture (WASAPI Loopback & Device Stream)
+  - `Issue 12.3` (#48): Linux Native Audio Capture (ALSA / PipeWire Stream Capture)
+  - `Issue 12.4` (#49): macOS Native Audio Capture (CoreAudio Stream & Permission Handling)
+  - `Issue 12.5` (#50): Unified Cross-Platform Audio Runtime, CLI `--audio-device` & Dynamic Fallback
+  - `Issue 12.6` (#51): Micro-Benchmark Expansion, Allocation Profiling & Hotspot Analysis
+  - `Issue 12.7` (#52): High-Performance Scalar Field & Framebuffer Rasterization Optimizations
+  - `Issue 12.8` (#53): Community Package Manager Distribution (Homebrew, AUR, Scoop, Winget)
+  - `Issue 12.9` (#54): V1.0 API Freeze, Configuration Migration Engine & Security Hardening
+  - `Issue 12.10` (#55): V1.0 Release Candidate Validation & Documentation Sync
+  - `Issue 12.11` (#56): ZenLavaTerm v1.0.0 Production Release & Transition
+
