@@ -5,6 +5,7 @@ pub mod fft;
 pub mod provider;
 pub mod ring_buffer;
 pub mod signals;
+pub mod windows;
 
 pub use capture::LiveAudioProvider;
 pub use fft::SpectrumAnalyzer;
