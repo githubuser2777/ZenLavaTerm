@@ -622,3 +622,42 @@ fn test_phase12_native_audio_architecture_and_resampling() {
     );
     assert!(signals.volume > 0.0, "Volume should be non-zero");
 }
+
+#[test]
+fn test_phase12_unified_audio_runtime_and_device_enumeration() {
+    use lavaterm::audio::{create_audio_provider, list_audio_devices};
+    use lavaterm::config::AudioConfig;
+
+    // 1. Device enumeration
+    let devices = list_audio_devices();
+    assert!(!devices.is_empty(), "Audio devices list must not be empty");
+    assert!(
+        devices.iter().any(|d| d.is_default),
+        "Must contain a default device"
+    );
+
+    // 2. Synthetic fallback when disabled
+    let disabled_cfg = AudioConfig {
+        enabled: false,
+        bpm: 130.0,
+        device: None,
+    };
+    let mut disabled_provider = create_audio_provider(&disabled_cfg);
+    assert!(!disabled_provider.is_live());
+    assert_eq!(disabled_provider.provider_name(), "synthetic");
+    let disabled_signals = disabled_provider.poll_signals();
+    assert!(disabled_signals.bass.is_finite());
+
+    // 3. Live capture provider when enabled
+    let enabled_cfg = AudioConfig {
+        enabled: true,
+        bpm: 120.0,
+        device: None,
+    };
+    let mut enabled_provider = create_audio_provider(&enabled_cfg);
+    let signals = enabled_provider.poll_signals();
+    assert!(signals.bass.is_finite());
+    assert!(signals.mid.is_finite());
+    assert!(signals.treble.is_finite());
+    assert!(signals.volume.is_finite());
+}

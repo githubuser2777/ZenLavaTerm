@@ -2,7 +2,7 @@
 
 pub mod schema;
 
-pub use schema::{Config, PaletteConfig, RenderConfig, SimulationConfig};
+pub use schema::{AudioConfig, Config, PaletteConfig, RenderConfig, SimulationConfig};
 
 use crate::{LavaError, Result};
 use std::fs;
