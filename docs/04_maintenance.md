@@ -300,9 +300,10 @@ tests pass
 lint passes
 build passes
 relevant benchmarks pass
+packaging validation passes (AppImage, DEB, MSI, DMG)
 docs updated
 CHANGELOG updated
-version correct
+version/tag consistency correct
 git state reviewed
 ```
 

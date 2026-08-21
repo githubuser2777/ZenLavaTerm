@@ -4,9 +4,13 @@
 
 LavaTerm is designed with the philosophy of **zero-configuration out of the box** with powerful customization when needed. If no configuration file is provided, beautiful default parameters are automatically used.
 
-LavaTerm checks for configuration files at:
-- CLI argument: `--config <path>`
-- User config directory: `$XDG_CONFIG_HOME/lavaterm/config.toml` or `~/.config/lavaterm/config.toml` (Linux/macOS) or `%APPDATA%\lavaterm\config.toml` (Windows)
+LavaTerm resolves configuration files in the following order:
+1. **Explicit CLI argument**: `--config <path>` (or `-c <path>`)
+2. **Platform-specific auto-discovery path**:
+   - **Linux / Unix**: `$XDG_CONFIG_HOME/lavaterm/config.toml` $\to$ `$HOME/.config/lavaterm/config.toml`
+   - **macOS**: `$XDG_CONFIG_HOME/lavaterm/config.toml` (if set) $\to$ `$HOME/Library/Application Support/lavaterm/config.toml` $\to$ `$HOME/.config/lavaterm/config.toml`
+   - **Windows**: `%APPDATA%\lavaterm\config.toml` $\to$ `%USERPROFILE%\AppData\Roaming\lavaterm\config.toml` $\to$ `%USERPROFILE%\.config\lavaterm\config.toml` $\to$ `$XDG_CONFIG_HOME/lavaterm/config.toml`
+3. **Hardcoded Defaults**: Safe built-in parameters if no file exists.
 
 ---
 

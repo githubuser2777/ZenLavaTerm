@@ -573,13 +573,13 @@ Phase 9 → v0.10.0
 tmux / zellij
 
 Phase 10 → v0.11.0
-Interaction
+Interaction & input mode
 
-Phase 11 → later
-Cross-platform expansion
+Phase 11 → v0.11.0
+Cross-platform expansion & packaging
 
 Phase 12 → v1.0.0
-Stable release
+Native audio capture, optimization & stable release
 ```
 
 These versions are milestone markers, not a strict semantic-version promise.
