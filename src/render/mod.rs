@@ -40,17 +40,22 @@ pub fn rasterize_simulation_options(
         return;
     }
 
+    let inv_w = 1.0 / width as f32;
+    let inv_h = 1.0 / height as f32;
+    let pixels = buffer.as_mut_slice();
+
     for y in 0..height {
         // Map discrete y [0..height] to normalized space [0.0..1.0] (y=0 top in terminal, so invert for simulation bottom heat)
-        let sim_y = 1.0 - (y as f32 + 0.5) / height as f32;
+        let sim_y = 1.0 - (y as f32 + 0.5) * inv_h;
+        let row_start = y * width;
 
         for x in 0..width {
-            let sim_x = (x as f32 + 0.5) / width as f32;
+            let sim_x = (x as f32 + 0.5) * inv_w;
 
             let (field_val, temp) = sim.evaluate_at(sim_x, sim_y);
             let pixel_color = palette.sample_lava_stepped(temp, field_val, threshold, gradient);
 
-            buffer.set_pixel(x, y, pixel_color);
+            pixels[row_start + x] = pixel_color;
         }
     }
 }

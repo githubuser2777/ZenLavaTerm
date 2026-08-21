@@ -21,14 +21,16 @@ impl Renderer for BlockRenderer {
     fn render(&mut self, buffer: &VirtualFramebuffer, writer: &mut dyn Write) -> io::Result<()> {
         let term_rows = buffer.height;
         let term_cols = buffer.width;
+        let slice = buffer.as_slice();
 
         self.last_fg = None;
 
         for row in 0..term_rows {
+            let row_start = row * term_cols;
             write!(writer, "\x1b[{};1H", row + 1)?;
 
             for col in 0..term_cols {
-                let color = buffer.get_pixel(col, row).unwrap_or_default();
+                let color = slice[row_start + col];
 
                 if self.last_fg != Some(color) {
                     write!(writer, "\x1b[38;2;{};{};{}m", color.r, color.g, color.b)?;

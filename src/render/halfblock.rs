@@ -22,20 +22,21 @@ impl Renderer for HalfBlockRenderer {
     fn render(&mut self, buffer: &VirtualFramebuffer, writer: &mut dyn Write) -> io::Result<()> {
         let term_rows = buffer.height / 2;
         let term_cols = buffer.width;
+        let slice = buffer.as_slice();
 
         self.last_fg = None;
         self.last_bg = None;
 
         for row in 0..term_rows {
-            let top_y = row * 2;
-            let btm_y = top_y + 1;
+            let top_row_start = (row * 2) * term_cols;
+            let btm_row_start = (row * 2 + 1) * term_cols;
 
             // Move cursor to row (1-indexed in ANSI)
             write!(writer, "\x1b[{};1H", row + 1)?;
 
             for col in 0..term_cols {
-                let top_col = buffer.get_pixel(col, top_y).unwrap_or_default();
-                let btm_col = buffer.get_pixel(col, btm_y).unwrap_or_default();
+                let top_col = slice[top_row_start + col];
+                let btm_col = slice[btm_row_start + col];
 
                 if self.last_fg != Some(top_col) {
                     write!(

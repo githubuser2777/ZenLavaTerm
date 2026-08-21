@@ -37,6 +37,9 @@ impl BrailleRenderer {
     ) -> (char, Option<Rgb>) {
         let base_x = cell_x * 2;
         let base_y = cell_y * 4;
+        let width = buffer.width;
+        let height = buffer.height;
+        let slice = buffer.as_slice();
 
         let dot_offsets = [
             (0, 0, 0x01), // Dot 1
@@ -58,7 +61,9 @@ impl BrailleRenderer {
         for &(dx, dy, bit) in &dot_offsets {
             let px = base_x + dx;
             let py = base_y + dy;
-            if let Some(col) = buffer.get_pixel(px, py) {
+            if px < width && py < height {
+                let idx = py * width + px;
+                let col = slice[idx];
                 if col != bg {
                     mask |= bit;
                     r_sum += col.r as u32;

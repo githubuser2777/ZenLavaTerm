@@ -17,7 +17,9 @@ impl ScalarField {
     pub fn evaluate_field(&self, blobs: &[Blob], px: f32, py: f32) -> f32 {
         let mut sum = 0.0;
         for blob in blobs {
-            let d_sq = blob.distance_sq_to(px, py);
+            let dx = px - blob.x;
+            let dy = py - blob.y;
+            let d_sq = dx * dx + dy * dy;
             let r_sq = blob.radius * blob.radius;
             sum += r_sq / (d_sq + EPSILON);
         }
@@ -33,7 +35,9 @@ impl ScalarField {
         let mut weighted_temp = 0.0;
 
         for blob in blobs {
-            let d_sq = blob.distance_sq_to(px, py);
+            let dx = px - blob.x;
+            let dy = py - blob.y;
+            let d_sq = dx * dx + dy * dy;
             let r_sq = blob.radius * blob.radius;
             let contribution = r_sq / (d_sq + EPSILON);
 
