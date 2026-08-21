@@ -121,20 +121,16 @@ fn bench_fft_and_audio(c: &mut Criterion) {
             *s = (2.0 * std::f32::consts::PI * 440.0 * (i as f32) / 44100.0).sin();
         }
 
-        group.bench_with_input(
-            BenchmarkId::new("compute_fft", size),
-            &size,
-            |b, _| {
-                let mut real = samples.clone();
-                let mut imag = vec![0.0f32; size];
-                b.iter(|| {
-                    real.copy_from_slice(&samples);
-                    imag.fill(0.0);
-                    let _ = SpectrumAnalyzer::compute_fft(&mut real, &mut imag);
-                    black_box(real[0]);
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("compute_fft", size), &size, |b, _| {
+            let mut real = samples.clone();
+            let mut imag = vec![0.0f32; size];
+            b.iter(|| {
+                real.copy_from_slice(&samples);
+                imag.fill(0.0);
+                let _ = SpectrumAnalyzer::compute_fft(&mut real, &mut imag);
+                black_box(real[0]);
+            });
+        });
     }
 
     let analyzer = SpectrumAnalyzer::new(44100, 1024);
@@ -145,7 +141,6 @@ fn bench_fft_and_audio(c: &mut Criterion) {
             black_box(sig.bass);
         });
     });
-
 
     let pcm_48k = vec![0.5f32; 1024];
     let mut resample_out = Vec::with_capacity(1024);
