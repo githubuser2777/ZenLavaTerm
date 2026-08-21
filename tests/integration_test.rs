@@ -610,9 +610,10 @@ fn test_phase12_native_audio_architecture_and_resampling() {
 
     // Downmix to mono and resample to 44.1kHz
     let mut mono_48k = Vec::with_capacity(480);
-    for chunk in stereo_48k.chunks_exact(2) {
-        mono_48k.push((chunk[0] + chunk[1]) * 0.5);
+    for &[l, r] in stereo_48k.as_chunks::<2>().0 {
+        mono_48k.push((l + r) * 0.5);
     }
+
     ring.push_resampled(&mono_48k, 48000, 44100);
 
     let signals = provider.poll_signals();
