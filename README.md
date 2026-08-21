@@ -275,6 +275,8 @@ Options:
       --height <ROWS>        Explicit viewport height (rows)
       --system               Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
       --audio                Enable audio-reactive visualizer mode (FFT spectrum analyzer)
+      --audio-device <DEV>   Target audio input or capture device name
+      --list-audio-devices   List available audio capture devices and exit
       --no-mouse             Disable mouse click shockwaves, dragging, and scroll pressure
       --no-ripple            Disable keyboard ripples on character keypresses
       --shockwave-force <F>  Multiplier for mouse click shockwave force [default: 1.0]
@@ -284,6 +286,7 @@ Options:
   -h, --help                 Print help information
   -V, --version              Print version information
 ```
+
 
 ---
 
@@ -440,7 +443,9 @@ stir_force = 1.0
 | `[reactive]` | `poll_interval_ms` | Integer | `500` | `100..10000` | Polling frequency for `/proc` and `/sys` virtual files. |
 | `[audio]` | `enabled` | Boolean | `false` | `true`, `false` | Enable FFT spectrum analyzer audio reactivity. |
 | `[audio]` | `bpm` | Float | `120.0` | `20.0..300.0` | Procedural rhythm generator tempo for testing and demos. |
+| `[audio]` | `device` | String | `None` | Device Name | Target audio input/capture endpoint name. |
 | `[widget]` | `compact` | Boolean | `false` | `true`, `false` | Force compact profile scaling by default. |
+
 | `[widget]` | `fps` | Integer | `15` | `1..240` | Default frame rate for widget mode. |
 | `[widget]` | `inline` | Boolean | `false` | `true`, `false` | Default to in-place inline rendering without alternate screen. |
 | `[widget]` | `width` | Integer | `None` | `1..1000` | Optional explicit columns width for widget layouts. |

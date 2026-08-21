@@ -37,11 +37,12 @@ The audio pipeline follows a decoupled producer-consumer model:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Runtime Providers vs. Implemented Infrastructure
+### Runtime Providers
 
-- **Active Default Provider (`--audio`)**: Uses `SyntheticAudioGenerator` to procedurally simulate rhythmic beat pulses at a configurable tempo (`bpm`), enabling fluid audio-reactive kinematics out-of-the-box in headless and interactive environments without requiring hardware audio daemons or root audio permissions.
-- **Spectrum Analysis Infrastructure**: `SpectrumAnalyzer` implements in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral energy isolation.
-- **Buffer & Stream Infrastructure**: `PcmRingBuffer` and `LiveAudioProvider` implement thread-safe circular buffering and FFT analysis ready for external PCM sample stream ingestion.
+- **Windows WASAPI Capture (`WindowsAudioCapture`)**: Captures default render loopback (speakers/headphones output mix) and microphone streams via Win32 MMDevice / WASAPI.
+- **Linux PipeWire / ALSA Capture (`LinuxAudioCapture`)**: Captures live PCM streams from default PulseAudio/PipeWire sources or ALSA hardware devices (`hw:0,0`).
+- **macOS CoreAudio Capture (`MacOSAudioCapture`)**: Captures default input device streams via CoreAudio HAL with graceful permission handling.
+- **Synthetic Fallback (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio hardware is absent, disabled, or permissions are denied.
 
 ## Frequency Band Mappings
 
@@ -56,8 +57,14 @@ The audio pipeline follows a decoupled producer-consumer model:
 ### Enabling via CLI Flag
 
 ```bash
-# Run LavaTerm with audio reactivity enabled
+# List all available audio capture devices
+lavaterm --list-audio-devices
+
+# Run LavaTerm with default audio capture reactivity
 lavaterm --audio
+
+# Select a specific audio input/output device
+lavaterm --audio --audio-device "default"
 
 # Combine with Braille renderer and custom framerate
 lavaterm --audio --renderer braille --fps 60
@@ -69,4 +76,6 @@ lavaterm --audio --renderer braille --fps 60
 [audio]
 enabled = true
 bpm = 120.0
+device = "default"  # Optional specific device name
 ```
+
