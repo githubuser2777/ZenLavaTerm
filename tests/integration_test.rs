@@ -661,3 +661,47 @@ fn test_phase12_unified_audio_runtime_and_device_enumeration() {
     assert!(signals.treble.is_finite());
     assert!(signals.volume.is_finite());
 }
+
+#[test]
+fn test_phase12_config_migration_and_security_bounds() {
+    use lavaterm::config::load_from_path;
+    use std::fs;
+
+    let temp_dir = std::env::temp_dir();
+    let legacy_file = temp_dir.join(format!(
+        "lavaterm_legacy_config_{}.toml",
+        std::process::id()
+    ));
+
+    let legacy_toml = r#"
+        [simulation]
+        num_blobs = 16
+        gravity_constant = 0.18
+        buoyancy_force = 0.95
+
+        [render]
+        renderer_type = "block"
+        target_fps = 40
+        smooth_gradient = true
+
+        [audio]
+        tempo = 135.0
+
+        [widget]
+        compact_mode = true
+    "#;
+
+    fs::write(&legacy_file, legacy_toml).expect("write legacy config");
+
+    let loaded = load_from_path(&legacy_file).expect("load and migrate succeeds");
+    assert_eq!(loaded.simulation.blobs, 16);
+    assert!((loaded.simulation.gravity - 0.18).abs() < 1e-4);
+    assert!((loaded.simulation.buoyancy - 0.95).abs() < 1e-4);
+    assert_eq!(loaded.render.renderer, "block");
+    assert_eq!(loaded.render.fps, 40);
+    assert!(loaded.render.gradient);
+    assert_eq!(loaded.audio.bpm, 135.0);
+    assert!(loaded.widget.compact);
+
+    let _ = fs::remove_file(&legacy_file);
+}
