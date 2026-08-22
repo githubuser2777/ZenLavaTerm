@@ -1,6 +1,7 @@
 # LavaTerm 🌋
 
 [![CI](https://github.com/githubuser2777/ZenLavaTerm/actions/workflows/ci.yml/badge.svg)](https://github.com/githubuser2777/ZenLavaTerm/actions/workflows/ci.yml)
+[![autofix.ci](https://github.com/githubuser2777/ZenLavaTerm/actions/workflows/autofix.yml/badge.svg)](https://github.com/githubuser2777/ZenLavaTerm/actions/workflows/autofix.yml)
 [![Release](https://github.com/githubuser2777/ZenLavaTerm/actions/workflows/release.yml/badge.svg)](https://github.com/githubuser2777/ZenLavaTerm/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust: 1.75+](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)](https://www.rust-lang.org/)

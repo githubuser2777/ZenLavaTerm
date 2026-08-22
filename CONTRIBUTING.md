@@ -54,8 +54,8 @@ cargo run -- --headless --frames 30
    - Do not import terminal/TTY dependencies (e.g. `crossterm`) into the `core` simulation module.
    - Do not use `unwrap()` in production paths; use typed errors (`Result<T, LavaError>`).
    - Write unit tests for new physics, math, color, or configuration logic.
-   - Run `cargo fmt` and `cargo clippy` before submitting.
-5. **Open a Pull Request**: Fill out the PR template completely and ensure all CI checks pass.
+   - Run `cargo fmt` and `cargo clippy` before submitting (or let `autofix.ci` automatically format and apply fixes on pull requests).
+5. **Open a Pull Request**: Fill out the PR template completely and ensure all CI checks pass. Any formatting or auto-fixable linter warnings will be automatically resolved by `autofix.ci`.
 
 ---
 
