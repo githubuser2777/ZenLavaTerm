@@ -83,6 +83,7 @@ echo "Windows MSI SHA-256:    ${MSI_SHA}"
 
 # 1. Update Homebrew formula
 if [[ -f "packaging/homebrew/lavaterm.rb" ]]; then
+    sed -i "s/__SOURCE_SHA__/${SOURCE_SHA}/g" packaging/homebrew/lavaterm.rb
     sed -i "s/sha256 \"[a-f0-9]*\"/sha256 \"${SOURCE_SHA}\"/" packaging/homebrew/lavaterm.rb
     sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v${VERSION}/g" packaging/homebrew/lavaterm.rb
     echo "✓ Updated packaging/homebrew/lavaterm.rb"
@@ -91,14 +92,15 @@ fi
 # 2. Update AUR PKGBUILD and .SRCINFO
 if [[ -f "packaging/aur/PKGBUILD" ]]; then
     sed -i "s/pkgver=[0-9]\+\.[0-9]\+\.[0-9]\+/pkgver=${VERSION}/" packaging/aur/PKGBUILD
-    sed -i "s/sha256sums=('[^']*')/sha256sums=('__SOURCE_SHA__')/" packaging/aur/PKGBUILD
+    sed -i "s/__SOURCE_SHA__/${SOURCE_SHA}/g" packaging/aur/PKGBUILD
+    sed -i "s/sha256sums=('[a-f0-9]*')/sha256sums=('${SOURCE_SHA}')/" packaging/aur/PKGBUILD
     echo "✓ Updated packaging/aur/PKGBUILD"
 fi
 
 # 2b. Update Arch source and bin PKGBUILDs (packaging/arch/)
 if [[ -f "packaging/arch/PKGBUILD" ]]; then
     sed -i "s/pkgver=[0-9]\+\.[0-9]\+\.[0-9]\+/pkgver=${VERSION}/" packaging/arch/PKGBUILD
-    sed -i "s/sha256sums=('[^']*')/sha256sums=('__SOURCE_SHA__')/" packaging/arch/PKGBUILD
+    sed -i "s/__SOURCE_SHA__/${SOURCE_SHA}/g" packaging/arch/PKGBUILD
     echo "✓ Updated packaging/arch/PKGBUILD"
 fi
 

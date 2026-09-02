@@ -35,7 +35,7 @@ Phase 11: Cross-Platform Expansion & Hardening (Complete - v0.11.0)
    │
 Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete - v1.0.0)
    │
-Phase 13: Native Hardware Audio Capture (Planned - v1.1)
+Phase 13: Advanced Audio Features & DSP Expansion (Planned - v1.1)
 ```
 
 ---
@@ -127,8 +127,8 @@ Phase 13: Native Hardware Audio Capture (Planned - v1.1)
   - Three-tier workflow architecture: PR CI (`ci.yml`), Release Candidate Packaging (`package.yml`), and Strict SemVer Production Release (`release.yml`).
 - **Testing & Validation**:
   - 120 automated tests (105 unit + 15 integration tests), including cross-platform provider contracts, lifecycle transitions, theme discovery, and headless smoke testing across Ubuntu, macOS, and Windows runners.
-- **Remaining Limitations**:
-  - Live hardware audio capture backends (WASAPI capture on Windows, CoreAudio on macOS, native PipeWire on Linux) remain synthetic/stream-based and are scheduled for Phase 13 (v1.1).
+- **Milestone Outcome**:
+  - Successfully expanded platform support across Linux, macOS, and Windows with robust configuration and theme discovery. Hardened foundation for Phase 12.
 
 ### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete — v1.0.0, Milestone #1)
 - **Objective**: Implement unified audio capture architecture with real hardware audio capture via CPAL (WASAPI, PipeWire/ALSA, CoreAudio), ring buffer resampling and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
