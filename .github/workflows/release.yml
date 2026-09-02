@@ -285,40 +285,51 @@ jobs:
           VERSION: ${{ needs.verify-tag.outputs.version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -e
           echo "Updating manifests for version $VERSION..."
+          
           # Since the source archive is created on GitHub, we need to download it to hash it
           wget --fail --show-progress -O source.tar.gz "https://github.com/githubuser2777/ZenLavaTerm/archive/refs/tags/v${VERSION}.tar.gz"
           test -s source.tar.gz
           SOURCE_SHA=$(sha256sum source.tar.gz | awk '{print $1}')
           
-          # Replace placeholders with real hash
-
-          sed -i "s/__SOURCE_SHA__/${SOURCE_SHA}/g" packaging/homebrew/lavaterm.rb packaging/aur/PKGBUILD packaging/aur/.SRCINFO packaging/arch/PKGBUILD
-          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v${VERSION}/g" packaging/homebrew/lavaterm.rb
-          sed -i "s/pkgver=[0-9]\+\.[0-9]\+\.[0-9]\+/pkgver=${VERSION}/g" packaging/aur/PKGBUILD packaging/arch/PKGBUILD
-          sed -i "s/pkgver = [0-9]\+\.[0-9]\+\.[0-9]\+/pkgver = ${VERSION}/g" packaging/aur/.SRCINFO
-                              
-                              
-                              
-                              
-          # Commit and push to dev/main, not the tag
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add packaging/
+          echo "Computed SHA256: $SOURCE_SHA"
           
           # Fetch and checkout dev branch to update manifests there
           git fetch origin dev
           git checkout dev
           
-          # Apply the sed changes again to the checked out branch
+          # Apply the replacements
           sed -i "s/__SOURCE_SHA__/${SOURCE_SHA}/g" packaging/homebrew/lavaterm.rb packaging/aur/PKGBUILD packaging/aur/.SRCINFO packaging/arch/PKGBUILD
           sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v${VERSION}/g" packaging/homebrew/lavaterm.rb
           sed -i "s/pkgver=[0-9]\+\.[0-9]\+\.[0-9]\+/pkgver=${VERSION}/g" packaging/aur/PKGBUILD packaging/arch/PKGBUILD
           sed -i "s/pkgver = [0-9]\+\.[0-9]\+\.[0-9]\+/pkgver = ${VERSION}/g" packaging/aur/.SRCINFO
           
+          # Verify the changes actually applied successfully
+          grep -q "${SOURCE_SHA}" packaging/homebrew/lavaterm.rb || { echo "Failed to update Homebrew SHA"; exit 1; }
+          grep -q "v${VERSION}" packaging/homebrew/lavaterm.rb || { echo "Failed to update Homebrew Version"; exit 1; }
+          
+          grep -q "${SOURCE_SHA}" packaging/aur/PKGBUILD || { echo "Failed to update AUR PKGBUILD SHA"; exit 1; }
+          grep -q "pkgver=${VERSION}" packaging/aur/PKGBUILD || { echo "Failed to update AUR PKGBUILD Version"; exit 1; }
+          
+          grep -q "${SOURCE_SHA}" packaging/aur/.SRCINFO || { echo "Failed to update AUR .SRCINFO SHA"; exit 1; }
+          grep -q "pkgver = ${VERSION}" packaging/aur/.SRCINFO || { echo "Failed to update AUR .SRCINFO Version"; exit 1; }
+          
+          grep -q "${SOURCE_SHA}" packaging/arch/PKGBUILD || { echo "Failed to update Arch PKGBUILD SHA"; exit 1; }
+          grep -q "pkgver=${VERSION}" packaging/arch/PKGBUILD || { echo "Failed to update Arch PKGBUILD Version"; exit 1; }
+          
+          # Commit and push
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add packaging/
-          git commit -m "chore(release): update package manifests for v${VERSION} [skip ci]"
-          git push origin dev
+          
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+              echo "No manifest changes to commit"
+          else
+              git commit -m "chore(release): update package manifests for v${VERSION} [skip ci]"
+              git push origin dev
+          fi
 
       - name: Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2

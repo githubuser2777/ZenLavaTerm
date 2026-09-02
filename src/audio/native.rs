@@ -17,6 +17,69 @@ impl std::fmt::Debug for NativeAudioCapture {
     }
 }
 
+// Extracted unit-testable device selection logic
+pub fn select_capture_device(
+    host: &cpal::Host,
+    device_name: Option<&str>,
+    loopback: bool,
+) -> Result<cpal::Device> {
+    #[cfg(not(target_os = "windows"))]
+    if loopback {
+        return Err(LavaError::Audio(
+            "Loopback capture is only supported natively on Windows".into(),
+        ));
+    }
+
+    let device_opt = if let Some(name) = device_name {
+        let mut found = None;
+        if loopback {
+            if let Ok(devices) = host.output_devices() {
+                for d in devices {
+                    if let Ok(n) = d.name() {
+                        if n == name {
+                            found = Some(d);
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            if let Ok(devices) = host.input_devices() {
+                for d in devices {
+                    if let Ok(n) = d.name() {
+                        if n == name {
+                            found = Some(d);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        found
+    } else {
+        if loopback {
+            host.default_output_device()
+        } else {
+            host.default_input_device()
+        }
+    };
+
+    device_opt.ok_or_else(|| LavaError::Audio("Audio capture device not found".into()))
+}
+
+// Helper to get the correct host across platforms
+fn get_cpal_host() -> cpal::Host {
+    #[cfg(target_os = "windows")]
+    {
+        // For Windows loopback, WASAPI is required.
+        cpal::host_from_id(cpal::HostId::Wasapi).unwrap_or_else(|_| cpal::default_host())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        cpal::default_host()
+    }
+}
+
 impl NativeAudioCapture {
     pub fn new(
         ring_buffer: PcmRingBuffer,
@@ -27,65 +90,31 @@ impl NativeAudioCapture {
         let (ready_tx, ready_rx) = channel();
 
         let device_name_clone = device_name.map(|s| s.to_string());
-        let loopback_clone = loopback;
+
+        // Fail fast if loopback on unsupported OS
+        #[cfg(not(target_os = "windows"))]
+        if loopback {
+            return Err(LavaError::Audio(
+                "Loopback capture is only supported natively on Windows".into(),
+            ));
+        }
 
         thread::Builder::new()
             .name("cpal_audio_worker".into())
             .spawn(move || {
-                #[cfg(target_os = "windows")]
-                let host = cpal::host_from_id(cpal::HostId::Wasapi)
-                    .unwrap_or_else(|_| cpal::default_host());
-                #[cfg(not(target_os = "windows"))]
-                #[cfg(target_os = "windows")]
-                let host = cpal::host_from_id(cpal::HostId::Wasapi)
-                    .unwrap_or_else(|_| cpal::default_host());
-                #[cfg(not(target_os = "windows"))]
-                let host = cpal::default_host();
-
-                let device_opt = if let Some(ref name) = device_name_clone {
-                    let mut found = None;
-                    if loopback_clone && cfg!(target_os = "windows") {
-                        if let Ok(devices) = host.output_devices() {
-                            for d in devices {
-                                if let Ok(n) = d.name() {
-                                    if &n == name {
-                                        found = Some(d);
-                                        break;
-                                    }
-                                }
-                            }
+                let host = get_cpal_host();
+                let device =
+                    match select_capture_device(&host, device_name_clone.as_deref(), loopback) {
+                        Ok(d) => d,
+                        Err(e) => {
+                            let _ = ready_tx.send(Err(e));
+                            return;
                         }
-                    } else {
-                        if let Ok(devices) = host.input_devices() {
-                            for d in devices {
-                                if let Ok(n) = d.name() {
-                                    if &n == name {
-                                        found = Some(d);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    found
-                } else {
-                    if loopback_clone && cfg!(target_os = "windows") {
-                        host.default_output_device()
-                    } else {
-                        host.default_input_device()
-                    }
-                };
+                    };
 
-                let device = match device_opt {
-                    Some(d) => d,
-                    None => {
-                        let _ = ready_tx.send(Err(LavaError::Audio(
-                            "Audio capture device not found".into(),
-                        )));
-                        return;
-                    }
-                };
-
+                // For output/loopback devices, they do not have an input config.
+                // We must use their output config, and CPAL's WASAPI backend natively injects AUDCLNT_STREAMFLAGS_LOOPBACK.
+                // ponytail: cpal natively injects AUDCLNT_STREAMFLAGS_LOOPBACK when build_input_stream is called on an eRender device (see cpal/src/host/wasapi/device.rs). Skipped separate wasapi crate.
                 let supported_config = match device
                     .default_input_config()
                     .or_else(|_| device.default_output_config())
@@ -178,22 +207,14 @@ impl NativeAudioCapture {
 
     pub fn list_devices() -> Vec<AudioDeviceInfo> {
         let mut devices = Vec::new();
-        #[cfg(target_os = "windows")]
-        let host =
-            cpal::host_from_id(cpal::HostId::Wasapi).unwrap_or_else(|_| cpal::default_host());
-        #[cfg(not(target_os = "windows"))]
-        #[cfg(target_os = "windows")]
-        let host =
-            cpal::host_from_id(cpal::HostId::Wasapi).unwrap_or_else(|_| cpal::default_host());
-        #[cfg(not(target_os = "windows"))]
-        let host = cpal::default_host();
+        let host = get_cpal_host();
 
         let default_in = host.default_input_device().and_then(|d| d.name().ok());
-        let default_out = if cfg!(target_os = "windows") {
-            host.default_output_device().and_then(|d| d.name().ok())
-        } else {
-            None
-        };
+
+        #[cfg(target_os = "windows")]
+        let default_out = host.default_output_device().and_then(|d| d.name().ok());
+        #[cfg(not(target_os = "windows"))]
+        let _default_out: Option<String> = None;
 
         if let Ok(input_devices) = host.input_devices() {
             for d in input_devices {
@@ -213,21 +234,20 @@ impl NativeAudioCapture {
             }
         }
 
-        if cfg!(target_os = "windows") {
-            if let Ok(output_devices) = host.output_devices() {
-                for d in output_devices {
-                    if let Ok(name) = d.name() {
-                        if !devices
-                            .iter()
-                            .any(|existing: &AudioDeviceInfo| existing.name == name)
-                        {
-                            let is_default = Some(&name) == default_out.as_ref();
-                            devices.push(AudioDeviceInfo {
-                                name,
-                                is_default,
-                                direction: "output",
-                            });
-                        }
+        #[cfg(target_os = "windows")]
+        if let Ok(output_devices) = host.output_devices() {
+            for d in output_devices {
+                if let Ok(name) = d.name() {
+                    if !devices
+                        .iter()
+                        .any(|existing: &AudioDeviceInfo| existing.name == name)
+                    {
+                        let is_default = Some(&name) == default_out.as_ref();
+                        devices.push(AudioDeviceInfo {
+                            name,
+                            is_default,
+                            direction: "output",
+                        });
                     }
                 }
             }
@@ -250,14 +270,45 @@ mod tests {
     }
 
     #[test]
-    fn test_native_audio_capture_invalid_device() {
-        let rb = PcmRingBuffer::new(128);
-        let res = NativeAudioCapture::new(rb, Some("ThisDeviceDoesNotExist12345"), false);
+    fn test_select_capture_device_invalid_name() {
+        let host = get_cpal_host();
+        let res = select_capture_device(&host, Some("ThisDeviceDoesNotExist12345"), false);
         assert!(res.is_err());
-        let err = res.unwrap_err();
-        match err {
-            LavaError::Audio(msg) => assert!(msg.contains("Audio capture device not found")),
-            _ => panic!("Expected Audio error"),
+        match res {
+            Err(err) => match err {
+                LavaError::Audio(msg) => assert!(msg.contains("Audio capture device not found")),
+                _ => panic!("Expected Audio error"),
+            },
+            Ok(_) => panic!("Expected error, got Ok"),
+        }
+    }
+
+    #[test]
+    fn test_select_capture_device_loopback_os_support() {
+        let host = get_cpal_host();
+        let res = select_capture_device(&host, None, true);
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            assert!(res.is_err());
+            match res {
+                Err(err) => match err {
+                    LavaError::Audio(msg) => {
+                        assert!(
+                            msg.contains("Loopback capture is only supported natively on Windows")
+                        )
+                    }
+                    _ => panic!("Expected Audio error"),
+                },
+                Ok(_) => panic!("Expected error, got Ok"),
+            }
+        }
+
+        // On Windows it might actually succeed if the test runner has an output device,
+        // or fail gracefully if it doesn't. We just ensure it doesn't panic.
+        #[cfg(target_os = "windows")]
+        {
+            let _ = res;
         }
     }
 }
