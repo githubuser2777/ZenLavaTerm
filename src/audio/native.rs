@@ -113,8 +113,8 @@ impl NativeAudioCapture {
                     };
 
                 // For output/loopback devices, they do not have an input config.
-                // We must use their output config, and CPAL's WASAPI backend natively injects AUDCLNT_STREAMFLAGS_LOOPBACK.
-                // ponytail: cpal natively injects AUDCLNT_STREAMFLAGS_LOOPBACK when build_input_stream is called on an eRender device (see cpal/src/host/wasapi/device.rs). Skipped separate wasapi crate.
+                // We must use their output config, and CPAL's WASAPI backend natively injects
+                // AUDCLNT_STREAMFLAGS_LOOPBACK when building an input stream on an eRender device.
                 let supported_config = match device
                     .default_input_config()
                     .or_else(|_| device.default_output_config())

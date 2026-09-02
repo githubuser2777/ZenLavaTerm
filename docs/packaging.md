@@ -35,9 +35,6 @@ yay -S lavaterm
 paru -S lavaterm
 ```
 
-winget install githubuser2777.ZenLavaTerm
-```
-
 ---
 
 ### Linux Installers

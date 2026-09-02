@@ -39,10 +39,10 @@ The audio pipeline follows a decoupled producer-consumer model:
 
 ### Runtime Providers
 
-- **Native Stream Capture (`NativeAudioCapture`)**: Background streaming capture worker powered by `cpal`, implementing real cross-platform hardware audio capture (WASAPI, PipeWire/ALSA, CoreAudio). It detects the default input/output hardware and captures raw PCM streams safely.
-- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is explicitly disabled, or hardware capture is unavailable.
-- **Spectrum Analyzer (`SpectrumAnalyzer`)**: Implements an in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral band integration.
-- **Sample Rate Converter (`resample_linear`)**: High-performance linear interpolation resampler supporting dynamic sample rate conversion (e.g. 48,000 Hz <-> 44,100 Hz).
+- **Native Stream Capture (`NativeAudioCapture`)**: Background streaming capture worker powered by `cpal`, providing cross-platform hardware audio capture across Linux (ALSA), Windows (WASAPI), and macOS (CoreAudio). It detects the default or user-specified audio hardware endpoint and captures raw PCM streams into the ring buffer.
+- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is explicitly disabled, or when native hardware capture is unavailable (graceful fallback).
+- **Spectrum Analyzer (`SpectrumAnalyzer`)**: Implements an in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral band integration, configured dynamically to match the active capture device's sample rate.
+- **Sample Rate Converter (`resample_linear`)**: Linear interpolation resampler utility in `PcmRingBuffer` for sample rate conversions (e.g. 48,000 Hz <-> 44,100 Hz).
 
 
 ## Frequency Band Mappings

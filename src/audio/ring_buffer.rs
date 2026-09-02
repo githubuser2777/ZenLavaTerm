@@ -5,7 +5,6 @@ use std::sync::{Arc, Mutex};
 /// Thread-safe circular ring buffer storing recent PCM audio samples.
 #[derive(Debug, Clone)]
 pub struct PcmRingBuffer {
-    // ponytail: Mutex on PCM ring buffer; lock-free atomic queue if audio capture thread contends
     buffer: Arc<Mutex<InnerBuffer>>,
 }
 

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-08-21 — Phase 12: Audio Architecture, High Performance & V1.0 Release Candidate
 
 ### Added
-- Decoupled cross-platform native audio streaming architecture (`LiveAudioProvider` in `src/audio/capture.rs`) powered by `cpal`, implementing real cross-platform hardware audio capture (WASAPI, PipeWire/ALSA, CoreAudio).
+- Decoupled cross-platform native audio streaming architecture (`LiveAudioProvider` in `src/audio/capture.rs`) powered by `cpal`, implementing real cross-platform hardware audio capture (WASAPI on Windows, ALSA on Linux, CoreAudio on macOS).
 - Unified cross-platform audio provider factory (`create_audio_provider`, `create_live_audio_provider`, and `list_audio_devices` in `src/audio/mod.rs`) with guaranteed lifetime retention of active stream backends and graceful synthetic fallback.
 - CLI audio flags: `--audio-device <DEVICE>` for selecting specific capture devices and `--list-audio-devices` for enumerating available endpoints.
 - TOML configuration `[audio]` schema extension with `device: Option<String>`.
