@@ -1,0 +1,9 @@
+[simulation]
+num_blobs = 18
+gravity_constant = 0.25
+invalid_key = "should be ignored"
+
+[render]
+renderer_type = "block"
+target_fps = 45
+smooth_gradient = false

@@ -82,7 +82,7 @@
   - **Auto-Detection (`--theme auto`)**: Automatically inspects desktop color caches with smooth fallback.
   - **Custom Files**: Load custom JSON and TOML 4-anchor color schemes.
 - 📊 **Ambient System Observability (`--system`)**: Zero-clutter hardware monitoring reading native operating system telemetry (Linux `/proc` and `/sys`, Windows Win32 API `GetSystemTimes`/`GlobalMemoryStatusEx`/`GetSystemPowerStatus`, and macOS Mach kernel `host_statistics64`). CPU load drives fluid turbulence, RAM usage expands blob volume, and battery charge regulates thermal buoyancy.
-- 🎵 **Audio-Reactive Mode (`--audio`)**: Zero-dependency Cooley-Tukey Radix-2 FFT and Hann-windowed spectrum analyzer isolating Bass ($20-250\text{ Hz}$), Midrange ($250-4000\text{ Hz}$), and Treble ($4-20\text{ kHz}$) into fluid kinematics. Currently uses a **synthetic audio generator**; native hardware capture backends (WASAPI, PipeWire, CoreAudio) are planned for v1.1.
+- 🎵 **Audio-Reactive Mode (`--audio`)**: Zero-dependency Cooley-Tukey Radix-2 FFT and Hann-windowed spectrum analyzer isolating Bass ($20-250\text{ Hz}$), Midrange ($250-4000\text{ Hz}$), and Treble ($4-20\text{ kHz}$) into fluid kinematics. Captures real-time system audio using native platform APIs via `cpal` (WASAPI, PipeWire/ALSA, CoreAudio).
 - 🖱️ **Interactive Physics & Live Modulation**: Click to detonate radial shockwaves, drag to stir fluid currents with momentum transfer, right click for localized thermal pulses, scroll for buoyancy pressure surges, and type characters for acoustic wave ripples.
 - 🪟 **Multiplexer & Widget Integration (`tmux` / `zellij`)**:
   - **Compact Mode (`--compact`)**: Automatically scales particle counts and radii for small split-panes without particle saturation.
@@ -203,8 +203,6 @@ lavaterm --system --theme matrix
 ### Audio-Reactive Music Visualizer
 Respond dynamically to music and rhythmic beats:
 
-> **Note:** In v1.0, audio-reactive mode uses a built-in **synthetic audio generator** (procedural beat pulses). Native hardware audio capture via WASAPI (Windows), PipeWire/ALSA (Linux), and CoreAudio (macOS) is deferred to v1.1. The audio architecture, FFT pipeline, and CLI flags are fully functional and will seamlessly transition to live hardware capture in a future release.
-
 ```bash
 lavaterm --audio --theme synthwave
 ```
@@ -277,9 +275,9 @@ Options:
       --width <COLS>         Explicit viewport width (columns)
       --height <ROWS>        Explicit viewport height (rows)
       --system               Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
-      --audio                Enable audio-reactive visualizer mode (FFT spectrum analyzer, synthetic generator in v1.0)
-      --audio-device <DEV>   Target audio input or capture device name (scaffolded for v1.1 hardware capture)
-      --list-audio-devices   List available audio capture devices and exit (returns placeholder names in v1.0)
+      --audio                Enable audio-reactive visualizer mode (FFT spectrum analyzer)
+      --audio-device <DEV>   Target audio input or capture device name
+      --list-audio-devices   List available audio capture devices and exit
       --no-mouse             Disable mouse click shockwaves, dragging, and scroll pressure
       --no-ripple            Disable keyboard ripples on character keypresses
       --shockwave-force <F>  Multiplier for mouse click shockwave force [default: 1.0]

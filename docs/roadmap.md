@@ -131,16 +131,15 @@ Phase 13: Native Hardware Audio Capture (Planned - v1.1)
   - Live hardware audio capture backends (WASAPI capture on Windows, CoreAudio on macOS, native PipeWire on Linux) remain synthetic/stream-based and are scheduled for Phase 13 (v1.1).
 
 ### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete — v1.0.0, Milestone #1)
-- **Objective**: Implement unified audio capture architecture with synthetic stream providers, ring buffer resampling and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
+- **Objective**: Implement unified audio capture architecture with real hardware audio capture via CPAL (WASAPI, PipeWire/ALSA, CoreAudio), ring buffer resampling and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
 - **GitHub Milestone**: `Phase 12 — Performance, Native Audio & V1.0` (Milestone #1)
 - **Status**: Complete
-- **Note**: Audio capture backends (`WindowsAudioCapture`, `LinuxAudioCapture`, `MacOSAudioCapture`) implement the streaming architecture with **synthetic signal generators** (procedural sine waves). Native hardware bindings (WASAPI, PipeWire, CoreAudio) are deferred to Phase 13 (v1.1). The FFT pipeline, ring buffer, CLI flags, and provider factory are fully functional and will seamlessly transition to real hardware capture.
 - **Issue Breakdown**:
   - `Issue 12.0` (#45): Architecture, Performance Baseline & Phase 12 Inception (Closed)
   - `Issue 12.1` (#46): Audio Architecture, Dynamic Provider Contract & Ring Buffer Hardening (Closed)
-  - `Issue 12.2` (#47): Windows Audio Capture Architecture (WASAPI Loopback Scaffolding) (Closed)
-  - `Issue 12.3` (#48): Linux Audio Capture Architecture (PipeWire/ALSA Scaffolding) (Closed)
-  - `Issue 12.4` (#49): macOS Audio Capture Architecture (CoreAudio Scaffolding) (Closed)
+  - `Issue 12.2` (#47): Windows Audio Capture Architecture (Closed)
+  - `Issue 12.3` (#48): Linux Audio Capture Architecture (Closed)
+  - `Issue 12.4` (#49): macOS Audio Capture Architecture (Closed)
   - `Issue 12.5` (#50): Unified Cross-Platform Audio Runtime, CLI `--audio-device` & Dynamic Fallback (Closed)
   - `Issue 12.6` (#51): Micro-Benchmark Expansion, Allocation Profiling & Hotspot Analysis (Closed)
   - `Issue 12.7` (#52): High-Performance Scalar Field & Framebuffer Rasterization Optimizations (Closed)
@@ -148,16 +147,6 @@ Phase 13: Native Hardware Audio Capture (Planned - v1.1)
   - `Issue 12.9` (#54): V1.0 API Freeze, Configuration Migration Engine & Security Hardening (Closed)
   - `Issue 12.10` (#55): V1.0 Release Candidate Validation & Documentation Sync (Closed)
   - `Issue 12.11` (#56): ZenLavaTerm v1.0.0 Production Release & Transition (Closed)
-
-### Phase 13: Native Hardware Audio Capture (Planned — v1.1)
-- **Objective**: Replace synthetic audio signal generators with real platform-native hardware audio capture via `cpal` or direct platform FFI bindings (WASAPI on Windows, PipeWire/ALSA on Linux, CoreAudio on macOS).
-- **Scope**:
-  - Implement true WASAPI loopback capture on Windows using `windows-sys` or `cpal`.
-  - Implement true PipeWire/ALSA stream capture on Linux.
-  - Implement true CoreAudio input stream capture on macOS with TCC permission handling.
-  - Replace synthetic `list_devices()` with real hardware device enumeration.
-  - Ensure `LiveAudioProvider::is_live()` accurately reflects hardware state.
-  - Update `PcmRingBuffer` to lock-free design if profiling warrants it.
 
 
 

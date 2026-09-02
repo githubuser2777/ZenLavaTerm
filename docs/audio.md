@@ -39,12 +39,8 @@ The audio pipeline follows a decoupled producer-consumer model:
 
 ### Runtime Providers
 
-> **v1.0 Scope Note:** In v1.0, the platform-specific audio capture backends below implement the streaming architecture using **synthetic signal generators** (procedural sine waves) rather than real hardware audio capture. The architecture, provider contracts, ring buffer, and FFT pipeline are fully functional. Native hardware bindings (WASAPI, PipeWire/ALSA, CoreAudio) will be implemented in v1.1 (Phase 13) and will integrate seamlessly through the existing `LiveAudioProvider` interface.
-
-- **Windows Stream Capture (`WindowsAudioCapture`)**: Background streaming capture worker with device selection scaffolding (render loopback / input stream). Currently generates synthetic PCM data; WASAPI hardware binding deferred to v1.1.
-- **Linux Stream Capture (`LinuxAudioCapture`)**: Background streaming capture worker with PipeWire / PulseAudio / ALSA device enumeration scaffolding. Currently generates synthetic PCM data; native PipeWire/ALSA binding deferred to v1.1.
-- **macOS Stream Capture (`MacOSAudioCapture`)**: Background streaming capture worker with CoreAudio device enumeration scaffolding. Currently generates synthetic PCM data; CoreAudio hardware binding deferred to v1.1.
-- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is disabled, headless/CI environments are detected, or hardware capture is unavailable.
+- **Native Stream Capture (`NativeAudioCapture`)**: Background streaming capture worker powered by `cpal`, implementing real cross-platform hardware audio capture (WASAPI, PipeWire/ALSA, CoreAudio). It detects the default input/output hardware and captures raw PCM streams safely.
+- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is explicitly disabled, or hardware capture is unavailable.
 - **Spectrum Analyzer (`SpectrumAnalyzer`)**: Implements an in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral band integration.
 - **Sample Rate Converter (`resample_linear`)**: High-performance linear interpolation resampler supporting dynamic sample rate conversion (e.g. 48,000 Hz <-> 44,100 Hz).
 
@@ -62,10 +58,10 @@ The audio pipeline follows a decoupled producer-consumer model:
 ### Enabling via CLI Flag
 
 ```bash
-# List available audio capture devices (returns placeholder device names in v1.0)
+# List available audio capture devices
 lavaterm --list-audio-devices
 
-# Run LavaTerm with audio-reactive mode (synthetic generator in v1.0)
+# Run LavaTerm with audio-reactive mode
 lavaterm --audio
 
 # Select a specific audio input/output device

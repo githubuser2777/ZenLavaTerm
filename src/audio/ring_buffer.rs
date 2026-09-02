@@ -102,6 +102,49 @@ impl PcmRingBuffer {
     }
 
     /// Pushes interleaved 16-bit integer PCM samples, normalizing to [-1.0, 1.0] and downmixing to mono.
+    /// Pushes interleaved 16-bit unsigned integer PCM samples, normalizing to [-1.0, 1.0] and downmixing to mono.
+    pub fn push_interleaved_u16(&self, interleaved_samples: &[u16], channels: usize) {
+        if interleaved_samples.is_empty() || channels == 0 {
+            return;
+        }
+
+        let num_frames = interleaved_samples.len() / channels;
+
+        if num_frames == 0 {
+            return;
+        }
+
+        let inv_scale = 1.0 / 32768.0f32;
+
+        let inv_channels = 1.0 / (channels as f32);
+
+        if let Ok(mut inner) = self.buffer.lock() {
+            let cap = inner.capacity;
+
+            for frame_idx in 0..num_frames {
+                let start = frame_idx * channels;
+
+                let mut sum = 0.0f32;
+
+                for c in 0..channels {
+                    let s = (interleaved_samples[start + c] as f32 - 32768.0) * inv_scale;
+
+                    sum += s;
+                }
+
+                let mono_sample = (sum * inv_channels).clamp(-1.0, 1.0);
+
+                let pos = inner.write_pos;
+
+                inner.data[pos] = mono_sample;
+
+                inner.write_pos = (pos + 1) % cap;
+            }
+
+            inner.total_written = inner.total_written.saturating_add(num_frames);
+        }
+    }
+
     pub fn push_interleaved_i16(&self, interleaved_samples: &[i16], channels: usize) {
         if interleaved_samples.is_empty() || channels == 0 {
             return;
@@ -286,5 +329,24 @@ mod tests {
         let mut read_out = Vec::new();
         ring.read_recent(4, &mut read_out);
         assert_eq!(read_out, vec![0.0, 0.0, 0.0, 0.0]);
+    }
+}
+
+#[cfg(test)]
+mod additional_tests {
+    use super::*;
+
+    #[test]
+    fn test_ring_buffer_push_interleaved_u16() {
+        let ring = PcmRingBuffer::new(8);
+        // Stereo u16: 65535 -> ~1.0, 32768 -> 0.0, 0 -> -1.0
+        let stereo = vec![65535u16, 65535u16, 0u16, 65535u16];
+        ring.push_interleaved_u16(&stereo, 2);
+
+        let mut read_out = Vec::new();
+        ring.read_recent(2, &mut read_out);
+        assert_eq!(read_out.len(), 2);
+        assert!((read_out[0] - 1.0).abs() < 1e-3);
+        assert!((read_out[1] - 0.0).abs() < 1e-3);
     }
 }
