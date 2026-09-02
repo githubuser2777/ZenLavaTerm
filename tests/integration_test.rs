@@ -642,6 +642,7 @@ fn test_phase12_unified_audio_runtime_and_device_enumeration() {
         enabled: false,
         bpm: 130.0,
         device: None,
+        loopback: false,
     };
     let mut disabled_provider = create_audio_provider(&disabled_cfg).unwrap();
     assert!(!disabled_provider.is_live());
@@ -654,6 +655,7 @@ fn test_phase12_unified_audio_runtime_and_device_enumeration() {
         enabled: true,
         bpm: 120.0,
         device: None,
+        loopback: false,
     };
     let mut enabled_provider = create_audio_provider(&enabled_cfg).unwrap();
     let signals = enabled_provider.poll_signals();

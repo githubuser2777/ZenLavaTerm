@@ -11,7 +11,7 @@ makedepends=('cargo' 'git')
 provides=('lavaterm')
 conflicts=('lavaterm-bin' 'lavaterm-git')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('6d2b6de1db92f55514f244831d6882fed3687620dcec229185dc21455e8f92ff')
+sha256sums=('__SOURCE_SHA__')
 
 build() {
   cd "ZenLavaTerm-$pkgver"

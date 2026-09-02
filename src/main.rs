@@ -92,6 +92,9 @@ struct Cli {
     /// Target audio input or capture device name
     #[arg(long, value_name = "DEVICE")]
     audio_device: Option<String>,
+    /// Capture system audio (loopback) instead of microphone
+    #[arg(long)]
+    audio_loopback: bool,
 
     /// List available audio capture devices and exit
     #[arg(long)]
@@ -488,6 +491,9 @@ fn main() -> std::process::ExitCode {
     let mut audio_config = config.audio.clone();
     if cli.audio {
         audio_config.enabled = true;
+    }
+    if cli.audio_loopback {
+        audio_config.loopback = true;
     }
     if let Some(ref dev) = cli.audio_device {
         audio_config.device = Some(dev.clone());

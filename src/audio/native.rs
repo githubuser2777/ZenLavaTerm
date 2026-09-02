@@ -18,48 +18,45 @@ impl std::fmt::Debug for NativeAudioCapture {
 }
 
 impl NativeAudioCapture {
-    pub fn new(ring_buffer: PcmRingBuffer, device_name: Option<&str>) -> Result<Self> {
+    pub fn new(ring_buffer: PcmRingBuffer, device_name: Option<&str>, loopback: bool) -> Result<Self> {
         let (shutdown_tx, shutdown_rx) = channel();
         let (ready_tx, ready_rx) = channel();
 
         let device_name_clone = device_name.map(|s| s.to_string());
+        let loopback_clone = loopback;
 
         thread::Builder::new()
             .name("cpal_audio_worker".into())
             .spawn(move || {
                 let host = cpal::default_host();
 
+
                 let device_opt = if let Some(ref name) = device_name_clone {
                     let mut found = None;
-                    if let Ok(devices) = host.input_devices() {
-                        for d in devices {
-                            if let Ok(n) = d.name() {
-                                if &n == name {
-                                    found = Some(d);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if found.is_none() && cfg!(target_os = "windows") {
+                    if loopback_clone && cfg!(target_os = "windows") {
                         if let Ok(devices) = host.output_devices() {
                             for d in devices {
                                 if let Ok(n) = d.name() {
-                                    if &n == name {
-                                        found = Some(d);
-                                        break;
-                                    }
+                                    if &n == name { found = Some(d); break; }
+                                }
+                            }
+                        }
+                    } else {
+                        if let Ok(devices) = host.input_devices() {
+                            for d in devices {
+                                if let Ok(n) = d.name() {
+                                    if &n == name { found = Some(d); break; }
                                 }
                             }
                         }
                     }
                     found
                 } else {
-                    let mut dev = host.default_input_device();
-                    if dev.is_none() && cfg!(target_os = "windows") {
-                        dev = host.default_output_device();
+                    if loopback_clone && cfg!(target_os = "windows") {
+                        host.default_output_device()
+                    } else {
+                        host.default_input_device()
                     }
-                    dev
                 };
 
                 let device = match device_opt {
@@ -230,7 +227,7 @@ mod tests {
     #[test]
     fn test_native_audio_capture_invalid_device() {
         let rb = PcmRingBuffer::new(128);
-        let res = NativeAudioCapture::new(rb, Some("ThisDeviceDoesNotExist12345"));
+        let res = NativeAudioCapture::new(rb, Some("ThisDeviceDoesNotExist12345"), false);
         assert!(res.is_err());
         let err = res.unwrap_err();
         match err {
