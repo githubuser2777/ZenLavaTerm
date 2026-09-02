@@ -35,14 +35,6 @@ yay -S lavaterm
 paru -S lavaterm
 ```
 
-#### Scoop (Windows)
-```powershell
-scoop bucket add zenlavaterm https://github.com/githubuser2777/ZenLavaTerm.git
-scoop install lavaterm
-```
-
-#### Windows Package Manager (Winget)
-```powershell
 winget install githubuser2777.ZenLavaTerm
 ```
 

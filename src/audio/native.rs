@@ -41,7 +41,7 @@ impl NativeAudioCapture {
                             }
                         }
                     }
-                    if found.is_none() {
+                    if found.is_none() && cfg!(target_os = "windows") {
                         if let Ok(devices) = host.output_devices() {
                             for d in devices {
                                 if let Ok(n) = d.name() {
@@ -55,14 +55,19 @@ impl NativeAudioCapture {
                     }
                     found
                 } else {
-                    host.default_input_device()
-                        .or_else(|| host.default_output_device())
+                    let mut dev = host.default_input_device();
+                    if dev.is_none() && cfg!(target_os = "windows") {
+                        dev = host.default_output_device();
+                    }
+                    dev
                 };
 
                 let device = match device_opt {
                     Some(d) => d,
                     None => {
-                        let _ = ready_tx.send(Err(LavaError::Audio("Device not found".into())));
+                        let _ = ready_tx.send(Err(LavaError::Audio(
+                            "Audio capture device not found".into(),
+                        )));
                         return;
                     }
                 };
@@ -133,9 +138,7 @@ impl NativeAudioCapture {
                             return;
                         }
 
-                        // Notify that initialization succeeded and send back the actual sample rate
                         if ready_tx.send(Ok(sample_rate)).is_ok() {
-                            // Block thread until shutdown signal received
                             let _ = shutdown_rx.recv();
                         }
                     }
@@ -149,7 +152,6 @@ impl NativeAudioCapture {
             })
             .map_err(|e| LavaError::Audio(format!("Failed to spawn audio thread: {}", e)))?;
 
-        // Wait for worker thread to initialize
         let actual_sample_rate = ready_rx.recv().map_err(|_| {
             LavaError::Audio("Audio worker thread panicked during initialization".into())
         })??;
@@ -165,26 +167,50 @@ impl NativeAudioCapture {
         let host = cpal::default_host();
 
         let default_in = host.default_input_device().and_then(|d| d.name().ok());
-        let default_out = host.default_output_device().and_then(|d| d.name().ok());
+        let default_out = if cfg!(target_os = "windows") {
+            host.default_output_device().and_then(|d| d.name().ok())
+        } else {
+            None
+        };
 
         if let Ok(input_devices) = host.input_devices() {
             for d in input_devices {
                 if let Ok(name) = d.name() {
                     let is_default = Some(&name) == default_in.as_ref();
-                    devices.push(AudioDeviceInfo { name, is_default });
-                }
-            }
-        }
-        if let Ok(output_devices) = host.output_devices() {
-            for d in output_devices {
-                if let Ok(name) = d.name() {
-                    if !devices.iter().any(|existing| existing.name == name) {
-                        let is_default = Some(&name) == default_out.as_ref();
-                        devices.push(AudioDeviceInfo { name, is_default });
+                    if !devices
+                        .iter()
+                        .any(|existing: &AudioDeviceInfo| existing.name == name)
+                    {
+                        devices.push(AudioDeviceInfo {
+                            name,
+                            is_default,
+                            direction: "input",
+                        });
                     }
                 }
             }
         }
+
+        if cfg!(target_os = "windows") {
+            if let Ok(output_devices) = host.output_devices() {
+                for d in output_devices {
+                    if let Ok(name) = d.name() {
+                        if !devices
+                            .iter()
+                            .any(|existing: &AudioDeviceInfo| existing.name == name)
+                        {
+                            let is_default = Some(&name) == default_out.as_ref();
+                            devices.push(AudioDeviceInfo {
+                                name,
+                                is_default,
+                                direction: "output",
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
         devices
     }
 }
@@ -196,8 +222,6 @@ mod tests {
     #[test]
     fn test_list_devices_does_not_panic() {
         let devices = NativeAudioCapture::list_devices();
-        // Just verify it runs without panicking. Depending on the CI environment,
-        // it may or may not find devices.
         if !devices.is_empty() {
             println!("Found {} devices", devices.len());
         }
@@ -210,7 +234,7 @@ mod tests {
         assert!(res.is_err());
         let err = res.unwrap_err();
         match err {
-            LavaError::Audio(msg) => assert!(msg.contains("Device not found")),
+            LavaError::Audio(msg) => assert!(msg.contains("Audio capture device not found")),
             _ => panic!("Expected Audio error"),
         }
     }

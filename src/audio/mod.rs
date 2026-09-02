@@ -26,19 +26,16 @@ pub fn default_audio_provider() -> Box<dyn AudioProvider> {
     Box::new(SyntheticAudioGenerator::default())
 }
 
-/// Creates a unified audio provider based on configuration, attempting live capture with graceful fallback to synthetic audio.
-pub fn create_audio_provider(config: &AudioConfig) -> Box<dyn AudioProvider> {
+/// Creates a unified audio provider based on configuration.
+/// If audio is explicitly enabled, it strictly attempts to open a live capture stream.
+/// Failure to open the native stream will result in an error, NOT a silent fallback to synthetic audio.
+pub fn create_audio_provider(config: &AudioConfig) -> Result<Box<dyn AudioProvider>> {
     if !config.enabled {
-        return Box::new(SyntheticAudioGenerator::new(config.bpm));
+        return Ok(Box::new(SyntheticAudioGenerator::new(config.bpm)));
     }
 
-    match create_live_audio_provider(config.device.as_deref()) {
-        Ok(live_provider) => Box::new(live_provider),
-        Err(e) => {
-            eprintln!("Warning: Live audio capture unavailable ({e}); falling back to synthetic beat generator.");
-            Box::new(SyntheticAudioGenerator::new(config.bpm))
-        }
-    }
+    let live_provider = create_live_audio_provider(config.device.as_deref())?;
+    Ok(Box::new(live_provider))
 }
 
 /// Creates an active `LiveAudioProvider` with the platform-native capture stream running.

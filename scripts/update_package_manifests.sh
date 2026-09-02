@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # update_package_manifests.sh
-# Synchronizes package manager manifests (Homebrew, AUR, Scoop, Winget)
+# Synchronizes package manager manifests (Homebrew, AUR)
 # with computed release artifact checksums from dist/ or staging.
 #
 # Usage:
@@ -111,20 +111,6 @@ if [[ -f "packaging/aur/.SRCINFO" ]]; then
     sed -i "s/pkgver = [0-9]\+\.[0-9]\+\.[0-9]\+/pkgver = ${VERSION}/" packaging/aur/.SRCINFO
     sed -i "s/sha256sums = .*/sha256sums = ${SOURCE_SHA}/" packaging/aur/.SRCINFO
     echo "✓ Updated packaging/aur/.SRCINFO"
-fi
-
-# 3. Update Scoop manifest
-if [[ -f "packaging/scoop/lavaterm.json" ]]; then
-    sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${VERSION}\"/" packaging/scoop/lavaterm.json
-    sed -i "s/\"hash\": \"[^\"]*\"/\"hash\": \"${MSI_SHA}\"/" packaging/scoop/lavaterm.json
-    echo "✓ Updated packaging/scoop/lavaterm.json"
-fi
-
-# 4. Update Winget manifests
-WINGET_INSTALLER="packaging/winget/manifests/g/githubuser2777/ZenLavaTerm/${VERSION}/githubuser2777.ZenLavaTerm.installer.yaml"
-if [[ -f "${WINGET_INSTALLER}" ]]; then
-    sed -i "s/InstallerSha256: .*/InstallerSha256: ${MSI_SHA}/" "${WINGET_INSTALLER}"
-    echo "✓ Updated ${WINGET_INSTALLER}"
 fi
 
 echo "=== Package manifest synchronization successfully completed! ==="

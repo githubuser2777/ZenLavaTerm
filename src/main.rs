@@ -212,7 +212,7 @@ fn run_headless(
         None
     };
     let mut audio_provider = if opts.audio_reactive {
-        Some(create_audio_provider(&opts.audio_config))
+        Some(create_audio_provider(&opts.audio_config)?)
     } else {
         None
     };
@@ -315,7 +315,7 @@ fn run_event_loop(
         None
     };
     let mut audio_provider = if opts.audio_reactive {
-        Some(create_audio_provider(&opts.audio_config))
+        Some(create_audio_provider(&opts.audio_config)?)
     } else {
         None
     };
@@ -440,7 +440,8 @@ fn main() -> std::process::ExitCode {
         println!("Available Audio Capture Devices ({} found):", devices.len());
         for (i, dev) in devices.iter().enumerate() {
             let default_tag = if dev.is_default { " (default)" } else { "" };
-            println!("  [{}] {}{}", i + 1, dev.name, default_tag);
+            let direction_tag = format!("[{}]", dev.direction);
+            println!("  {}. {} {} {}", i + 1, direction_tag, dev.name, default_tag);
         }
         return std::process::ExitCode::SUCCESS;
     }

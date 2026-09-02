@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TOML configuration `[audio]` schema extension with `device: Option<String>`.
 - Multi-channel PCM audio ingestion, stereo-to-mono downmixing, 16-bit integer PCM normalization, and linear sample-rate resampling (`48kHz` <-> `44.1kHz`) in `PcmRingBuffer`.
 - Public API freeze and backward-compatible TOML configuration migration engine (`src/config/migrate.rs`) automatically upgrading legacy schemas (`num_blobs`, `renderer_type`, `target_fps`, `smooth_gradient`, `tempo`, `compact_mode`).
-- Community package manager manifests and recipes: Homebrew Formula (`packaging/homebrew/lavaterm.rb`), Arch Linux AUR (`packaging/aur/PKGBUILD` and `.SRCINFO`), Scoop (`packaging/scoop/lavaterm.json`), and Windows Package Manager Winget (`packaging/winget/`).
+- Community package manager manifests and recipes: Homebrew Formula (`packaging/homebrew/lavaterm.rb`) and Arch Linux AUR (`packaging/aur/PKGBUILD` and `.SRCINFO`).
 - Fail-closed package manager manifest release synchronization tooling (`scripts/update_package_manifests.sh`).
 - Comprehensive micro-benchmark suite (`benches/field_and_render.rs`) with Criterion profiling across scalar field math, multi-resolution rasterization, renderers, Radix-2 FFT window sizes (512, 1024, 2048), linear resampling, and simulation pipeline.
 

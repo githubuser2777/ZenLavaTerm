@@ -643,7 +643,7 @@ fn test_phase12_unified_audio_runtime_and_device_enumeration() {
         bpm: 130.0,
         device: None,
     };
-    let mut disabled_provider = create_audio_provider(&disabled_cfg);
+    let mut disabled_provider = create_audio_provider(&disabled_cfg).unwrap();
     assert!(!disabled_provider.is_live());
     assert_eq!(disabled_provider.provider_name(), "synthetic");
     let disabled_signals = disabled_provider.poll_signals();
@@ -655,7 +655,7 @@ fn test_phase12_unified_audio_runtime_and_device_enumeration() {
         bpm: 120.0,
         device: None,
     };
-    let mut enabled_provider = create_audio_provider(&enabled_cfg);
+    let mut enabled_provider = create_audio_provider(&enabled_cfg).unwrap();
     let signals = enabled_provider.poll_signals();
     assert!(signals.bass.is_finite());
     assert!(signals.mid.is_finite());
