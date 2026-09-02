@@ -287,7 +287,8 @@ jobs:
         run: |
           echo "Updating manifests for version $VERSION..."
           # Since the source archive is created on GitHub, we need to download it to hash it
-          wget -qO source.tar.gz "https://github.com/githubuser2777/ZenLavaTerm/archive/refs/tags/v${VERSION}.tar.gz"
+          wget --fail --show-progress -O source.tar.gz "https://github.com/githubuser2777/ZenLavaTerm/archive/refs/tags/v${VERSION}.tar.gz"
+          test -s source.tar.gz
           SOURCE_SHA=$(sha256sum source.tar.gz | awk '{print $1}')
           
           # Replace placeholders with real hash
@@ -300,12 +301,24 @@ jobs:
                               
                               
                               
-          # Commit and push
+          # Commit and push to dev/main, not the tag
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add packaging/
-          git commit -m "chore(release): update package manifests for v${VERSION} [skip ci]" || true
-          git push origin HEAD:${{ github.ref_name }} || true
+          
+          # Fetch and checkout dev branch to update manifests there
+          git fetch origin dev
+          git checkout dev
+          
+          # Apply the sed changes again to the checked out branch
+          sed -i "s/__SOURCE_SHA__/${SOURCE_SHA}/g" packaging/homebrew/lavaterm.rb packaging/aur/PKGBUILD packaging/aur/.SRCINFO packaging/arch/PKGBUILD
+          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v${VERSION}/g" packaging/homebrew/lavaterm.rb
+          sed -i "s/pkgver=[0-9]\+\.[0-9]\+\.[0-9]\+/pkgver=${VERSION}/g" packaging/aur/PKGBUILD packaging/arch/PKGBUILD
+          sed -i "s/pkgver = [0-9]\+\.[0-9]\+\.[0-9]\+/pkgver = ${VERSION}/g" packaging/aur/.SRCINFO
+          
+          git add packaging/
+          git commit -m "chore(release): update package manifests for v${VERSION} [skip ci]"
+          git push origin dev
 
       - name: Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2

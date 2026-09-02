@@ -18,7 +18,11 @@ impl std::fmt::Debug for NativeAudioCapture {
 }
 
 impl NativeAudioCapture {
-    pub fn new(ring_buffer: PcmRingBuffer, device_name: Option<&str>, loopback: bool) -> Result<Self> {
+    pub fn new(
+        ring_buffer: PcmRingBuffer,
+        device_name: Option<&str>,
+        loopback: bool,
+    ) -> Result<Self> {
         let (shutdown_tx, shutdown_rx) = channel();
         let (ready_tx, ready_rx) = channel();
 
@@ -28,8 +32,15 @@ impl NativeAudioCapture {
         thread::Builder::new()
             .name("cpal_audio_worker".into())
             .spawn(move || {
+                #[cfg(target_os = "windows")]
+                let host = cpal::host_from_id(cpal::HostId::Wasapi)
+                    .unwrap_or_else(|_| cpal::default_host());
+                #[cfg(not(target_os = "windows"))]
+                #[cfg(target_os = "windows")]
+                let host = cpal::host_from_id(cpal::HostId::Wasapi)
+                    .unwrap_or_else(|_| cpal::default_host());
+                #[cfg(not(target_os = "windows"))]
                 let host = cpal::default_host();
-
 
                 let device_opt = if let Some(ref name) = device_name_clone {
                     let mut found = None;
@@ -37,7 +48,10 @@ impl NativeAudioCapture {
                         if let Ok(devices) = host.output_devices() {
                             for d in devices {
                                 if let Ok(n) = d.name() {
-                                    if &n == name { found = Some(d); break; }
+                                    if &n == name {
+                                        found = Some(d);
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -45,7 +59,10 @@ impl NativeAudioCapture {
                         if let Ok(devices) = host.input_devices() {
                             for d in devices {
                                 if let Ok(n) = d.name() {
-                                    if &n == name { found = Some(d); break; }
+                                    if &n == name {
+                                        found = Some(d);
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -161,6 +178,14 @@ impl NativeAudioCapture {
 
     pub fn list_devices() -> Vec<AudioDeviceInfo> {
         let mut devices = Vec::new();
+        #[cfg(target_os = "windows")]
+        let host =
+            cpal::host_from_id(cpal::HostId::Wasapi).unwrap_or_else(|_| cpal::default_host());
+        #[cfg(not(target_os = "windows"))]
+        #[cfg(target_os = "windows")]
+        let host =
+            cpal::host_from_id(cpal::HostId::Wasapi).unwrap_or_else(|_| cpal::default_host());
+        #[cfg(not(target_os = "windows"))]
         let host = cpal::default_host();
 
         let default_in = host.default_input_device().and_then(|d| d.name().ok());

@@ -39,7 +39,10 @@ pub fn create_audio_provider(config: &AudioConfig) -> Result<Box<dyn AudioProvid
 }
 
 /// Creates an active `LiveAudioProvider` with the platform-native capture stream running.
-pub fn create_live_audio_provider(device_name: Option<&str>, loopback: bool) -> Result<LiveAudioProvider> {
+pub fn create_live_audio_provider(
+    device_name: Option<&str>,
+    loopback: bool,
+) -> Result<LiveAudioProvider> {
     let ring_buffer = PcmRingBuffer::new(4096);
     let capture = native::NativeAudioCapture::new(ring_buffer.clone(), device_name, loopback)?;
     let analyzer = SpectrumAnalyzer::new(capture.actual_sample_rate, 1024);

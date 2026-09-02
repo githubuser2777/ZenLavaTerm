@@ -444,7 +444,13 @@ fn main() -> std::process::ExitCode {
         for (i, dev) in devices.iter().enumerate() {
             let default_tag = if dev.is_default { " (default)" } else { "" };
             let direction_tag = format!("[{}]", dev.direction);
-            println!("  {}. {} {} {}", i + 1, direction_tag, dev.name, default_tag);
+            println!(
+                "  {}. {} {} {}",
+                i + 1,
+                direction_tag,
+                dev.name,
+                default_tag
+            );
         }
         return std::process::ExitCode::SUCCESS;
     }
