@@ -18,7 +18,7 @@ This audit was conducted strictly against the repository state (`githubuser2777/
 | Issue 12.5 (#50) | `COMPLETE` | `create_audio_provider` factory, CLI `--audio-device` flag, and fallback traits exist. | None |
 | Issue 12.6 (#51) | `COMPLETE` | Criterion micro-benchmarks exist in `benches/field_and_render.rs`. | None |
 | Issue 12.7 (#52) | `COMPLETE` | Rasterization and renderer loops (`VirtualFramebuffer::as_slice`) use direct 1D indexing and hoisted invariants. | None |
-| Issue 12.8 (#53) | `COMPLETE` | AUR, Homebrew, Scoop, and Winget manifests exist in `packaging/`. | None |
+| Issue 12.8 (#53) | `COMPLETE` | AUR and Homebrew manifests exist in `packaging/` (Scoop & Winget deferred to post-1.0). | None |
 | Issue 12.9 (#54) | `COMPLETE` | V1.0 API freeze and TOML config migration engine implemented in `src/config/migrate.rs`. | None |
 | Issue 12.10 (#55) | `PARTIAL` | Documentation sync is incomplete. The PR 57 remediation commit `b092bbe` did not update `README.md`, `docs/audio.md`, or `docs/roadmap.md` to reflect the synthetic fallback reality. | Synchronize remaining documentation. |
 | Issue 12.11 (#56) | `BLOCKED` | Dependent on Issue 55 remediation and PR 57 merge. | Clear blockers and merge PR 57. |

@@ -131,7 +131,7 @@ Phase 13: Advanced Audio Features & DSP Expansion (Planned - v1.1)
   - Successfully expanded platform support across Linux, macOS, and Windows with robust configuration and theme discovery. Hardened foundation for Phase 12.
 
 ### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete — v1.0.0, Milestone #1)
-- **Objective**: Implement unified audio capture architecture with real hardware audio capture via CPAL (WASAPI, PipeWire/ALSA, CoreAudio), ring buffer resampling and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
+- **Objective**: Implement unified audio capture architecture with real cross-platform hardware audio capture via CPAL (WASAPI on Windows, ALSA on Linux, CoreAudio on macOS), ring buffer resampling utility and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
 - **GitHub Milestone**: `Phase 12 — Performance, Native Audio & V1.0` (Milestone #1)
 - **Status**: Complete
 - **Issue Breakdown**:
