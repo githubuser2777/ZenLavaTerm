@@ -95,6 +95,13 @@ if [[ -f "packaging/aur/PKGBUILD" ]]; then
     echo "✓ Updated packaging/aur/PKGBUILD"
 fi
 
+# 2b. Update Arch source PKGBUILD (packaging/arch/)
+if [[ -f "packaging/arch/PKGBUILD" ]]; then
+    sed -i "s/pkgver=[0-9]\+\.[0-9]\+\.[0-9]\+/pkgver=${VERSION}/" packaging/arch/PKGBUILD
+    sed -i "s/sha256sums=('[^']*')/sha256sums=('${SOURCE_SHA}')/" packaging/arch/PKGBUILD
+    echo "✓ Updated packaging/arch/PKGBUILD"
+fi
+
 if [[ -f "packaging/aur/.SRCINFO" ]]; then
     sed -i "s/pkgver = [0-9]\+\.[0-9]\+\.[0-9]\+/pkgver = ${VERSION}/" packaging/aur/.SRCINFO
     sed -i "s/sha256sums = .*/sha256sums = ${SOURCE_SHA}/" packaging/aur/.SRCINFO

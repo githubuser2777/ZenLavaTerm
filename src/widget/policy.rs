@@ -53,6 +53,7 @@ pub struct ResolvedPolicy {
 /// Precedence: CLI Arguments > TOML Configuration > Built-in Defaults.
 pub fn resolve_policy(input: &PolicyInput) -> Result<ResolvedPolicy> {
     // 1. Conflict Validation
+    // ponytail: manual combinatorial flag checks; use clap ArgGroup conflicts_with if CLI routing gets more complex
     if input.cli_snapshot && (input.cli_inline || input.cli_headless) {
         return Err(LavaError::Config(
             "Conflict: --snapshot cannot be combined with --inline or --headless".to_string(),

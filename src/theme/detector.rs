@@ -13,6 +13,7 @@ pub enum DetectedThemeSource {
 
 /// Automatically detects the active system theme from Pywal, Wallust, or default fallback.
 pub fn detect_auto_theme() -> (ColorPalette, DetectedThemeSource) {
+    // ponytail: linear filesystem probes on startup; inotify/cached watcher if live hot-reloading needed
     if let Ok(pal) = load_pywal_default() {
         return (pal, DetectedThemeSource::Pywal);
     }

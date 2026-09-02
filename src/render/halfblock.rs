@@ -28,6 +28,7 @@ impl Renderer for HalfBlockRenderer {
         self.last_bg = None;
 
         for row in 0..term_rows {
+            // ponytail: direct formatted cell writes; line-buffered/diff-based damage grid if terminal IO saturates
             let top_row_start = (row * 2) * term_cols;
             let btm_row_start = (row * 2 + 1) * term_cols;
 

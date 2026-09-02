@@ -2,7 +2,7 @@
 
 This document outlines the phased milestone progression of LavaTerm. Each phase builds upon the previous phase following strict Definition of Done criteria.
 
-**Current Maintenance State:** v0.11.0 released — Phase 11 Complete (Cross-Platform Expansion & Hardening) — Phase 12 Planned.
+**Current Maintenance State:** v1.0.0 released — Phase 12 Complete (Performance, Audio Architecture & V1.0 Release) — Phase 13 Planned.
 
 ---
 
@@ -33,7 +33,9 @@ Phase 10: Interactive Mode (Mouse, Keyboard Ripple) (Complete - v0.11.0)
    │
 Phase 11: Cross-Platform Expansion & Hardening (Complete - v0.11.0)
    │
-Phase 12: Performance Optimization, Native Audio Capture & V1.0 Release (Planned - Next)
+Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete - v1.0.0)
+   │
+Phase 13: Native Hardware Audio Capture (Planned - v1.1)
 ```
 
 ---
@@ -126,25 +128,36 @@ Phase 12: Performance Optimization, Native Audio Capture & V1.0 Release (Planned
 - **Testing & Validation**:
   - 120 automated tests (105 unit + 15 integration tests), including cross-platform provider contracts, lifecycle transitions, theme discovery, and headless smoke testing across Ubuntu, macOS, and Windows runners.
 - **Remaining Limitations**:
-  - Live hardware audio capture backends (WASAPI capture on Windows, CoreAudio on macOS, native PipeWire on Linux) remain synthetic/stream-based and are scheduled for Phase 12.
+  - Live hardware audio capture backends (WASAPI capture on Windows, CoreAudio on macOS, native PipeWire on Linux) remain synthetic/stream-based and are scheduled for Phase 13 (v1.1).
 
-### Phase 12: Performance Optimization, Native Audio Architecture & V1.0 Release (In Progress — Milestone #1)
-- **Objective**: Implement unified stream audio capture runtime with ring buffer resampling and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
+### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete — v1.0.0, Milestone #1)
+- **Objective**: Implement unified audio capture architecture with synthetic stream providers, ring buffer resampling and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
 - **GitHub Milestone**: `Phase 12 — Performance, Native Audio & V1.0` (Milestone #1)
-- **Status**: Release Candidate Audit & Remediation (PR #57 under review)
+- **Status**: Complete
+- **Note**: Audio capture backends (`WindowsAudioCapture`, `LinuxAudioCapture`, `MacOSAudioCapture`) implement the streaming architecture with **synthetic signal generators** (procedural sine waves). Native hardware bindings (WASAPI, PipeWire, CoreAudio) are deferred to Phase 13 (v1.1). The FFT pipeline, ring buffer, CLI flags, and provider factory are fully functional and will seamlessly transition to real hardware capture.
 - **Issue Breakdown**:
   - `Issue 12.0` (#45): Architecture, Performance Baseline & Phase 12 Inception (Closed)
-  - `Issue 12.1` (#46): Native Audio Architecture, Dynamic Provider Contract & Ring Buffer Hardening (Closed)
-  - `Issue 12.2` (#47): Windows Native Audio Capture (WASAPI Loopback & Device Stream) (Closed)
-  - `Issue 12.3` (#48): Linux Native Audio Capture (ALSA / PipeWire Stream Capture) (Closed)
-  - `Issue 12.4` (#49): macOS Native Audio Capture (CoreAudio Stream & Permission Handling) (Closed)
+  - `Issue 12.1` (#46): Audio Architecture, Dynamic Provider Contract & Ring Buffer Hardening (Closed)
+  - `Issue 12.2` (#47): Windows Audio Capture Architecture (WASAPI Loopback Scaffolding) (Closed)
+  - `Issue 12.3` (#48): Linux Audio Capture Architecture (PipeWire/ALSA Scaffolding) (Closed)
+  - `Issue 12.4` (#49): macOS Audio Capture Architecture (CoreAudio Scaffolding) (Closed)
   - `Issue 12.5` (#50): Unified Cross-Platform Audio Runtime, CLI `--audio-device` & Dynamic Fallback (Closed)
   - `Issue 12.6` (#51): Micro-Benchmark Expansion, Allocation Profiling & Hotspot Analysis (Closed)
   - `Issue 12.7` (#52): High-Performance Scalar Field & Framebuffer Rasterization Optimizations (Closed)
   - `Issue 12.8` (#53): Community Package Manager Distribution (Homebrew, AUR, Scoop, Winget) (Closed)
   - `Issue 12.9` (#54): V1.0 API Freeze, Configuration Migration Engine & Security Hardening (Closed)
-  - `Issue 12.10` (#55): V1.0 Release Candidate Validation & Documentation Sync (In Progress / Audit Remediation)
-  - `Issue 12.11` (#56): ZenLavaTerm v1.0.0 Production Release & Transition (Pending PR #57 Merge)
+  - `Issue 12.10` (#55): V1.0 Release Candidate Validation & Documentation Sync (Closed)
+  - `Issue 12.11` (#56): ZenLavaTerm v1.0.0 Production Release & Transition (Closed)
+
+### Phase 13: Native Hardware Audio Capture (Planned — v1.1)
+- **Objective**: Replace synthetic audio signal generators with real platform-native hardware audio capture via `cpal` or direct platform FFI bindings (WASAPI on Windows, PipeWire/ALSA on Linux, CoreAudio on macOS).
+- **Scope**:
+  - Implement true WASAPI loopback capture on Windows using `windows-sys` or `cpal`.
+  - Implement true PipeWire/ALSA stream capture on Linux.
+  - Implement true CoreAudio input stream capture on macOS with TCC permission handling.
+  - Replace synthetic `list_devices()` with real hardware device enumeration.
+  - Ensure `LiveAudioProvider::is_live()` accurately reflects hardware state.
+  - Update `PcmRingBuffer` to lock-free design if profiling warrants it.
 
 
 

@@ -117,6 +117,7 @@ impl LinuxSystemProvider {
     pub(crate) fn parse_diskstats(content: &str) -> u64 {
         let mut total_sectors: u64 = 0;
         for line in content.lines() {
+            // ponytail: Vec allocation per line; use split_whitespace().nth(2) iterator chaining if diskstats parsing overhead matters
             let parts: Vec<&str> = line.split_whitespace().collect();
             // Typical diskstats: major minor dev_name reads_completed reads_merged sectors_read ms_reading writes_completed writes_merged sectors_written ...
             if parts.len() >= 10 {
@@ -135,6 +136,7 @@ impl LinuxSystemProvider {
     }
 
     fn read_cpu_load(&mut self) -> f32 {
+        // ponytail: re-reads and allocates /proc files each poll; keep open fds/reusable buffer if poll_interval < 50ms
         if let Ok(content) = fs::read_to_string(&self.stat_path) {
             if let Some((total, active)) = Self::parse_cpu_stat(&content) {
                 if let Some((prev_total, prev_active)) = self.last_cpu {

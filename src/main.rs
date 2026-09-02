@@ -412,6 +412,7 @@ fn run_event_loop(
 
             let elapsed = now.elapsed();
             if elapsed < target_frame_duration {
+                // ponytail: thread::sleep for frame cadence; spin-wait/high-precision timer if jitter occurs
                 std::thread::sleep(target_frame_duration - elapsed);
             }
         }

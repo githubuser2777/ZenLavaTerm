@@ -61,6 +61,7 @@ impl MacOSAudioCapture {
                 let mut phase = 0.0f32;
 
                 while running_flag.load(Ordering::Relaxed) {
+                    // ponytail: Vec allocation per 10ms tick; reuse static array/pre-allocated Vec if GC/alloc overhead stutters audio
                     let mut chunk = Vec::with_capacity(chunk_size);
                     for _ in 0..chunk_size {
                         let val = (phase * std::f32::consts::TAU).sin() * 0.35;

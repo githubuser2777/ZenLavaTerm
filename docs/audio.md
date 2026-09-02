@@ -16,7 +16,7 @@ The audio pipeline follows a decoupled producer-consumer model:
                                │ Ingests PCM samples
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 Lockless PCM Ring Buffer                    │
+│                 Thread-Safe PCM Ring Buffer                 │
 │  - Decouples high-rate audio capture from render loop       │
 └──────────────────────────────┬──────────────────────────────┘
                                │ Extracts analysis window
@@ -39,9 +39,11 @@ The audio pipeline follows a decoupled producer-consumer model:
 
 ### Runtime Providers
 
-- **Windows Stream Capture (`WindowsAudioCapture`)**: Background streaming capture worker managing device selection (render loopback / input stream), ingesting PCM chunks into the lock-free ring buffer.
-- **Linux Stream Capture (`LinuxAudioCapture`)**: Background streaming capture worker supporting PipeWire / PulseAudio / ALSA stream device enumeration and ring buffer ingestion.
-- **macOS Stream Capture (`MacOSAudioCapture`)**: Background streaming capture worker managing CoreAudio device enumeration and ring buffer ingestion with graceful permission fallback.
+> **v1.0 Scope Note:** In v1.0, the platform-specific audio capture backends below implement the streaming architecture using **synthetic signal generators** (procedural sine waves) rather than real hardware audio capture. The architecture, provider contracts, ring buffer, and FFT pipeline are fully functional. Native hardware bindings (WASAPI, PipeWire/ALSA, CoreAudio) will be implemented in v1.1 (Phase 13) and will integrate seamlessly through the existing `LiveAudioProvider` interface.
+
+- **Windows Stream Capture (`WindowsAudioCapture`)**: Background streaming capture worker with device selection scaffolding (render loopback / input stream). Currently generates synthetic PCM data; WASAPI hardware binding deferred to v1.1.
+- **Linux Stream Capture (`LinuxAudioCapture`)**: Background streaming capture worker with PipeWire / PulseAudio / ALSA device enumeration scaffolding. Currently generates synthetic PCM data; native PipeWire/ALSA binding deferred to v1.1.
+- **macOS Stream Capture (`MacOSAudioCapture`)**: Background streaming capture worker with CoreAudio device enumeration scaffolding. Currently generates synthetic PCM data; CoreAudio hardware binding deferred to v1.1.
 - **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is disabled, headless/CI environments are detected, or hardware capture is unavailable.
 - **Spectrum Analyzer (`SpectrumAnalyzer`)**: Implements an in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral band integration.
 - **Sample Rate Converter (`resample_linear`)**: High-performance linear interpolation resampler supporting dynamic sample rate conversion (e.g. 48,000 Hz <-> 44,100 Hz).
@@ -60,10 +62,10 @@ The audio pipeline follows a decoupled producer-consumer model:
 ### Enabling via CLI Flag
 
 ```bash
-# List all available audio capture devices
+# List available audio capture devices (returns placeholder device names in v1.0)
 lavaterm --list-audio-devices
 
-# Run LavaTerm with default audio capture reactivity
+# Run LavaTerm with audio-reactive mode (synthetic generator in v1.0)
 lavaterm --audio
 
 # Select a specific audio input/output device

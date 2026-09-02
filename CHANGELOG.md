@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-08-21 — Phase 12: Audio Architecture, High Performance & V1.0 Release Candidate
 
 ### Added
-- Decoupled cross-platform audio streaming architecture (`LiveAudioProvider` in `src/audio/capture.rs`) with background streaming capture workers for Windows (`WindowsAudioCapture`), Linux (`LinuxAudioCapture`), and macOS (`MacOSAudioCapture`).
+- Decoupled cross-platform audio streaming architecture (`LiveAudioProvider` in `src/audio/capture.rs`) with background streaming capture workers for Windows (`WindowsAudioCapture`), Linux (`LinuxAudioCapture`), and macOS (`MacOSAudioCapture`). Note: v1.0 capture backends use synthetic signal generators; native hardware bindings (WASAPI, PipeWire, CoreAudio) are deferred to v1.1.
 - Unified cross-platform audio provider factory (`create_audio_provider`, `create_live_audio_provider`, and `list_audio_devices` in `src/audio/mod.rs`) with guaranteed lifetime retention of active stream backends and graceful synthetic fallback.
 - CLI audio flags: `--audio-device <DEVICE>` for selecting specific capture devices and `--list-audio-devices` for enumerating available endpoints.
 - TOML configuration `[audio]` schema extension with `device: Option<String>`.
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized framebuffer rasterization in `src/render/mod.rs` with precomputed inverse dimensions and direct contiguous slice indexing, eliminating per-pixel bounds check overhead.
 - Optimized `HalfBlockRenderer`, `BlockRenderer`, and `BrailleRenderer` with direct slice indexing and pre-allocated formatting buffers.
 - Recorded 50-65% benchmark speedups on rasterization and rendering loops, achieving >5,000 FPS equivalent throughput.
-- Expanded automated test suite to 132 tests (114 unit tests + 18 integration tests) covering 100% of functional paths.
+- Expanded automated test suite to 133 tests (115 unit tests + 18 integration tests) covering 100% of functional paths.
 
 ## [0.11.0] - 2026-08-19 — Phase 11: Cross-Platform Expansion
 
