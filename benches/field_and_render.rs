@@ -1,6 +1,7 @@
 //! Comprehensive performance benchmarks for LavaTerm field evaluation, renderers, audio FFT, and pipeline.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use std::hint::black_box;
 use lavaterm::{
     audio::{resample_linear, AudioSignals, SpectrumAnalyzer},
     core::{PhysicsParams, Simulation},

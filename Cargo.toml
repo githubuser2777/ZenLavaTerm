@@ -31,7 +31,7 @@ signal-hook = "0.4"
 cpal = "0.15"
 
 [dev-dependencies]
-criterion = { version = "0.5", default-features = false }
+criterion = { version = "0.8", default-features = false }
 
 [[bench]]
 name = "field_and_render"
