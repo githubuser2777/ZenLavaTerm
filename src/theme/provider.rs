@@ -10,6 +10,83 @@ use super::{
 use crate::render::ColorPalette;
 use std::path::Path;
 
+/// Trait implemented by theme sources to produce a `ColorPalette`.
+pub trait ThemeProvider {
+    /// Loads or resolves the color palette.
+    fn load_palette(&self) -> Result<ColorPalette, String>;
+}
+
+/// Provider for built-in named presets.
+#[derive(Debug, Clone)]
+pub struct PresetThemeProvider(pub String);
+
+impl ThemeProvider for PresetThemeProvider {
+    fn load_palette(&self) -> Result<ColorPalette, String> {
+        get_preset_palette(&self.0).ok_or_else(|| {
+            format!(
+                "Unknown theme preset '{}'. Available presets: {}",
+                self.0,
+                list_presets().join(", ")
+            )
+        })
+    }
+}
+
+/// Provider for Pywal desktop colors.
+#[derive(Debug, Clone, Default)]
+pub struct PywalThemeProvider {
+    pub path: Option<std::path::PathBuf>,
+}
+
+impl ThemeProvider for PywalThemeProvider {
+    fn load_palette(&self) -> Result<ColorPalette, String> {
+        if let Some(ref p) = self.path {
+            super::pywal::load_pywal_from_path(p)
+        } else {
+            load_pywal_default()
+        }
+    }
+}
+
+/// Provider for Wallust dynamic colors.
+#[derive(Debug, Clone, Default)]
+pub struct WallustThemeProvider {
+    pub path: Option<std::path::PathBuf>,
+}
+
+impl ThemeProvider for WallustThemeProvider {
+    fn load_palette(&self) -> Result<ColorPalette, String> {
+        if let Some(ref p) = self.path {
+            super::wallust::load_wallust_from_path(p)
+        } else {
+            load_wallust_default()
+        }
+    }
+}
+
+/// Provider for custom theme files on disk.
+#[derive(Debug, Clone)]
+pub struct FileThemeProvider {
+    pub path: std::path::PathBuf,
+}
+
+impl ThemeProvider for FileThemeProvider {
+    fn load_palette(&self) -> Result<ColorPalette, String> {
+        load_custom_theme_file(&self.path)
+    }
+}
+
+/// Provider that automatically queries desktop color caches.
+#[derive(Debug, Clone, Default)]
+pub struct AutoThemeProvider;
+
+impl ThemeProvider for AutoThemeProvider {
+    fn load_palette(&self) -> Result<ColorPalette, String> {
+        let (pal, _source) = detect_auto_theme();
+        Ok(pal)
+    }
+}
+
 /// Resolves a theme specification string into a `ColorPalette`.
 ///
 /// `spec` can be:
@@ -22,7 +99,8 @@ pub fn resolve_theme(spec: &str) -> Result<ColorPalette, String> {
     let clean = spec.trim();
 
     if clean.eq_ignore_ascii_case("auto") {
-        return Ok(detect_auto_theme());
+        let (pal, _) = detect_auto_theme();
+        return Ok(pal);
     }
 
     if clean.eq_ignore_ascii_case("pywal") {

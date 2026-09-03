@@ -8,7 +8,7 @@ use crate::{LavaError, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Loads a configuration from a specific file path with automatic backward-compatible schema migration.
+/// Loads a configuration from a specific file path, supporting backward-compatible schema aliases via Serde.
 pub fn load_from_path<P: AsRef<Path>>(path: P) -> Result<Config> {
     let path_ref = path.as_ref();
     let content = fs::read_to_string(path_ref).map_err(|e| {

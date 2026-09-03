@@ -513,6 +513,23 @@ mod tests {
     }
 
     #[test]
+    fn test_partially_specified_palette_deserialization() {
+        let toml_str = r##"
+            [palette]
+            background = "#123456"
+        "##;
+
+        let config: Config =
+            toml::from_str(toml_str).expect("Partially specified palette TOML should deserialize");
+        assert_eq!(config.palette.background, Rgb::new(0x12, 0x34, 0x56));
+        // Unspecified colors should retain defaults
+        let default_pal = ColorPalette::default();
+        assert_eq!(config.palette.bottom, default_pal.bottom);
+        assert_eq!(config.palette.middle, default_pal.middle);
+        assert_eq!(config.palette.top, default_pal.top);
+    }
+
+    #[test]
     fn test_widget_toml_parsing_and_validation() {
         let toml_str = r##"
             [widget]
