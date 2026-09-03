@@ -253,8 +253,7 @@ impl NativeAudioCapture {
                     .iter()
                     .any(|existing: &AudioDeviceInfo| existing.name == name)
                 {
-                    let is_default =
-                        default_out_device.as_ref().is_some_and(|def| d == *def);
+                    let is_default = default_out_device.as_ref().is_some_and(|def| d == *def);
                     devices.push(AudioDeviceInfo {
                         name,
                         is_default,

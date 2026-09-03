@@ -1,7 +1,6 @@
 //! Comprehensive performance benchmarks for LavaTerm field evaluation, renderers, audio FFT, and pipeline.
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use std::hint::black_box;
 use lavaterm::{
     audio::{resample_linear, AudioSignals, SpectrumAnalyzer},
     core::{PhysicsParams, Simulation},
@@ -12,6 +11,7 @@ use lavaterm::{
     },
     widget::{CompactProfile, CompactScaler},
 };
+use std::hint::black_box;
 
 fn bench_field_evaluation(c: &mut Criterion) {
     let mut group = c.benchmark_group("field_evaluation");
