@@ -302,8 +302,10 @@ mod tests {
         // Disconnect
         feeder.simulate_disconnect();
         assert!(!feeder.is_stream_alive());
+        // Allow any in-flight chunk started before disconnect to finish pushing
+        thread::sleep(Duration::from_millis(15));
         let count_at_disconnect = ring.total_samples_written();
-        thread::sleep(Duration::from_millis(25));
+        thread::sleep(Duration::from_millis(30));
         let count_after_disconnect = ring.total_samples_written();
         assert_eq!(
             count_at_disconnect, count_after_disconnect,

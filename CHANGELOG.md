@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized framebuffer rasterization in `src/render/mod.rs` with precomputed inverse dimensions and direct contiguous slice indexing, eliminating per-pixel bounds check overhead.
 - Optimized `HalfBlockRenderer`, `BlockRenderer`, and `BrailleRenderer` with direct slice indexing and pre-allocated formatting buffers.
 - Recorded 50-65% benchmark speedups on rasterization loops (achieving 7,865 FPS on $80 \times 48$ smooth gradient and 15,954 FPS on stepped gradient) and validated lock-free ring buffer throughput under multi-threaded contention, documented in [`docs/benchmarks/benchmark_baseline.md`](docs/benchmarks/benchmark_baseline.md) and [`docs/benchmarks/criterion_baseline.log`](docs/benchmarks/criterion_baseline.log).
-- Expanded automated test suite to 142 tests (120 unit tests + 22 integration tests) covering 100% of functional paths.
+- Expanded automated test suite to 143 tests (120 unit tests + 23 integration tests) covering 100% of functional paths.
 
 ## [0.11.0] - 2026-08-19 — Phase 11: Cross-Platform Expansion
 
