@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-09-03 — Codebase Hygiene, Dependency Optimization & Patch Release
+
+### Refactored & Optimized
+- **Test Fixture Isolation**: Relocated `MockAudioStreamFeeder` (~230 LOC) out of production binary `src/audio/provider.rs` into shared integration test fixtures `tests/common/mod.rs`.
+- **Dependency Elimination**: Dropped `thiserror` crate by manually implementing standard `std::fmt::Display`, `std::error::Error`, and `From<std::io::Error>` on `LavaError`.
+- **Native Serde Migration**: Replaced manual AST re-writing engine `src/config/migrate.rs` (-144 LOC) with native Serde field aliases (`#[serde(alias = "...")]`) across config structs.
+- **PaletteConfig Consolidation**: Merged duplicated `PaletteConfig` struct into `pub type PaletteConfig = ColorPalette;` with `#[serde(default)]`, ensuring robust partial table deserialization.
+- **Dead Code Pruning**: Removed unused `resample_linear`, `push_resampled`, and dormant `widget::multiplexer` module.
+- **Dependency Upgrades**: Upgraded dependencies to latest releases (`crossterm 0.29`, `signal-hook 0.4`, `criterion 0.8`, `cpal 0.18`) via PR #71 and #72.
+- **SemVer Stability**: Fully preserved public API exports under `lavaterm::theme` and `Simulation::field` for 100% backward compatibility.
+
 ## [1.0.0] - 2026-08-21 — Phase 12: Audio Architecture, High Performance & V1.0 Release Candidate
 
 ### Added
