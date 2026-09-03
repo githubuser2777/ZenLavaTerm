@@ -8,13 +8,13 @@
 #   ./scripts/update_package_manifests.sh [VERSION] [DIST_DIR] [--allow-placeholders]
 #
 # Defaults:
-#   VERSION: 1.0.0
+#   VERSION: 1.0.1
 #   DIST_DIR: dist
 #   Strict mode: Enabled (fails closed if release artifacts are missing)
 # =============================================================================
 set -euo pipefail
 
-VERSION="${1:-1.0.0}"
+VERSION="${1:-1.0.1}"
 DIST_DIR="${2:-dist}"
 ALLOW_PLACEHOLDERS=0
 
