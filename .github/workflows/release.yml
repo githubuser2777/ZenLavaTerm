@@ -304,6 +304,7 @@ jobs:
 
           # Update manifests in dist
           sed -i "s/__SOURCE_SHA__/${SOURCE_SHA}/g" dist/packaging/homebrew/lavaterm.rb dist/packaging/aur/PKGBUILD dist/packaging/aur/.SRCINFO dist/packaging/arch/PKGBUILD
+          sed -i "s/sha256sums=('[^']*')/sha256sums=('${SOURCE_SHA}')/g" dist/packaging/arch/PKGBUILD dist/packaging/aur/PKGBUILD
           sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v${VERSION}/g" dist/packaging/homebrew/lavaterm.rb
           sed -i "s/pkgver=[0-9]\+\.[0-9]\+\.[0-9]\+/pkgver=${VERSION}/g" dist/packaging/aur/PKGBUILD dist/packaging/arch/PKGBUILD
           sed -i "s/pkgver = [0-9]\+\.[0-9]\+\.[0-9]\+/pkgver = ${VERSION}/g" dist/packaging/aur/.SRCINFO
