@@ -82,8 +82,7 @@ pub struct AutoThemeProvider;
 
 impl ThemeProvider for AutoThemeProvider {
     fn load_palette(&self) -> Result<ColorPalette, String> {
-        let (pal, _source) = detect_auto_theme();
-        Ok(pal)
+        Ok(detect_auto_theme())
     }
 }
 

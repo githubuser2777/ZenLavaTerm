@@ -10,7 +10,7 @@ pub mod provider;
 pub mod pywal;
 pub mod wallust;
 
-pub use detector::{detect_auto_theme, DetectedThemeSource};
+pub use detector::detect_auto_theme;
 pub use file::load_custom_theme_file;
 pub use preset::{get_preset_palette, list_presets, ThemePreset, PRESETS};
 pub use provider::{

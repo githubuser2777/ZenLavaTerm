@@ -2,7 +2,7 @@
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use lavaterm::{
-    audio::{resample_linear, AudioSignals, SpectrumAnalyzer},
+    audio::{AudioSignals, SpectrumAnalyzer},
     core::{PhysicsParams, Simulation},
     reactive::SystemSignals,
     render::{
@@ -140,15 +140,6 @@ fn bench_fft_and_audio(c: &mut Criterion) {
         b.iter(|| {
             let sig = analyzer.analyze(&pcm_1024);
             black_box(sig.bass);
-        });
-    });
-
-    let pcm_48k = vec![0.5f32; 1024];
-    let mut resample_out = Vec::with_capacity(1024);
-    group.bench_function("resample_linear_48k_to_44k", |b| {
-        b.iter(|| {
-            resample_linear(&pcm_48k, 48000, 44100, &mut resample_out);
-            black_box(resample_out.len());
         });
     });
 
