@@ -9,7 +9,10 @@ pub mod signals;
 
 pub use capture::LiveAudioProvider;
 pub use fft::SpectrumAnalyzer;
-pub use provider::{AudioDeviceInfo, AudioProvider, MockAudioProvider, SyntheticAudioGenerator};
+pub use provider::{
+    AudioDeviceInfo, AudioProvider, MockAudioProvider, MockAudioStreamFeeder,
+    SyntheticAudioGenerator,
+};
 pub use ring_buffer::{resample_linear, PcmRingBuffer};
 pub use signals::AudioSignals;
 
@@ -36,7 +39,10 @@ pub fn create_audio_provider(config: &AudioConfig) -> Result<Box<dyn AudioProvid
     }
 
     match create_live_audio_provider(config.device.as_deref(), config.loopback) {
-        Ok(live_provider) => Ok(Box::new(live_provider)),
+        Ok(mut live_provider) => {
+            live_provider.set_fallback_bpm(config.bpm);
+            Ok(Box::new(live_provider))
+        }
         Err(err) => {
             eprintln!("Audio capture unavailable: {err}; falling back to synthetic generator");
             Ok(Box::new(SyntheticAudioGenerator::new(config.bpm)))
@@ -52,12 +58,11 @@ pub fn create_live_audio_provider(
     let ring_buffer = PcmRingBuffer::new(4096);
     let capture = native::NativeAudioCapture::new(ring_buffer.clone(), device_name, loopback)?;
     let analyzer = SpectrumAnalyzer::new(capture.actual_sample_rate, 1024);
+    let stream_alive = capture.stream_alive();
 
     let backend: Option<Box<dyn std::any::Any + Send + Sync>> = Some(Box::new(capture));
 
-    Ok(LiveAudioProvider::with_backend(
-        ring_buffer,
-        analyzer,
-        backend,
-    ))
+    let mut provider = LiveAudioProvider::with_backend(ring_buffer, analyzer, backend);
+    provider.set_stream_alive(stream_alive);
+    Ok(provider)
 }

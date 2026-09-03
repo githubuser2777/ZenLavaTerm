@@ -3,17 +3,23 @@ use super::ring_buffer::PcmRingBuffer;
 use crate::{LavaError, Result};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{SampleFormat, StreamConfig};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Sender};
+use std::sync::Arc;
 use std::thread;
 
 pub struct NativeAudioCapture {
     _shutdown_tx: Sender<()>,
     pub actual_sample_rate: u32,
+    pub stream_alive: Arc<AtomicBool>,
 }
 
 impl std::fmt::Debug for NativeAudioCapture {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NativeAudioCapture").finish()
+        f.debug_struct("NativeAudioCapture")
+            .field("actual_sample_rate", &self.actual_sample_rate)
+            .field("stream_alive", &self.stream_alive.load(Ordering::Relaxed))
+            .finish()
     }
 }
 
@@ -88,6 +94,8 @@ impl NativeAudioCapture {
     ) -> Result<Self> {
         let (shutdown_tx, shutdown_rx) = channel();
         let (ready_tx, ready_rx) = channel();
+        let stream_alive = Arc::new(AtomicBool::new(true));
+        let stream_alive_cb = stream_alive.clone();
 
         let device_name_clone = device_name.map(|s| s.to_string());
 
@@ -134,7 +142,10 @@ impl NativeAudioCapture {
                 let channels = config.channels as usize;
                 let sample_rate = config.sample_rate.0;
 
-                let err_fn = |err| eprintln!("Audio stream error: {}", err);
+                let err_fn = move |err| {
+                    stream_alive_cb.store(false, Ordering::SeqCst);
+                    eprintln!("Audio stream error: {}", err);
+                };
 
                 let stream_res = match sample_format {
                     SampleFormat::F32 => {
@@ -202,7 +213,13 @@ impl NativeAudioCapture {
         Ok(Self {
             _shutdown_tx: shutdown_tx,
             actual_sample_rate,
+            stream_alive,
         })
+    }
+
+    /// Returns a shared handle to the stream alive atomic flag.
+    pub fn stream_alive(&self) -> Arc<AtomicBool> {
+        self.stream_alive.clone()
     }
 
     pub fn list_devices() -> Vec<AudioDeviceInfo> {

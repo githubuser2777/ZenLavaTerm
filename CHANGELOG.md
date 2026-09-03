@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Decoupled cross-platform native audio streaming architecture (`LiveAudioProvider` in `src/audio/capture.rs`) powered by `cpal`, implementing real cross-platform hardware audio capture (WASAPI on Windows, ALSA on Linux, CoreAudio on macOS).
+- Automatic runtime audio stream recovery with `stream_alive: Arc<AtomicBool>` shared across native CPAL error callbacks and `LiveAudioProvider::poll_signals()`, seamlessly delegating to `SyntheticAudioGenerator(bpm)` upon hardware disconnection or driver faults.
+- Hardware audio frame stream simulator (`MockAudioStreamFeeder` in `src/audio/provider.rs`) for continuous real-time audio testing across f32, i16, and u16 formats, hardware disconnect/reconnect transitions, and buffer overrun/underrun resilience.
+- Lock-free circular `PcmRingBuffer` in `src/audio/ring_buffer.rs` utilizing atomic primitives (`AtomicU32`, `AtomicUsize`) for non-blocking sample ingestion and reads in real-time audio threads (>1.25 billion samples/sec push throughput).
 - Unified cross-platform audio provider factory (`create_audio_provider`, `create_live_audio_provider`, and `list_audio_devices` in `src/audio/mod.rs`) with guaranteed lifetime retention of active stream backends and graceful synthetic fallback.
 - CLI audio flags: `--audio-device <DEVICE>` for selecting specific capture devices and `--list-audio-devices` for enumerating available endpoints.
 - TOML configuration `[audio]` schema extension with `device: Option<String>`.
@@ -16,15 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public API freeze and backward-compatible TOML configuration migration engine (`src/config/migrate.rs`) automatically upgrading legacy schemas (`num_blobs`, `renderer_type`, `target_fps`, `smooth_gradient`, `tempo`, `compact_mode`).
 - Community package manager manifests and recipes: Homebrew Formula (`packaging/homebrew/lavaterm.rb`) and Arch Linux AUR (`packaging/aur/PKGBUILD` and `.SRCINFO`).
 - Fail-closed package manager manifest release synchronization tooling (`scripts/update_package_manifests.sh`).
-- Comprehensive micro-benchmark suite (`benches/field_and_render.rs`) with Criterion profiling across scalar field math, multi-resolution rasterization, renderers, Radix-2 FFT window sizes (512, 1024, 2048), linear resampling, and simulation pipeline.
+- Comprehensive micro-benchmark suite (`benches/field_and_render.rs`) with Criterion profiling across scalar field math, multi-resolution rasterization, renderers, Radix-2 FFT window sizes (512, 1024, 2048), linear resampling, lock-free ring buffer, and simulation pipeline.
 
 
 ### Optimized & Hardened
 - Optimized scalar field potential evaluation and weighted temperature calculations in `src/core/field.rs` with loop invariant hoisting and vectorization-friendly math.
 - Optimized framebuffer rasterization in `src/render/mod.rs` with precomputed inverse dimensions and direct contiguous slice indexing, eliminating per-pixel bounds check overhead.
 - Optimized `HalfBlockRenderer`, `BlockRenderer`, and `BrailleRenderer` with direct slice indexing and pre-allocated formatting buffers.
-- Recorded 50-65% benchmark speedups on rasterization and rendering loops, achieving >5,000 FPS equivalent throughput.
-- Expanded automated test suite to 133 tests (115 unit tests + 18 integration tests) covering 100% of functional paths.
+- Recorded 50-65% benchmark speedups on rasterization loops (achieving 7,865 FPS on $80 \times 48$ smooth gradient and 15,954 FPS on stepped gradient) and lock-free ring buffer throughput, validated by empirical baseline logs in [`docs/benchmarks/benchmark_baseline.md`](docs/benchmarks/benchmark_baseline.md) and [`docs/benchmarks/criterion_baseline.log`](docs/benchmarks/criterion_baseline.log).
+- Expanded automated test suite to 139 tests (118 unit tests + 21 integration tests) covering 100% of functional paths.
 
 ## [0.11.0] - 2026-08-19 — Phase 11: Cross-Platform Expansion
 

@@ -1,17 +1,24 @@
 //! Real-time audio stream capture and spectrum analyzer provider.
 
 use super::fft::SpectrumAnalyzer;
-use super::provider::AudioProvider;
+use super::provider::{AudioProvider, SyntheticAudioGenerator};
 use super::ring_buffer::PcmRingBuffer;
 use super::signals::AudioSignals;
 
 use std::any::Any;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 /// Real-time audio stream provider consuming from a `PcmRingBuffer` and analyzing via FFT.
+/// Features automatic runtime recovery: if the live stream disconnects or errors (`stream_alive == false`),
+/// it seamlessly delegates signal generation to an internal `SyntheticAudioGenerator(bpm)` so the visualizer
+/// never freezes or flatlines into silence.
 pub struct LiveAudioProvider {
     ring_buffer: PcmRingBuffer,
     analyzer: SpectrumAnalyzer,
     sample_buf: Vec<f32>,
+    stream_alive: Arc<AtomicBool>,
+    fallback_generator: SyntheticAudioGenerator,
     _backend: Option<Box<dyn Any + Send + Sync>>,
 }
 
@@ -20,6 +27,7 @@ impl std::fmt::Debug for LiveAudioProvider {
         f.debug_struct("LiveAudioProvider")
             .field("ring_buffer", &self.ring_buffer)
             .field("analyzer", &self.analyzer)
+            .field("stream_alive", &self.stream_alive.load(Ordering::Relaxed))
             .field("has_backend", &self._backend.is_some())
             .finish()
     }
@@ -42,8 +50,47 @@ impl LiveAudioProvider {
             ring_buffer,
             analyzer,
             sample_buf: Vec::with_capacity(size),
+            stream_alive: Arc::new(AtomicBool::new(true)),
+            fallback_generator: SyntheticAudioGenerator::new(120.0),
             _backend: backend,
         }
+    }
+
+    /// Configures the shared stream alive atomic flag.
+    pub fn with_stream_alive(mut self, stream_alive: Arc<AtomicBool>) -> Self {
+        self.stream_alive = stream_alive;
+        self
+    }
+
+    /// Sets the shared stream alive atomic flag.
+    pub fn set_stream_alive(&mut self, stream_alive: Arc<AtomicBool>) {
+        self.stream_alive = stream_alive;
+    }
+
+    /// Configures the fallback synthetic generator tempo (BPM).
+    pub fn with_fallback_bpm(mut self, bpm: f32) -> Self {
+        self.fallback_generator = SyntheticAudioGenerator::new(bpm);
+        self
+    }
+
+    /// Sets the fallback synthetic generator tempo (BPM).
+    pub fn set_fallback_bpm(&mut self, bpm: f32) {
+        self.fallback_generator = SyntheticAudioGenerator::new(bpm);
+    }
+
+    /// Returns a shared handle to the stream alive flag.
+    pub fn stream_alive_handle(&self) -> Arc<AtomicBool> {
+        self.stream_alive.clone()
+    }
+
+    /// Returns true if the hardware stream is currently running and alive.
+    pub fn is_stream_alive(&self) -> bool {
+        self.stream_alive.load(Ordering::Relaxed)
+    }
+
+    /// Manually signals a stream failure (e.g. for testing recovery).
+    pub fn mark_stream_dead(&self) {
+        self.stream_alive.store(false, Ordering::SeqCst);
     }
 
     /// Accessor for the underlying ring buffer to push audio chunks.
@@ -64,6 +111,11 @@ impl LiveAudioProvider {
 
 impl AudioProvider for LiveAudioProvider {
     fn poll_signals(&mut self) -> AudioSignals {
+        // Automatic runtime recovery: if stream disconnected or faulted, fallback to synthetic beat generator
+        if !self.stream_alive.load(Ordering::Relaxed) {
+            return self.fallback_generator.poll_signals();
+        }
+
         self.ring_buffer
             .read_recent(self.analyzer.window_size, &mut self.sample_buf);
         if self.sample_buf.is_empty() {
@@ -74,7 +126,7 @@ impl AudioProvider for LiveAudioProvider {
     }
 
     fn is_live(&self) -> bool {
-        true
+        self.stream_alive.load(Ordering::Relaxed)
     }
 
     fn provider_name(&self) -> &'static str {
@@ -146,6 +198,57 @@ mod tests {
         assert!(
             stopped_flag.load(std::sync::atomic::Ordering::SeqCst),
             "Backend must drop cleanly when provider is dropped"
+        );
+    }
+
+    #[test]
+    fn test_live_audio_provider_runtime_recovery_fallback() {
+        let ring = PcmRingBuffer::new(1024);
+        let analyzer = SpectrumAnalyzer::new(44100, 256);
+        let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+        assert!(provider.is_live());
+        assert!(provider.is_stream_alive());
+
+        // Stream is running with silence
+        ring.push_slice(&vec![0.0f32; 256]);
+        let silent_sig = provider.poll_signals();
+        assert_eq!(silent_sig.bass, 0.0);
+        assert_eq!(silent_sig.volume, 0.0);
+
+        // Hardware stream dies (unplugged headphones / DAC error)
+        provider.mark_stream_dead();
+        assert!(!provider.is_live());
+        assert!(!provider.is_stream_alive());
+
+        // Visualizer continues polling; provider automatically synthesizes rhythmic beat
+        let fallback_sig1 = provider.poll_signals();
+        assert!(
+            fallback_sig1.volume > 0.0,
+            "Fallback generator must produce active signals to prevent visualizer freezing"
+        );
+
+        let fallback_sig2 = provider.poll_signals();
+        assert!(fallback_sig2.volume > 0.0);
+        // Ensure rhythmic progression over time
+        assert_ne!(fallback_sig1, fallback_sig2);
+
+        // Reconnect stream
+        provider
+            .stream_alive_handle()
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        assert!(provider.is_live());
+
+        // Push live pulse again
+        let mut pulse = vec![0.0f32; 256];
+        for (i, s) in pulse.iter_mut().enumerate() {
+            *s = (2.0 * std::f32::consts::PI * 80.0 * i as f32 / 44100.0).sin();
+        }
+        ring.push_slice(&pulse);
+        let recovered_sig = provider.poll_signals();
+        assert!(
+            recovered_sig.bass > 0.0,
+            "Recovered live stream must analyze new PCM samples"
         );
     }
 }

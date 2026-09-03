@@ -1,0 +1,169 @@
+    Finished `bench` profile [optimized] target(s) in 0.06s
+     Running benches/field_and_render.rs (target/release/deps/field_and_render-cee09cdaf35d6bbb)
+Benchmarking field_evaluation/6
+Benchmarking field_evaluation/6: Warming up for 3.0000 s
+Benchmarking field_evaluation/6: Collecting 100 samples in estimated 5.0010 s (12M iterations)
+Benchmarking field_evaluation/6: Analyzing
+field_evaluation/6      time:   [421.69 ns 422.79 ns 424.20 ns]
+Found 19 outliers among 100 measurements (19.00%)
+  2 (2.00%) high mild
+  17 (17.00%) high severe
+Benchmarking field_evaluation/12
+Benchmarking field_evaluation/12: Warming up for 3.0000 s
+Benchmarking field_evaluation/12: Collecting 100 samples in estimated 5.0010 s (12M iterations)
+Benchmarking field_evaluation/12: Analyzing
+field_evaluation/12     time:   [422.00 ns 423.34 ns 424.99 ns]
+Found 16 outliers among 100 measurements (16.00%)
+  5 (5.00%) high mild
+  11 (11.00%) high severe
+Benchmarking field_evaluation/24
+Benchmarking field_evaluation/24: Warming up for 3.0000 s
+Benchmarking field_evaluation/24: Collecting 100 samples in estimated 5.0015 s (12M iterations)
+Benchmarking field_evaluation/24: Analyzing
+field_evaluation/24     time:   [424.57 ns 425.85 ns 427.31 ns]
+Found 9 outliers among 100 measurements (9.00%)
+  5 (5.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking rasterization/rasterize_80x48
+Benchmarking rasterization/rasterize_80x48: Warming up for 3.0000 s
+Benchmarking rasterization/rasterize_80x48: Collecting 100 samples in estimated 5.1538 s (40k iterations)
+Benchmarking rasterization/rasterize_80x48: Analyzing
+rasterization/rasterize_80x48
+                        time:   [126.65 µs 127.14 µs 127.70 µs]
+Found 10 outliers among 100 measurements (10.00%)
+  5 (5.00%) high mild
+  5 (5.00%) high severe
+Benchmarking rasterization/rasterize_120x60
+Benchmarking rasterization/rasterize_120x60: Warming up for 3.0000 s
+Benchmarking rasterization/rasterize_120x60: Collecting 100 samples in estimated 5.9991 s (25k iterations)
+Benchmarking rasterization/rasterize_120x60: Analyzing
+rasterization/rasterize_120x60
+                        time:   [235.94 µs 236.65 µs 237.40 µs]
+Found 13 outliers among 100 measurements (13.00%)
+  7 (7.00%) high mild
+  6 (6.00%) high severe
+Benchmarking rasterization/rasterize_stepped_gradient_80x48
+Benchmarking rasterization/rasterize_stepped_gradient_80x48: Warming up for 3.0000 s
+Benchmarking rasterization/rasterize_stepped_gradient_80x48: Collecting 100 samples in estimated 5.0459 s (81k iterations)
+Benchmarking rasterization/rasterize_stepped_gradient_80x48: Analyzing
+rasterization/rasterize_stepped_gradient_80x48
+                        time:   [62.282 µs 62.681 µs 63.114 µs]
+Found 6 outliers among 100 measurements (6.00%)
+  2 (2.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking renderers/halfblock
+Benchmarking renderers/halfblock: Warming up for 3.0000 s
+Benchmarking renderers/halfblock: Collecting 100 samples in estimated 5.0342 s (56k iterations)
+Benchmarking renderers/halfblock: Analyzing
+renderers/halfblock     time:   [82.442 µs 83.850 µs 85.573 µs]
+Benchmarking renderers/block
+Benchmarking renderers/block: Warming up for 3.0000 s
+Benchmarking renderers/block: Collecting 100 samples in estimated 5.2741 s (66k iterations)
+Benchmarking renderers/block: Analyzing
+renderers/block         time:   [80.277 µs 81.241 µs 82.338 µs]
+Found 7 outliers among 100 measurements (7.00%)
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+Benchmarking renderers/braille
+Benchmarking renderers/braille: Warming up for 3.0000 s
+Benchmarking renderers/braille: Collecting 100 samples in estimated 5.1453 s (71k iterations)
+Benchmarking renderers/braille: Analyzing
+renderers/braille       time:   [71.758 µs 72.330 µs 73.000 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+
+Benchmarking fft_and_audio/compute_fft/512
+Benchmarking fft_and_audio/compute_fft/512: Warming up for 3.0000 s
+Benchmarking fft_and_audio/compute_fft/512: Collecting 100 samples in estimated 5.0187 s (884k iterations)
+Benchmarking fft_and_audio/compute_fft/512: Analyzing
+fft_and_audio/compute_fft/512
+                        time:   [5.6637 µs 5.6930 µs 5.7267 µs]
+Found 6 outliers among 100 measurements (6.00%)
+  5 (5.00%) high mild
+  1 (1.00%) high severe
+Benchmarking fft_and_audio/compute_fft/1024
+Benchmarking fft_and_audio/compute_fft/1024: Warming up for 3.0000 s
+Benchmarking fft_and_audio/compute_fft/1024: Collecting 100 samples in estimated 5.0454 s (404k iterations)
+Benchmarking fft_and_audio/compute_fft/1024: Analyzing
+fft_and_audio/compute_fft/1024
+                        time:   [12.441 µs 12.494 µs 12.553 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+Benchmarking fft_and_audio/compute_fft/2048
+Benchmarking fft_and_audio/compute_fft/2048: Warming up for 3.0000 s
+Benchmarking fft_and_audio/compute_fft/2048: Collecting 100 samples in estimated 5.0910 s (187k iterations)
+Benchmarking fft_and_audio/compute_fft/2048: Analyzing
+fft_and_audio/compute_fft/2048
+                        time:   [26.997 µs 27.104 µs 27.213 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+Benchmarking fft_and_audio/spectrum_analyze_1024
+Benchmarking fft_and_audio/spectrum_analyze_1024: Warming up for 3.0000 s
+Benchmarking fft_and_audio/spectrum_analyze_1024: Collecting 100 samples in estimated 5.0094 s (293k iterations)
+Benchmarking fft_and_audio/spectrum_analyze_1024: Analyzing
+fft_and_audio/spectrum_analyze_1024
+                        time:   [17.033 µs 17.098 µs 17.168 µs]
+Found 6 outliers among 100 measurements (6.00%)
+  5 (5.00%) high mild
+  1 (1.00%) high severe
+Benchmarking fft_and_audio/resample_linear_48k_to_44k
+Benchmarking fft_and_audio/resample_linear_48k_to_44k: Warming up for 3.0000 s
+Benchmarking fft_and_audio/resample_linear_48k_to_44k: Collecting 100 samples in estimated 5.0201 s (1.1M iterations)
+Benchmarking fft_and_audio/resample_linear_48k_to_44k: Analyzing
+fft_and_audio/resample_linear_48k_to_44k
+                        time:   [4.4279 µs 4.4516 µs 4.4784 µs]
+Found 19 outliers among 100 measurements (19.00%)
+  1 (1.00%) high mild
+  18 (18.00%) high severe
+Benchmarking fft_and_audio/ring_buffer_lock_free_push_256
+Benchmarking fft_and_audio/ring_buffer_lock_free_push_256: Warming up for 3.0000 s
+Benchmarking fft_and_audio/ring_buffer_lock_free_push_256: Collecting 100 samples in estimated 5.0007 s (25M iterations)
+Benchmarking fft_and_audio/ring_buffer_lock_free_push_256: Analyzing
+fft_and_audio/ring_buffer_lock_free_push_256
+                        time:   [202.83 ns 203.36 ns 203.93 ns]
+Found 21 outliers among 100 measurements (21.00%)
+  1 (1.00%) high mild
+  20 (20.00%) high severe
+Benchmarking fft_and_audio/ring_buffer_lock_free_read_512
+Benchmarking fft_and_audio/ring_buffer_lock_free_read_512: Warming up for 3.0000 s
+Benchmarking fft_and_audio/ring_buffer_lock_free_read_512: Collecting 100 samples in estimated 5.0033 s (6.1M iterations)
+Benchmarking fft_and_audio/ring_buffer_lock_free_read_512: Analyzing
+fft_and_audio/ring_buffer_lock_free_read_512
+                        time:   [811.97 ns 813.54 ns 815.42 ns]
+Found 21 outliers among 100 measurements (21.00%)
+  3 (3.00%) high mild
+  18 (18.00%) high severe
+
+Benchmarking pipeline_and_adaptation/full_frame_audio_halfblock
+Benchmarking pipeline_and_adaptation/full_frame_audio_halfblock: Warming up for 3.0000 s
+Benchmarking pipeline_and_adaptation/full_frame_audio_halfblock: Collecting 100 samples in estimated 6.1307 s (25k iterations)
+Benchmarking pipeline_and_adaptation/full_frame_audio_halfblock: Analyzing
+pipeline_and_adaptation/full_frame_audio_halfblock
+                        time:   [241.48 µs 244.11 µs 246.78 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+Benchmarking pipeline_and_adaptation/full_frame_reactive_halfblock
+Benchmarking pipeline_and_adaptation/full_frame_reactive_halfblock: Warming up for 3.0000 s
+Benchmarking pipeline_and_adaptation/full_frame_reactive_halfblock: Collecting 100 samples in estimated 5.8522 s (25k iterations)
+Benchmarking pipeline_and_adaptation/full_frame_reactive_halfblock: Analyzing
+pipeline_and_adaptation/full_frame_reactive_halfblock
+                        time:   [225.36 µs 227.63 µs 229.91 µs]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking pipeline_and_adaptation/compact_adapt_simulation
+Benchmarking pipeline_and_adaptation/compact_adapt_simulation: Warming up for 3.0000 s
+Benchmarking pipeline_and_adaptation/compact_adapt_simulation: Collecting 100 samples in estimated 5.0001 s (383M iterations)
+Benchmarking pipeline_and_adaptation/compact_adapt_simulation: Analyzing
+pipeline_and_adaptation/compact_adapt_simulation
+                        time:   [12.159 ns 12.317 ns 12.496 ns]
+Found 15 outliers among 100 measurements (15.00%)
+  10 (10.00%) high mild
+  5 (5.00%) high severe
+

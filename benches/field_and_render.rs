@@ -151,6 +151,22 @@ fn bench_fft_and_audio(c: &mut Criterion) {
         });
     });
 
+    let ring = lavaterm::audio::PcmRingBuffer::new(2048);
+    let chunk_256 = vec![0.5f32; 256];
+    group.bench_function("ring_buffer_lock_free_push_256", |b| {
+        b.iter(|| {
+            ring.push_slice(black_box(&chunk_256));
+        });
+    });
+
+    let mut read_out = Vec::with_capacity(512);
+    group.bench_function("ring_buffer_lock_free_read_512", |b| {
+        b.iter(|| {
+            ring.read_recent(black_box(512), &mut read_out);
+            black_box(read_out.len());
+        });
+    });
+
     group.finish();
 }
 

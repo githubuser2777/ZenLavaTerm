@@ -709,3 +709,153 @@ fn test_phase12_config_migration_and_security_bounds() {
 
     let _ = fs::remove_file(&legacy_file);
 }
+
+#[test]
+fn test_phase12_real_audio_mock_stream_feeder_continuous_streaming() {
+    use lavaterm::audio::{
+        AudioProvider, LiveAudioProvider, MockAudioStreamFeeder, PcmRingBuffer, SpectrumAnalyzer,
+    };
+    use std::thread;
+    use std::time::Duration;
+
+    let ring = PcmRingBuffer::new(4096);
+    let analyzer = SpectrumAnalyzer::new(44100, 512);
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+    let mut feeder = MockAudioStreamFeeder::new(ring.clone(), 44100, 2).with_frequency(80.0); // 80Hz bass pulse
+
+    // Start background stream worker feeding 128-frame chunks every 3ms
+    feeder.start_worker(128, 3);
+    thread::sleep(Duration::from_millis(20));
+
+    assert!(provider.is_live());
+    assert_eq!(provider.provider_name(), "live");
+
+    // Simulate 15 visualizer render frames at ~60 FPS
+    let mut polled_frames = 0;
+    for _ in 0..15 {
+        let sig = provider.poll_signals();
+        assert!(
+            sig.bass > 0.0,
+            "Continuous stream should contain 80Hz bass energy"
+        );
+        assert!(sig.volume > 0.0, "Volume should be non-zero");
+        polled_frames += 1;
+        thread::sleep(Duration::from_millis(5));
+    }
+    assert_eq!(polled_frames, 15);
+    assert!(ring.total_samples_written() >= 512);
+
+    feeder.stop();
+
+    // Verify format ingestion (i16 and u16) via feeder bursts
+    ring.clear();
+    feeder.feed_frames_i16(512);
+    let sig_i16 = provider.poll_signals();
+    assert!(
+        sig_i16.bass > 0.0,
+        "Interleaved i16 stream must produce bass energy"
+    );
+
+    ring.clear();
+    feeder.feed_frames_u16(512);
+    let sig_u16 = provider.poll_signals();
+    assert!(
+        sig_u16.bass > 0.0,
+        "Interleaved u16 stream must produce bass energy"
+    );
+}
+
+#[test]
+fn test_phase12_real_audio_stream_interruption_and_runtime_recovery() {
+    use lavaterm::audio::{
+        AudioProvider, LiveAudioProvider, MockAudioStreamFeeder, PcmRingBuffer, SpectrumAnalyzer,
+    };
+
+    let ring = PcmRingBuffer::new(2048);
+    let analyzer = SpectrumAnalyzer::new(44100, 256);
+
+    let feeder = MockAudioStreamFeeder::new(ring.clone(), 44100, 2).with_frequency(60.0);
+
+    let stream_alive = feeder.stream_alive_handle();
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer)
+        .with_stream_alive(stream_alive)
+        .with_fallback_bpm(135.0);
+
+    // 1. Initial live streaming
+    feeder.feed_frames_f32(512);
+    assert!(provider.is_live());
+    let live_sig = provider.poll_signals();
+    assert!(live_sig.bass > 0.0);
+    assert!(live_sig.volume > 0.0);
+
+    // 2. Hardware disconnect event (e.g. unplugged DAC or CPAL stream error)
+    feeder.simulate_disconnect();
+    assert!(
+        !provider.is_live(),
+        "Provider must reflect dead stream state"
+    );
+
+    // Clear buffer to guarantee no residual frames
+    ring.clear();
+
+    // 3. Fallback to synthetic beat generator: visualizer does not freeze or flatline to silence
+    let fallback_1 = provider.poll_signals();
+    assert!(
+        fallback_1.volume > 0.0,
+        "Fallback generator must produce active audio signals upon disconnect"
+    );
+
+    let fallback_2 = provider.poll_signals();
+    assert!(fallback_2.volume > 0.0);
+    assert_ne!(
+        fallback_1, fallback_2,
+        "Synthetic generator must advance dynamically"
+    );
+
+    // 4. Hardware reconnect event
+    feeder.simulate_reconnect();
+    assert!(
+        provider.is_live(),
+        "Provider must report live after reconnection"
+    );
+
+    // Feed new 1000Hz tone into reconnected stream
+    let feeder_mid = MockAudioStreamFeeder::new(ring.clone(), 44100, 1).with_frequency(1000.0);
+    feeder_mid.feed_frames_f32(512);
+
+    let recovered_sig = provider.poll_signals();
+    assert!(
+        recovered_sig.mid > 0.0,
+        "Recovered live stream must analyze new incoming frequency content"
+    );
+}
+
+#[test]
+fn test_phase12_mock_stream_feeder_buffer_overrun_and_underrun_resilience() {
+    use lavaterm::audio::{
+        AudioProvider, LiveAudioProvider, MockAudioStreamFeeder, PcmRingBuffer, SpectrumAnalyzer,
+    };
+
+    let ring = PcmRingBuffer::new(256); // small ring buffer to test overrun
+    let analyzer = SpectrumAnalyzer::new(44100, 128);
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+    let feeder = MockAudioStreamFeeder::new(ring.clone(), 44100, 1).with_frequency(150.0);
+
+    // Overrun test: push 5,000 frames into a 256-capacity buffer
+    feeder.feed_frames_f32(5000);
+    assert_eq!(ring.total_samples_written(), 5000);
+
+    let sig_after_overrun = provider.poll_signals();
+    assert!(sig_after_overrun.bass.is_finite());
+    assert!(sig_after_overrun.volume > 0.0);
+
+    // Underrun test: clear ring buffer and poll repeatedly without any new frames
+    ring.clear();
+    for _ in 0..10 {
+        let sig = provider.poll_signals();
+        assert_eq!(sig.bass, 0.0);
+        assert_eq!(sig.volume, 0.0);
+    }
+}

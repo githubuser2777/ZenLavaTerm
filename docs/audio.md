@@ -16,8 +16,9 @@ The audio pipeline follows a decoupled producer-consumer model:
                                │ Ingests PCM samples
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 Thread-Safe PCM Ring Buffer                 │
-│  - Decouples high-rate audio capture from render loop       │
+│                 Lock-Free PCM Ring Buffer                   │
+│  - Atomic circular buffer (AtomicU32 / AtomicUsize)         │
+│  - Decouples high-rate audio capture without mutex blocking  │
 └──────────────────────────────┬──────────────────────────────┘
                                │ Extracts analysis window
                                ▼
@@ -37,10 +38,13 @@ The audio pipeline follows a decoupled producer-consumer model:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Runtime Providers
+### Runtime Providers & Recovery
 
 - **Native Stream Capture (`NativeAudioCapture`)**: Background streaming capture worker powered by `cpal`, providing cross-platform hardware audio capture across Linux (ALSA), Windows (WASAPI), and macOS (CoreAudio). It detects the default or user-specified audio hardware endpoint and captures raw PCM streams into the ring buffer.
-- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is explicitly disabled, or when native hardware capture is unavailable (graceful fallback).
+- **Automatic Runtime Audio Recovery**: `NativeAudioCapture` and `LiveAudioProvider` share an atomic `stream_alive: Arc<AtomicBool>` flag. If the active hardware stream disconnects (e.g. unplugging headphones/DAC or driver crash), CPAL error callbacks immediately trip `stream_alive` to false. `LiveAudioProvider::poll_signals()` automatically falls back to an internal `SyntheticAudioGenerator(bpm)` instance, ensuring the terminal lava lamp visualizer never freezes or flatlines into silence.
+- **Lock-Free Ring Buffer (`PcmRingBuffer`)**: Zero-mutex atomic circular buffer storing recent PCM samples for lock-free audio thread ingestion (>1.25 billion samples/sec throughput).
+- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is explicitly disabled, or when native hardware capture is unavailable / disconnected.
+- **Hardware Frame Simulator (`MockAudioStreamFeeder`)**: Simulates continuous real hardware audio frame streams (f32, i16, u16) with background threads, hardware disconnect/reconnect simulation, and buffer overrun/underrun testing.
 - **Spectrum Analyzer (`SpectrumAnalyzer`)**: Implements an in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral band integration, configured dynamically to match the active capture device's sample rate.
 - **Sample Rate Converter (`resample_linear`)**: Linear interpolation resampler utility in `PcmRingBuffer` for sample rate conversions (e.g. 48,000 Hz <-> 44,100 Hz).
 
