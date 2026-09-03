@@ -603,10 +603,7 @@ fn test_phase12_native_audio_architecture_and_resampling() {
     ring.push_interleaved_f32(&stereo_signal, 2);
 
     let signals = provider.poll_signals();
-    assert!(
-        signals.bass > 0.0,
-        "80Hz pulse should register bass energy"
-    );
+    assert!(signals.bass > 0.0, "80Hz pulse should register bass energy");
     assert!(signals.volume > 0.0, "Volume should be non-zero");
 }
 
@@ -698,9 +695,7 @@ fn test_phase12_config_migration_and_security_bounds() {
 
 #[test]
 fn test_phase12_real_audio_mock_stream_feeder_continuous_streaming() {
-    use lavaterm::audio::{
-        AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer,
-    };
+    use lavaterm::audio::{AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer};
     use std::thread;
     use std::time::Duration;
 
@@ -754,9 +749,7 @@ fn test_phase12_real_audio_mock_stream_feeder_continuous_streaming() {
 
 #[test]
 fn test_phase12_real_audio_stream_interruption_and_runtime_recovery() {
-    use lavaterm::audio::{
-        AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer,
-    };
+    use lavaterm::audio::{AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer};
 
     let ring = PcmRingBuffer::new(2048);
     let analyzer = SpectrumAnalyzer::new(44100, 256);
@@ -819,9 +812,7 @@ fn test_phase12_real_audio_stream_interruption_and_runtime_recovery() {
 
 #[test]
 fn test_phase12_mock_stream_feeder_buffer_overrun_and_underrun_resilience() {
-    use lavaterm::audio::{
-        AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer,
-    };
+    use lavaterm::audio::{AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer};
 
     let ring = PcmRingBuffer::new(256); // small ring buffer to test overrun
     let analyzer = SpectrumAnalyzer::new(44100, 128);
@@ -848,9 +839,7 @@ fn test_phase12_mock_stream_feeder_buffer_overrun_and_underrun_resilience() {
 
 #[test]
 fn test_phase12_ring_buffer_wrap_around_and_reader_seqlock_consistency() {
-    use lavaterm::audio::{
-        AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer,
-    };
+    use lavaterm::audio::{AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer};
     use std::thread;
     use std::time::Duration;
 
@@ -899,9 +888,7 @@ fn test_phase12_ring_buffer_wrap_around_and_reader_seqlock_consistency() {
 
 #[test]
 fn test_phase12_audio_pipeline_full_e2e_samples_to_render() {
-    use lavaterm::audio::{
-        AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer,
-    };
+    use lavaterm::audio::{AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer};
     use lavaterm::core::{PhysicsParams, Simulation};
     use lavaterm::render::{rasterize_simulation, ColorPalette, VirtualFramebuffer};
 
