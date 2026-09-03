@@ -1,90 +1,14 @@
-//! Theme provider trait abstraction and theme resolution engine.
+//! Theme resolution engine.
 
 use super::{
     detector::detect_auto_theme,
     file::load_custom_theme_file,
     preset::{get_preset_palette, list_presets},
-    pywal::{load_pywal_default, load_pywal_from_path},
-    wallust::{load_wallust_default, load_wallust_from_path},
+    pywal::load_pywal_default,
+    wallust::load_wallust_default,
 };
 use crate::render::ColorPalette;
-use std::path::{Path, PathBuf};
-
-/// Trait implemented by theme sources to produce a `ColorPalette`.
-pub trait ThemeProvider {
-    /// Loads or resolves the color palette.
-    fn load_palette(&self) -> Result<ColorPalette, String>;
-}
-
-/// Provider for built-in named presets.
-#[derive(Debug, Clone)]
-pub struct PresetThemeProvider(pub String);
-
-impl ThemeProvider for PresetThemeProvider {
-    fn load_palette(&self) -> Result<ColorPalette, String> {
-        get_preset_palette(&self.0).ok_or_else(|| {
-            format!(
-                "Unknown theme preset '{}'. Available presets: {}",
-                self.0,
-                list_presets().join(", ")
-            )
-        })
-    }
-}
-
-/// Provider for Pywal desktop colors.
-#[derive(Debug, Clone, Default)]
-pub struct PywalThemeProvider {
-    pub path: Option<PathBuf>,
-}
-
-impl ThemeProvider for PywalThemeProvider {
-    fn load_palette(&self) -> Result<ColorPalette, String> {
-        if let Some(ref p) = self.path {
-            load_pywal_from_path(p)
-        } else {
-            load_pywal_default()
-        }
-    }
-}
-
-/// Provider for Wallust dynamic colors.
-#[derive(Debug, Clone, Default)]
-pub struct WallustThemeProvider {
-    pub path: Option<PathBuf>,
-}
-
-impl ThemeProvider for WallustThemeProvider {
-    fn load_palette(&self) -> Result<ColorPalette, String> {
-        if let Some(ref p) = self.path {
-            load_wallust_from_path(p)
-        } else {
-            load_wallust_default()
-        }
-    }
-}
-
-/// Provider for custom theme files on disk.
-#[derive(Debug, Clone)]
-pub struct FileThemeProvider {
-    pub path: PathBuf,
-}
-
-impl ThemeProvider for FileThemeProvider {
-    fn load_palette(&self) -> Result<ColorPalette, String> {
-        load_custom_theme_file(&self.path)
-    }
-}
-
-/// Provider that automatically queries desktop color caches.
-#[derive(Debug, Clone, Default)]
-pub struct AutoThemeProvider;
-
-impl ThemeProvider for AutoThemeProvider {
-    fn load_palette(&self) -> Result<ColorPalette, String> {
-        Ok(detect_auto_theme())
-    }
-}
+use std::path::Path;
 
 /// Resolves a theme specification string into a `ColorPalette`.
 ///
@@ -98,11 +22,11 @@ pub fn resolve_theme(spec: &str) -> Result<ColorPalette, String> {
     let clean = spec.trim();
 
     if clean.eq_ignore_ascii_case("auto") {
-        return AutoThemeProvider.load_palette();
+        return Ok(detect_auto_theme());
     }
 
     if clean.eq_ignore_ascii_case("pywal") {
-        return match PywalThemeProvider::default().load_palette() {
+        return match load_pywal_default() {
             Ok(p) => Ok(p),
             Err(e) => {
                 eprintln!("Warning: {e}. Falling back to default lava theme.");
@@ -112,7 +36,7 @@ pub fn resolve_theme(spec: &str) -> Result<ColorPalette, String> {
     }
 
     if clean.eq_ignore_ascii_case("wallust") {
-        return match WallustThemeProvider::default().load_palette() {
+        return match load_wallust_default() {
             Ok(p) => Ok(p),
             Err(e) => {
                 eprintln!("Warning: {e}. Falling back to default lava theme.");
@@ -132,10 +56,7 @@ pub fn resolve_theme(spec: &str) -> Result<ColorPalette, String> {
         || clean.contains('/')
         || clean.contains('\\')
     {
-        return FileThemeProvider {
-            path: PathBuf::from(clean),
-        }
-        .load_palette();
+        return load_custom_theme_file(path);
     }
 
     Err(format!(

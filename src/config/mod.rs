@@ -1,9 +1,7 @@
 //! Configuration loading, file discovery, and defaults.
 
-pub mod migrate;
 pub mod schema;
 
-pub use migrate::migrate_config;
 pub use schema::{AudioConfig, Config, PaletteConfig, RenderConfig, SimulationConfig};
 
 use crate::{LavaError, Result};
@@ -21,7 +19,9 @@ pub fn load_from_path<P: AsRef<Path>>(path: P) -> Result<Config> {
         ))
     })?;
 
-    let (config, _migrated) = migrate_config(&content)?;
+    let config: Config = toml::from_str(&content)
+        .map_err(|e| LavaError::Config(format!("Failed to parse config TOML: {e}")))?;
+    config.validate().map_err(LavaError::Config)?;
     Ok(config)
 }
 

@@ -588,7 +588,6 @@ dependencies = [
  "serde",
  "serde_json",
  "signal-hook 0.4.4",
- "thiserror 2.0.20",
  "toml",
 ]
 
