@@ -3,19 +3,20 @@
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 
-/// SPSC Lock-Free Circular Ring Buffer with Sequence Lock (Seqlock) snapshot coherence.
+/// SPSC Ring Buffer with Lock-Free Reader, Serialized Multi-Producer Guard, and Seqlock Snapshot Coherence.
 ///
-/// # Concurrency Model:
-/// - **Primary Contract**: Single-Producer Single-Consumer (SPSC).
+/// # Concurrency Architecture:
+/// - **Primary Model**: Single-Producer Single-Consumer (SPSC) real-time audio contract.
 ///   - **Producer**: Dedicated audio capture callback thread (CPAL worker or stream feeder) pushes PCM frames.
-///   - **Consumer**: Terminal visualizer render thread reads recent samples for FFT spectrum analysis.
-/// - **Tear-Free Snapshot Coherence**: Utilizes a 64-bit sequence lock (`version`). The producer increments
-///   `version` to an odd number before writing and increments to an even number after writing. Readers check
-///   the version before and after copying; if a wrap-around or concurrent write occurs during reading, the reader
-///   retries, guaranteeing that the FFT analysis window NEVER mixes different data generations.
-/// - **Multi-Producer Hardening**: A fast atomic spin-guard (`producer_guard`) serializes writes if multiple
-///   producers ever invoke push concurrently, preventing index clobbering.
-/// - **Lock-Free Reader**: Readers NEVER acquire locks or block producers, preserving real-time audio safety.
+///   - **Consumer**: Terminal visualizer render thread reads recent analysis windows for FFT spectrum analysis.
+/// - **Lock-Free Reader**: Readers NEVER acquire locks, spinlocks, or block producers. Reads are non-blocking
+///   and wait-free in the uncontended common case.
+/// - **Tear-Free Snapshot Coherence**: Uses a 64-bit sequence lock (`version`). The producer transitions `version`
+///   to odd before writing and even after writing. Readers verify that `version` remained unchanged throughout the read.
+///   If writer collision or wrap-around occurs during copy, `read_recent` retries up to 64 times. Under sustained
+///   unthrottled contention, it strictly returns `false` and clears the output buffer, never returning unverified or torn data.
+/// - **Serialized Multi-Producer Guard**: An atomic CAS spin-guard (`producer_guard`) serializes writes if multiple
+///   producer threads write concurrently, protecting write indices while maintaining zero overhead for single producers.
 #[derive(Debug, Clone)]
 pub struct PcmRingBuffer {
     inner: Arc<LockFreeBuffer>,
@@ -295,13 +296,17 @@ impl PcmRingBuffer {
     /// Reads the most recent `count` samples in chronological order without locking.
     /// Employs an optimistic Seqlock protocol: guarantees that the returned window is a
     /// 100% coherent snapshot and never a torn mix of older and overwritten newer generations.
-    pub fn read_recent(&self, count: usize, out: &mut Vec<f32>) {
+    ///
+    /// Returns `true` if and only if a 100% coherent snapshot was verified.
+    /// Under extreme contention where a coherent snapshot cannot be verified within 64 retries,
+    /// returns `false` and clears `out`, strictly refusing to return unverified or torn data.
+    pub fn read_recent(&self, count: usize, out: &mut Vec<f32>) -> bool {
         out.clear();
         let cap = self.inner.capacity;
         let read_len = count.min(cap);
         out.reserve(read_len);
 
-        const MAX_RETRIES: usize = 32;
+        const MAX_RETRIES: usize = 64;
         for _ in 0..MAX_RETRIES {
             let v0 = self.inner.version.load(Ordering::Acquire);
             if v0 & 1 != 0 {
@@ -322,19 +327,22 @@ impl PcmRingBuffer {
             let v1 = self.inner.version.load(Ordering::Acquire);
             if v0 == v1 {
                 // Verified consistent, non-torn snapshot
-                return;
+                return true;
             }
         }
 
-        // Bounded fallback in the event of extreme artificial contention:
-        // read clean snapshot from latest write position
-        let current_pos = self.inner.write_pos.load(Ordering::Acquire);
-        let start_idx = (current_pos + cap - read_len) % cap;
+        // Under sustained extreme contention, strictly refuse to return unverified/torn data.
         out.clear();
-        for i in 0..read_len {
-            let idx = (start_idx + i) % cap;
-            let bits = self.inner.data[idx].load(Ordering::Relaxed);
-            out.push(f32::from_bits(bits));
+        false
+    }
+
+    /// Reads the most recent `count` samples, spinning indefinitely until a coherent snapshot is verified.
+    pub fn read_recent_blocking(&self, count: usize, out: &mut Vec<f32>) {
+        loop {
+            if self.read_recent(count, out) {
+                return;
+            }
+            std::hint::spin_loop();
         }
     }
 }
@@ -432,6 +440,48 @@ mod tests {
     }
 
     #[test]
+    fn test_ring_buffer_cross_chunk_resampling_continuity() {
+        let ring = PcmRingBuffer::new(1024);
+        let sample_rate_src = 48000;
+        let sample_rate_dst = 44100;
+        let freq = 440.0f32;
+
+        // Generate chunk 1: frames 0..256
+        let chunk1: Vec<f32> = (0..256)
+            .map(|i| ((i as f32 / sample_rate_src as f32) * freq * std::f32::consts::TAU).sin())
+            .collect();
+
+        // Generate chunk 2: frames 256..512 (smooth continuous continuation)
+        let chunk2: Vec<f32> = (256..512)
+            .map(|i| ((i as f32 / sample_rate_src as f32) * freq * std::f32::consts::TAU).sin())
+            .collect();
+
+        ring.push_resampled(&chunk1, sample_rate_src, sample_rate_dst);
+        let written_1 = ring.total_samples_written();
+
+        ring.push_resampled(&chunk2, sample_rate_src, sample_rate_dst);
+        let written_2 = ring.total_samples_written();
+
+        let mut read_out = Vec::new();
+        assert!(ring.read_recent(written_2, &mut read_out));
+        assert_eq!(read_out.len(), written_2);
+
+        // Verify that across the boundary around written_1, the delta between consecutive samples
+        // is bounded by max sine slope (smoothness check)
+        let max_expected_delta = (freq * std::f32::consts::TAU) / (sample_rate_dst as f32) * 1.5;
+        let boundary_idx = written_1;
+        if boundary_idx < read_out.len() && boundary_idx > 0 {
+            let delta = (read_out[boundary_idx] - read_out[boundary_idx - 1]).abs();
+            assert!(
+                delta <= max_expected_delta,
+                "Boundary discontinuity too high: delta = {}, max = {}",
+                delta,
+                max_expected_delta
+            );
+        }
+    }
+
+    #[test]
     fn test_ring_buffer_clear() {
         let ring = PcmRingBuffer::new(8);
         ring.push_slice(&[1.0, 2.0, 3.0, 4.0]);
@@ -493,14 +543,15 @@ mod additional_tests {
         let mut read_buf = Vec::new();
         let mut reads_performed = 0;
         while running.load(Ordering::Acquire) || reads_performed < 50 {
-            ring.read_recent(128, &mut read_buf);
-            assert_eq!(read_buf.len(), 128);
-            // Verify monotonic ordering within the window
-            for w in read_buf.windows(2) {
-                // Either strictly increasing or reset on clear
-                assert!(w[0] <= w[1] || w[1] == 0.0);
+            if ring.read_recent(128, &mut read_buf) {
+                assert_eq!(read_buf.len(), 128);
+                // Verify monotonic ordering within the window
+                for w in read_buf.windows(2) {
+                    // Either strictly increasing or reset on clear
+                    assert!(w[0] <= w[1] || w[1] == 0.0);
+                }
+                reads_performed += 1;
             }
-            reads_performed += 1;
             thread::sleep(Duration::from_micros(200));
         }
 
@@ -537,26 +588,27 @@ mod additional_tests {
         let mut read_buf = Vec::new();
         let mut checks = 0;
         while running.load(Ordering::Acquire) || checks < 100 {
-            ring.read_recent(128, &mut read_buf);
-            assert_eq!(read_buf.len(), 128);
+            if ring.read_recent(128, &mut read_buf) {
+                assert_eq!(read_buf.len(), 128);
 
-            // Verify snapshot consistency: in each coherent read window,
-            // generations must be monotonically non-decreasing. There must NEVER be
-            // a torn sample (e.g. gen 10 -> gen 2 -> gen 10).
-            let mut last_gen = 0.0f32;
-            for &sample in &read_buf {
-                if sample > 0.0 {
-                    let gen = sample.floor();
-                    assert!(
-                        gen >= last_gen,
-                        "Torn read detected! Observed gen {} after gen {}",
-                        gen,
-                        last_gen
-                    );
-                    last_gen = gen;
+                // Verify snapshot consistency: in each coherent read window,
+                // generations must be monotonically non-decreasing. There must NEVER be
+                // a torn sample (e.g. gen 10 -> gen 2 -> gen 10).
+                let mut last_gen = 0.0f32;
+                for &sample in &read_buf {
+                    if sample > 0.0 {
+                        let gen = sample.floor();
+                        assert!(
+                            gen >= last_gen,
+                            "Torn read detected! Observed gen {} after gen {}",
+                            gen,
+                            last_gen
+                        );
+                        last_gen = gen;
+                    }
                 }
+                checks += 1;
             }
-            checks += 1;
             thread::sleep(Duration::from_micros(50));
         }
 

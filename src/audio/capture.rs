@@ -116,8 +116,16 @@ impl AudioProvider for LiveAudioProvider {
             return self.fallback_generator.poll_signals();
         }
 
-        self.ring_buffer
+        let is_coherent = self
+            .ring_buffer
             .read_recent(self.analyzer.window_size, &mut self.sample_buf);
+
+        if !is_coherent {
+            // If contention prevented verifying a 100% coherent snapshot,
+            // strictly avoid feeding unverified or torn data into FFT; fallback cleanly
+            return self.fallback_generator.poll_signals();
+        }
+
         if self.sample_buf.is_empty() {
             AudioSignals::default()
         } else {

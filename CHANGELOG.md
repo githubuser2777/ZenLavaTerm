@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Decoupled cross-platform native audio streaming architecture (`LiveAudioProvider` in `src/audio/capture.rs`) powered by `cpal`, implementing real cross-platform hardware audio capture (WASAPI on Windows, ALSA on Linux, CoreAudio on macOS).
 - Runtime audio stream fallback and live resumption: `stream_alive: Arc<AtomicBool>` shared across native CPAL error callbacks and `LiveAudioProvider::poll_signals()`, gracefully falling back to `SyntheticAudioGenerator(bpm)` upon hardware disconnection and automatically resuming live processing upon stream recovery.
 - Hardware audio frame stream simulator (`MockAudioStreamFeeder` in `src/audio/provider.rs`) for continuous real-time audio testing across f32, i16, and u16 formats, hardware disconnect/reconnect transitions, buffer overrun/underrun resilience, and wrap-around snapshot coherence.
-- SPSC Lock-Free circular `PcmRingBuffer` in `src/audio/ring_buffer.rs` utilizing atomic primitives (`AtomicU32`, `AtomicUsize`) paired with a 64-bit sequence lock (`version: AtomicU64`) to guarantee tear-free snapshot consistency during wrap-around under concurrent producer/consumer execution, alongside an atomic CAS spin-guard (`producer_guard`) for multi-producer safety.
+- SPSC `PcmRingBuffer` in `src/audio/ring_buffer.rs` featuring lock-free reader paths, serialized atomic CAS producer guard (`producer_guard`), and 64-bit sequence lock (`version: AtomicU64`) strictly guaranteeing tear-free snapshot consistency under wrap-around without unverified fallbacks, paired with graceful synthetic delegation in `LiveAudioProvider` upon contention.
 - Unified cross-platform audio provider factory (`create_audio_provider`, `create_live_audio_provider`, and `list_audio_devices` in `src/audio/mod.rs`) with guaranteed lifetime retention of active stream backends and graceful synthetic fallback.
 - CLI audio flags: `--audio-device <DEVICE>` for selecting specific capture devices and `--list-audio-devices` for enumerating available endpoints.
 - TOML configuration `[audio]` schema extension with `device: Option<String>`.
@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized framebuffer rasterization in `src/render/mod.rs` with precomputed inverse dimensions and direct contiguous slice indexing, eliminating per-pixel bounds check overhead.
 - Optimized `HalfBlockRenderer`, `BlockRenderer`, and `BrailleRenderer` with direct slice indexing and pre-allocated formatting buffers.
 - Recorded 50-65% benchmark speedups on rasterization loops (achieving 7,865 FPS on $80 \times 48$ smooth gradient and 15,954 FPS on stepped gradient) and validated lock-free ring buffer throughput under multi-threaded contention, documented in [`docs/benchmarks/benchmark_baseline.md`](docs/benchmarks/benchmark_baseline.md) and [`docs/benchmarks/criterion_baseline.log`](docs/benchmarks/criterion_baseline.log).
-- Expanded automated test suite to 143 tests (120 unit tests + 23 integration tests) covering 100% of functional paths.
+- Expanded automated test suite to 144 tests (121 unit tests + 23 integration tests) covering 100% of functional paths.
 
 ## [0.11.0] - 2026-08-19 — Phase 11: Cross-Platform Expansion
 
