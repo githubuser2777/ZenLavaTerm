@@ -124,8 +124,8 @@ Suite kiểm tra tự động `scripts/smoke_test.py` được xây dựng để
 * **release build**: PASS
 
 ### TEST
-* **unit tests**: PASS (120/120)
-* **integration tests**: PASS (24/24)
+* **unit tests**: PASS (121/121)
+* **integration tests**: PASS (23/23) - 144 tests total
 * **audio tests**: PASS (Simulated mock pipeline + Real hardware ALSA/PipeWire 1,854 samples)
 * **smoke test**: PASS (10/10 kịch bản thành công)
 * **E2E**: PASS

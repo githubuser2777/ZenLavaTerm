@@ -89,3 +89,17 @@ bpm = 120.0
 device = "default"  # Optional specific device name
 ```
 
+---
+
+## Platform Specifics & Operational Caveats
+
+### 1. Windows WASAPI Loopback (`--audio-loopback`)
+- **Mechanism**: On Windows, ZenLavaTerm connects to the default audio render endpoint (`eRender`) via WASAPI. CPAL automatically sets `AUDCLNT_STREAMFLAGS_LOOPBACK` on the audio client, enabling capture of the system's shared output mix (e.g., music players, browser playback, games).
+- **Silence & Buffer Event Behavior**: Under Windows WASAPI architecture, the core audio engine only dispatches loopback buffer packets when audio is actively rendering through the selected output endpoint. If no sound is currently playing, WASAPI suppresses buffer events or produces silent underruns. Consequently, ZenLavaTerm's visualizer remains quiescent or smoothly delegates to synthetic beats until audio begins playing.
+- **Headless CI Verification Limitation**: Automated CI runners (GitHub Actions `windows-latest`) operate in headless virtual machines without physical audio hardware or active audio render endpoints. CI verifies the device enumeration contract, configuration schema, error handling, and in-memory mock frame pipelines (`MockAudioStreamFeeder`), but live loopback PCM capture must be verified on physical Windows hardware with active audio output.
+
+### 2. Live Audio Streaming vs. Resampling
+- **Dynamic Hardware Sampling Rate**: To eliminate resampling overhead, phase distortion, and chunk boundary discontinuities, `LiveAudioProvider` queries the capture device's native sample rate (e.g., 44.1 kHz, 48 kHz, 96 kHz) upon stream creation and initializes `SpectrumAnalyzer` with that exact hardware rate.
+- **Zero Boundary Discontinuity in Live Path**: Because the FFT spectrum analyzer adapts directly to the hardware sample rate, the live capture callback ingests raw PCM frames directly into the ring buffer without per-chunk resampling.
+- **Resampling Utility**: `resample_linear` and `PcmRingBuffer::push_resampled` provide lightweight linear interpolation for testing, format normalization, or synthetic pipelines.
+

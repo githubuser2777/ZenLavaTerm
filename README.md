@@ -861,7 +861,7 @@ cargo run -- --headless --frames 60 --theme cyberpunk
 | `cargo build` | Compile the debug binary in `target/debug/lavaterm`. |
 | `cargo build --release` | Compile the production binary with LTO, opt-level 3, and stripped symbols. |
 | `cargo run --release` | Build and immediately execute LavaTerm. |
-| `cargo test` | Run the complete test suite (115 unit tests + 18 integration tests = 133 tests total). |
+| `cargo test` | Run the complete test suite (121 unit tests + 23 integration tests = 144 tests total). |
 | `cargo test --test integration_test` | Run integration tests only. |
 | `cargo bench` | Run Criterion micro-benchmarks for field math and renderers. |
 | `cargo run --example minimal_sim` | Execute the minimal standalone simulation example. |

@@ -2,7 +2,7 @@
 
 This document outlines the phased milestone progression of LavaTerm. Each phase builds upon the previous phase following strict Definition of Done criteria.
 
-**Current Maintenance State:** v1.0.0 released — Phase 12 Complete (Performance, Audio Architecture & V1.0 Release) — Phase 13 Planned.
+**Current Maintenance State:** Phase 12 In Review (PR #57) — v1.0.0 Release Candidate — Pending Final Signoff & Merge.
 
 ---
 
@@ -33,7 +33,7 @@ Phase 10: Interactive Mode (Mouse, Keyboard Ripple) (Complete - v0.11.0)
    │
 Phase 11: Cross-Platform Expansion & Hardening (Complete - v0.11.0)
    │
-Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete - v1.0.0)
+Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (In Review / RC - PR #57)
    │
 Phase 13: Advanced Audio Features & DSP Expansion (Planned - v1.1)
 ```
@@ -130,10 +130,10 @@ Phase 13: Advanced Audio Features & DSP Expansion (Planned - v1.1)
 - **Milestone Outcome**:
   - Successfully expanded platform support across Linux, macOS, and Windows with robust configuration and theme discovery. Hardened foundation for Phase 12.
 
-### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete — v1.0.0, Milestone #1)
+### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Release Candidate — PR #57, Milestone #1)
 - **Objective**: Implement unified audio capture architecture with real cross-platform hardware audio capture via CPAL (WASAPI on Windows, ALSA on Linux, CoreAudio on macOS), ring buffer resampling utility and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
 - **GitHub Milestone**: `Phase 12 — Performance, Native Audio & V1.0` (Milestone #1)
-- **Status**: Complete
+- **Status**: In Review (PR #57 Active — Release Candidate Verification)
 - **Issue Breakdown**:
   - `Issue 12.0` (#45): Architecture, Performance Baseline & Phase 12 Inception (Closed)
   - `Issue 12.1` (#46): Audio Architecture, Dynamic Provider Contract & Ring Buffer Hardening (Closed)

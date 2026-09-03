@@ -89,3 +89,7 @@ Evaluates full simulation step + field evaluation + rasterization + terminal ren
 | `compact_adapt_simulation` | **12.32 ns** | ~81 million adaptations/sec |
 
 At a standard display refresh rate of 60 FPS ($16.67\text{ ms}$ frame budget), ZenLavaTerm consumes approximately **1.46%** of a single CPU core's frame budget ($244.11\ \mu\text{s} / 16,666\ \mu\text{s}$), leaving over 98.5% of the frame interval idle.
+
+*Engineering Trade-Offs & Honest Analysis*:
+- **Targeted Hotspot Optimizations**: Micro-optimizations delivered measurable gains in specific bottlenecks (e.g., stepped gradient rasterization achieves 15,954 FPS, a 50.7% speedup over smooth gradient rasterization; scalar field potential evaluation scales near-$O(1)$ across blob counts).
+- **Full Pipeline Audio Cost**: Integrating real-time FFT spectrum analysis (Hann windowing, Radix-2 butterfly passes, and Seqlock atomic synchronization) adds approximately 16.5 µs per frame compared to non-audio reactive rendering (244.1 µs vs 227.6 µs). The resulting 4,096 FPS composite throughput demonstrates that the complete audio visualization pipeline remains well within real-time terminal rendering budgets.
