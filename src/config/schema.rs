@@ -1,6 +1,6 @@
 //! TOML configuration data structures and validation logic.
 
-use crate::render::{ColorPalette, Rgb};
+use crate::render::ColorPalette;
 use serde::{Deserialize, Serialize};
 
 /// Root configuration for LavaTerm.
@@ -334,6 +334,7 @@ impl Default for InteractionConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::render::Rgb;
 
     #[test]
     fn test_interaction_config_validation_and_parsing() {

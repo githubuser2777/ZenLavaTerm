@@ -362,7 +362,6 @@ mod tests {
     }
 
     #[test]
-    #[test]
     fn test_ring_buffer_clear() {
         let ring = PcmRingBuffer::new(8);
         ring.push_slice(&[1.0, 2.0, 3.0, 4.0]);

@@ -10,6 +10,7 @@ use std::time::Duration;
 /// Mock stream feeder simulating real hardware audio device frames arriving at real-time intervals.
 /// Generates mono or interleaved multi-channel PCM frames (f32, i16, u16) and pushes them into a
 /// `PcmRingBuffer`, simulating CPAL hardware callbacks.
+#[allow(dead_code)]
 pub struct MockAudioStreamFeeder {
     ring_buffer: PcmRingBuffer,
     pub sample_rate: u32,
@@ -32,6 +33,7 @@ impl std::fmt::Debug for MockAudioStreamFeeder {
     }
 }
 
+#[allow(dead_code)]
 impl MockAudioStreamFeeder {
     /// Creates a new mock audio stream feeder.
     pub fn new(ring_buffer: PcmRingBuffer, sample_rate: u32, channels: usize) -> Self {

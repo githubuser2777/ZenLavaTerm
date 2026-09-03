@@ -24,7 +24,7 @@ fn test_end_to_end_simulation_and_rasterization() {
     };
 
     let mut sim = Simulation::new(physics, 8, 42);
-    let palette = ColorPalette::from(config.palette);
+    let palette = config.palette;
     let mut fb = VirtualFramebuffer::new(40, 20, palette.background);
 
     // Step simulation 10 times
@@ -481,12 +481,12 @@ fn test_phase11_cross_platform_headless_execution() {
     use lavaterm::config::Config;
     use lavaterm::core::{PhysicsParams, Simulation};
     use lavaterm::reactive::default_system_provider;
-    use lavaterm::render::{rasterize_simulation, ColorPalette, VirtualFramebuffer};
+    use lavaterm::render::{rasterize_simulation, VirtualFramebuffer};
 
     let config = Config::default();
     let physics = PhysicsParams::default();
     let mut sim = Simulation::new(physics, config.simulation.blobs, 42);
-    let palette = ColorPalette::from(config.palette);
+    let palette = config.palette;
     let mut fb = VirtualFramebuffer::new(60, 30, palette.background);
     let mut provider = default_system_provider();
 
