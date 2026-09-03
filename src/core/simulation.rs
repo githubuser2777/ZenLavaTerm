@@ -1,6 +1,6 @@
 //! Simulation orchestrator managing blob states, physics stepping, and scalar field evaluation.
 
-use super::field::ScalarField;
+use super::field::{evaluate_field, evaluate_with_temperature};
 use super::metaball::Blob;
 use super::physics::{step_blob, PhysicsParams};
 
@@ -44,8 +44,6 @@ pub struct Simulation {
     pub blobs: Vec<Blob>,
     /// Physics parameters.
     pub params: PhysicsParams,
-    /// Scalar field evaluator.
-    pub field: ScalarField,
     /// Total elapsed simulation time in seconds.
     pub elapsed_time: f32,
     /// Base radius scale for compact / adaptive viewports.
@@ -86,7 +84,6 @@ impl Simulation {
         Self {
             blobs,
             params,
-            field: ScalarField,
             elapsed_time: 0.0,
             radius_scale: 1.0,
             prng,
@@ -118,13 +115,13 @@ impl Simulation {
     /// Evaluates the scalar field at coordinate `(px, py)` in $[0.0, 1.0] \times [0.0, 1.0]$.
     #[inline]
     pub fn evaluate_field(&self, px: f32, py: f32) -> f32 {
-        self.field.evaluate_field(&self.blobs, px, py)
+        evaluate_field(&self.blobs, px, py)
     }
 
     /// Evaluates field intensity and temperature at `(px, py)`.
     #[inline]
     pub fn evaluate_at(&self, px: f32, py: f32) -> (f32, f32) {
-        self.field.evaluate_with_temperature(&self.blobs, px, py)
+        evaluate_with_temperature(&self.blobs, px, py)
     }
 
     /// Dynamically modulates physics constants and blob parameters from normalized reactive signals.

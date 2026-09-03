@@ -12,6 +12,38 @@ struct DirectPaletteSchema {
     background: Option<String>,
 }
 
+impl DirectPaletteSchema {
+    fn to_palette(&self) -> Option<ColorPalette> {
+        if self.bottom.is_some() || self.top.is_some() {
+            let default_pal = ColorPalette::default();
+            Some(ColorPalette {
+                bottom: self
+                    .bottom
+                    .as_deref()
+                    .and_then(|h| Rgb::from_hex(h).ok())
+                    .unwrap_or(default_pal.bottom),
+                middle: self
+                    .middle
+                    .as_deref()
+                    .and_then(|h| Rgb::from_hex(h).ok())
+                    .unwrap_or(default_pal.middle),
+                top: self
+                    .top
+                    .as_deref()
+                    .and_then(|h| Rgb::from_hex(h).ok())
+                    .unwrap_or(default_pal.top),
+                background: self
+                    .background
+                    .as_deref()
+                    .and_then(|h| Rgb::from_hex(h).ok())
+                    .unwrap_or(default_pal.background),
+            })
+        } else {
+            None
+        }
+    }
+}
+
 /// Loads and parses a custom theme file from any arbitrary path.
 pub fn load_custom_theme_file(path: &Path) -> Result<ColorPalette, String> {
     let content = fs::read_to_string(path)
@@ -21,59 +53,15 @@ pub fn load_custom_theme_file(path: &Path) -> Result<ColorPalette, String> {
 
     // 1. Try parsing as TOML direct palette schema
     if let Ok(toml_palette) = toml::from_str::<DirectPaletteSchema>(trimmed) {
-        if toml_palette.bottom.is_some() || toml_palette.top.is_some() {
-            let default_pal = ColorPalette::default();
-            return Ok(ColorPalette {
-                bottom: toml_palette
-                    .bottom
-                    .as_deref()
-                    .and_then(|h| Rgb::from_hex(h).ok())
-                    .unwrap_or(default_pal.bottom),
-                middle: toml_palette
-                    .middle
-                    .as_deref()
-                    .and_then(|h| Rgb::from_hex(h).ok())
-                    .unwrap_or(default_pal.middle),
-                top: toml_palette
-                    .top
-                    .as_deref()
-                    .and_then(|h| Rgb::from_hex(h).ok())
-                    .unwrap_or(default_pal.top),
-                background: toml_palette
-                    .background
-                    .as_deref()
-                    .and_then(|h| Rgb::from_hex(h).ok())
-                    .unwrap_or(default_pal.background),
-            });
+        if let Some(pal) = toml_palette.to_palette() {
+            return Ok(pal);
         }
     }
 
     // 2. Try parsing as JSON direct palette schema
     if let Ok(json_palette) = serde_json::from_str::<DirectPaletteSchema>(trimmed) {
-        if json_palette.bottom.is_some() || json_palette.top.is_some() {
-            let default_pal = ColorPalette::default();
-            return Ok(ColorPalette {
-                bottom: json_palette
-                    .bottom
-                    .as_deref()
-                    .and_then(|h| Rgb::from_hex(h).ok())
-                    .unwrap_or(default_pal.bottom),
-                middle: json_palette
-                    .middle
-                    .as_deref()
-                    .and_then(|h| Rgb::from_hex(h).ok())
-                    .unwrap_or(default_pal.middle),
-                top: json_palette
-                    .top
-                    .as_deref()
-                    .and_then(|h| Rgb::from_hex(h).ok())
-                    .unwrap_or(default_pal.top),
-                background: json_palette
-                    .background
-                    .as_deref()
-                    .and_then(|h| Rgb::from_hex(h).ok())
-                    .unwrap_or(default_pal.background),
-            });
+        if let Some(pal) = json_palette.to_palette() {
+            return Ok(pal);
         }
     }
 
