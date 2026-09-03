@@ -1,0 +1,34 @@
+---
+description: Testing methodology, mock harnesses, benchmarks, and smoke test rules for ZenLavaTerm
+globs: tests/**/*.rs,src/**/tests.rs,benches/**/*.rs,scripts/smoke_test.py
+---
+
+# Testing Rules for ZenLavaTerm
+
+## 1. Test Architecture & Structure
+- **Unit Tests**: Place unit tests in a nested `tests` submodule at the bottom of the relevant file (e.g., `src/core/field.rs`). Focus on mathematical boundary conditions, clamping, and edge cases.
+- **Integration Tests**: Place cross-module integration tests in `tests/integration_test.rs`. Use shared fixtures from `tests/common/mod.rs`.
+- **Test Fixture Isolation**: Never include test-only stream simulators or heavy mocks in production binaries. Place reusable test mocks (like `MockAudioStreamFeeder`) under `tests/common/mod.rs`.
+
+## 2. Test Execution & Coverage Requirements
+- Run tests using:
+  ```bash
+  cargo test
+  ```
+- Any new feature or bug fix must include tests covering both the happy path and failure/edge cases.
+- All 135+ existing unit and integration tests must continue to pass with 0 failures.
+
+## 3. Headless & Smoke Verification
+- Validate the binary lifecycle in headless mode without a physical TTY:
+  ```bash
+  cargo run -- --headless --frames 30
+  ```
+- For changes affecting signal handling, PTY lifecycle, or arguments, execute the PTY smoke suite:
+  ```bash
+  python3 scripts/smoke_test.py target/debug/lavaterm
+  ```
+
+## 4. Benchmarking
+- Maintain performance benchmarks in `benches/field_and_render.rs`.
+- Verify benchmark compilation with `cargo bench --no-run`.
+- Do not degrade verified baseline performance (>5,000 FPS rasterization throughput at $80 \times 48$).

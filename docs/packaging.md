@@ -1,5 +1,7 @@
 # ZenLavaTerm Packaging & Installation Guide
 
+> **Packaging Documentation Hub**: For operational details on building packages and CI/CD automation, see [docs/operations/packaging.md](operations/packaging.md) and [docs/operations/ci-cd.md](operations/ci-cd.md).
+
 This document outlines the official installation methods, supported package formats, and the maintainer release process for **ZenLavaTerm**.
 
 ---

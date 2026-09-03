@@ -1,0 +1,22 @@
+---
+description: Security standards, credential hygiene, memory bounds, and vulnerability audit rules for ZenLavaTerm
+globs: **/*
+---
+
+# Security Rules for ZenLavaTerm
+
+## 1. Zero Secrets & Credentials
+- Never commit credentials, private tokens, passwords, SSH keys, or personal paths into the repository.
+- Avoid logging sensitive environment variables or command arguments.
+
+## 2. Ephemeral Artifacts & Git Hygiene
+- Do NOT commit generated build artifacts (`target/`, `dist/`), test/benchmark traces, or private agent memory.
+- Ephemeral agent memory or logs should be stored outside the repo or in `.gitignore` paths.
+
+## 3. Bounded Resources & Input Safety
+- **Terminal Resize Safety**: Validate terminal width and height from crossterm or CLI args before allocating framebuffer memory. Guard against integer overflow or zero/negative dimensions in `src/input/coords.rs` and `src/render/framebuffer.rs`.
+- **Audio Buffer Bounds**: Cap ring buffer capacity (`PcmRingBuffer::new(capacity.max(128))`) and limit read retries (max 64 retries on seqlock contention before safe fallback) to prevent DoS.
+- **Config Ingestion Bounds**: Configuration values (e.g. `blobs`, `fps`, `radius`) must be validated against reasonable upper bounds to prevent CPU starvation.
+
+## 4. Vulnerability Audits
+- Regularly verify crate dependencies using `cargo audit` (enforced in `.github/workflows/ci.yml` via `rustsec/audit-check`).

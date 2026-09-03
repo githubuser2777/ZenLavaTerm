@@ -1,0 +1,31 @@
+---
+description: Rust coding idioms, error handling, formatting, and dependency rules for ZenLavaTerm
+globs: src/**/*.rs,tests/**/*.rs,benches/**/*.rs,Cargo.toml
+---
+
+# Rust Coding Rules for ZenLavaTerm
+
+## 1. Rust Edition & Idioms
+- Target Rust 2021 edition (`rustc 1.85+`).
+- Write idiomatic, readable, high-performance Rust.
+- Keep dependencies minimal. Before adding any new crate to `Cargo.toml`, evaluate if `std` or an existing dependency (`crossterm`, `serde`, `clap`, `cpal`) already provides the capability.
+
+## 2. Zero Panics in Production Paths
+- Production code must never call `unwrap()`, `expect()`, or `panic!()`.
+- All fallible operations must return `lavaterm::Result<T>` (`Result<T, LavaError>`).
+- Implement descriptive error variants in `src/lib.rs` (`LavaError`) with manual `Display` and `Error` implementations without unnecessary external macro dependencies.
+
+## 3. Formatting & Linting Gates
+- Code formatting must strictly adhere to `rustfmt.toml`:
+  ```bash
+  cargo fmt --check
+  ```
+- Code must pass `clippy` with zero warnings under `-D warnings`:
+  ```bash
+  cargo clippy --all-targets --all-features -- -D warnings
+  ```
+
+## 4. Performance & Memory Primitives
+- Framebuffer rendering loops and scalar field potential evaluations are in the hot path. Avoid heap allocations (`Vec::new()`, `clone()`, `String::from`) inside per-frame or per-pixel loops.
+- Use pre-allocated contiguous buffers (`Vec<Rgb>`, `BufWriter<Stdout>`) and in-place slices.
+- Protect concurrency with lock-free atomic primitives (`AtomicU64` Seqlock, `AtomicBool` CAS) as seen in `src/audio/ring_buffer.rs`.

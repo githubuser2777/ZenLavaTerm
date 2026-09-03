@@ -1,0 +1,29 @@
+---
+description: Architectural boundaries, unidirectional data flow, and module separation rules for ZenLavaTerm
+globs: src/**/*.rs
+---
+
+# Architecture Rules for ZenLavaTerm
+
+## 1. Unidirectional Data Flow
+Maintain the strict one-way pipeline at all times:
+```text
+Signals / Inputs -> Simulation Core -> Virtual Framebuffer -> Terminal Renderer -> Stdout TTY
+```
+Never invert this dependency chain (e.g., renderers must never modify simulation state; simulation must never write to stdout or poll crossterm).
+
+## 2. Core Isolation (`src/core/`)
+- `src/core/` operates exclusively in normalized continuous space (`[0.0, 1.0]`).
+- **Forbidden in `core`**: `crossterm`, `std::io::stdout`, OS-specific APIs (`libc`, `windows-sys`), audio drivers, or terminal dimensions.
+- Keep simulation deterministic given initial conditions, physics parameters, and $\Delta t$.
+
+## 3. UI Paradigm: Terminal-Native TUI
+- ZenLavaTerm is a **terminal-native ANSI TUI** visualizer using `crossterm` and custom sub-cell rasterization (`HalfBlockRenderer`, `BlockRenderer`, `BrailleRenderer`).
+- It does **not** use a webview, GUI framework, or Tauri. Do not introduce GUI dependencies or web assets into the runtime.
+- For compact terminal geometries or multiplexers (tmux/zellij), use the `src/widget/` policy engine and `CompactScaler`.
+
+## 4. Telemetry Normalization (`src/reactive/` & `src/audio/`)
+- Platform-specific telemetry (Linux procfs, Windows Win32, macOS Mach kernel) and audio capture (CPAL) must translate into normalized structs:
+  - `SystemSignals`: `cpu_load`, `memory_usage`, `battery_level`, `io_activity` (all `[0.0, 1.0]`).
+  - `AudioSignals`: `bass`, `mid`, `treble`, `energy` (all `[0.0, 1.0]`).
+- Hardware stream capture failures must degrade gracefully to deterministic synthetic generators (`SyntheticAudioGenerator`, `MockSystemProvider`) without crashing or freezing.

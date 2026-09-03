@@ -1,5 +1,13 @@
 # LavaTerm Architecture
 
+> **Architecture Documentation Hub**: For detailed subsystem architecture guides, see the comprehensive [docs/architecture/](architecture/) directory:
+> - [Architecture Overview & Pipeline](architecture/overview.md)
+> - [Audio Pipeline & Ring Buffer](architecture/audio-pipeline.md)
+> - [Rendering Pipeline & Terminal Encodings](architecture/rendering-pipeline.md)
+> - [Simulation & Physics](architecture/simulation.md)
+> - [Reactive Telemetry Subsystem](architecture/reactive-telemetry.md)
+> - [Terminal UI & Widgets (vs Tauri/GUI)](architecture/ui-and-widgets.md)
+
 ## 1. Executive Summary
 
 **LavaTerm** is designed with a strict unidirectional data flow, separating pure mathematical simulation from terminal rendering and OS-level platform signals. The core simulation runs independently of terminal dimensions, frame rate, or ANSI terminal sequences.

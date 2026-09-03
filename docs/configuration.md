@@ -1,5 +1,7 @@
 # LavaTerm Configuration Schema
 
+> **Reference Documentation**: For the comprehensive configuration guide and schema details, see [docs/reference/configuration.md](reference/configuration.md).
+
 ## 1. Overview
 
 LavaTerm is designed with the philosophy of **zero-configuration out of the box** with powerful customization when needed. If no configuration file is provided, beautiful default parameters are automatically used.

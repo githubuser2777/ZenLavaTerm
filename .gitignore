@@ -25,3 +25,11 @@
 .aider-desk/
 .continue/
 skills-lock.json
+.cursor/*.log
+.cursor/scratch/
+.ai/scratch/
+.ai/**/*.tmp
+
+# Log files (preserve benchmark baseline logs)
+*.log
+!docs/benchmarks/*.log

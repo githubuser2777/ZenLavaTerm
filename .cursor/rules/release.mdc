@@ -1,0 +1,26 @@
+---
+description: Release process, SemVer validation, packaging manifests, and checksum rules for ZenLavaTerm
+globs: Cargo.toml,CHANGELOG.md,packaging/**,scripts/package_*,scripts/update_package_manifests.sh,.github/workflows/release.yml,.github/workflows/package.yml
+---
+
+# Release Rules for ZenLavaTerm
+
+## 1. Strict Semantic Versioning
+- Version numbers must strictly follow SemVer (`MAJOR.MINOR.PATCH`).
+- Production git tags must strictly match `^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$` (e.g. `v1.0.1`).
+- The git tag MUST match the version declared in `Cargo.toml` (`lavaterm` package).
+- Pre-release candidates (e.g. `-rc*`, `-beta*`) are validated only via `.github/workflows/package.yml`, never published as final GitHub releases.
+
+## 2. Packaging Artifact Consistency
+The release matrix requires 4 official desktop installers and 2 community package manager manifests:
+1. **Linux AppImage** (`ZenLavaTerm-v<VER>-linux-x86_64.AppImage`)
+2. **Linux DEB** (`ZenLavaTerm-v<VER>-linux-x86_64.deb`)
+3. **Windows MSI** (`ZenLavaTerm-v<VER>-windows-x86_64.msi`)
+4. **macOS Universal DMG** (`ZenLavaTerm-v<VER>-macos-universal.dmg`)
+5. **Homebrew Formula** (`packaging/homebrew/lavaterm.rb`)
+6. **Arch Linux AUR** (`packaging/aur/PKGBUILD`, `.SRCINFO`)
+
+## 3. Integrity & Manifest Synchronization
+- Release workflows in `.github/workflows/release.yml` require independent SHA256 checksum generation (`*.sha256`) and consolidation into `SHA256SUMS.txt`.
+- Manifest update script `scripts/update_package_manifests.sh` must be used to keep package definitions in sync with release source tarballs.
+- Never bypass checksum verification or tag consistency checks in CI.

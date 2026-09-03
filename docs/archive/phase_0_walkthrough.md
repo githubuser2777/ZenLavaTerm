@@ -118,7 +118,7 @@ b82ea31 docs: add architecture, simulation, rendering, and roadmap documentation
 
 ## 5. Trạng thái Kiểm chuẩn & CI
 
-- **Workflow CI**: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) cấu hình matrix cho Linux (`ubuntu-latest`), macOS (`macos-latest`), Windows (`windows-latest`).
+- **Workflow CI**: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) cấu hình matrix cho Linux (`ubuntu-latest`), macOS (`macos-latest`), Windows (`windows-latest`).
 - **Format check**: `cargo fmt --check` $\to$ **PASS**
 - **Lint check**: `cargo clippy --all-targets --all-features -- -D warnings` $\to$ **PASS** (0 warning/error)
 - **Unit & Integration tests**: `cargo test` $\to$ **PASS 19/19 tests** (100% pass)

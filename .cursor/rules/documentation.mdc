@@ -1,0 +1,25 @@
+---
+description: Documentation standards, synchronization rules, and authority hierarchy for ZenLavaTerm
+globs: docs/**/*.md,README.md,CHANGELOG.md,.ai/**/*.md
+---
+
+# Documentation Rules for ZenLavaTerm
+
+## 1. Documentation Authority Hierarchy
+1. **Source Code & Tests**: Ground truth of implementation behavior.
+2. **`docs/` & `README.md` & `CHANGELOG.md`**: Authoritative human documentation.
+3. **`AGENTS.md` & `.cursor/rules/`**: Authoritative rules for AI coding agents.
+4. **`.ai/`**: Subordinate supporting context and scratchpad. Synchronize `.ai/` to match `docs/` and code when discrepancies occur.
+
+## 2. Mandatory Synchronization Trigger
+Update documentation in the same commit whenever:
+- CLI options, flags, or default parameters in `src/main.rs` change -> update `docs/reference/cli.md` and `README.md`.
+- Configuration schemas or defaults in `src/config/` change -> update `docs/reference/configuration.md` and `docs/configuration.md`.
+- Architecture, module boundaries, or thread models change -> update `docs/architecture/`.
+- Packaging or CI workflows change -> update `docs/operations/`.
+- Release versions change -> update `Cargo.toml`, `CHANGELOG.md`, and `.ai/context/current-state.md`.
+
+## 3. Style & Accuracy Invariants
+- **Empirical Accuracy Only**: Never invent unverified test counts, speculative benchmarks, or fake roadmap items. Record only verified, reproducible metrics.
+- **Link Over Duplication**: Use relative links or references between documents rather than copying large text blocks.
+- **Maintain Copyable Sample**: Keep `docs/configuration.md` directly valid and copyable as a sample configuration file for users.

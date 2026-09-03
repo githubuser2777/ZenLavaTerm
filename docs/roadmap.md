@@ -2,7 +2,7 @@
 
 This document outlines the phased milestone progression of LavaTerm. Each phase builds upon the previous phase following strict Definition of Done criteria.
 
-**Current Maintenance State:** Phase 12 In Review (PR #57) — v1.0.0 Release Candidate — Pending Final Signoff & Merge.
+**Current Maintenance State:** Production Release v1.0.1 Active — Phase 13 In Planning (v1.1.0).
 
 ---
 
@@ -33,9 +33,9 @@ Phase 10: Interactive Mode (Mouse, Keyboard Ripple) (Complete - v0.11.0)
    │
 Phase 11: Cross-Platform Expansion & Hardening (Complete - v0.11.0)
    │
-Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (In Review / RC - PR #57)
+Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete - v1.0.0 / v1.0.1)
    │
-Phase 13: Advanced Audio Features & DSP Expansion (Planned - v1.1)
+Phase 13: Advanced Audio Features & DSP Expansion (Planned - v1.1.0)
 ```
 
 ---
@@ -130,23 +130,27 @@ Phase 13: Advanced Audio Features & DSP Expansion (Planned - v1.1)
 - **Milestone Outcome**:
   - Successfully expanded platform support across Linux, macOS, and Windows with robust configuration and theme discovery. Hardened foundation for Phase 12.
 
-### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Release Candidate — PR #57, Milestone #1)
+### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Complete — v1.0.0 / v1.0.1)
 - **Objective**: Implement unified audio capture architecture with real cross-platform hardware audio capture via CPAL (WASAPI on Windows, ALSA on Linux, CoreAudio on macOS), ring buffer resampling utility and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
-- **GitHub Milestone**: `Phase 12 — Performance, Native Audio & V1.0` (Milestone #1)
-- **Status**: In Review (PR #57 Active — Release Candidate Verification)
-- **Issue Breakdown**:
-  - `Issue 12.0` (#45): Architecture, Performance Baseline & Phase 12 Inception (Closed)
-  - `Issue 12.1` (#46): Audio Architecture, Dynamic Provider Contract & Ring Buffer Hardening (Closed)
-  - `Issue 12.2` (#47): Windows Audio Capture Architecture (Closed)
-  - `Issue 12.3` (#48): Linux Audio Capture Architecture (Closed)
-  - `Issue 12.4` (#49): macOS Audio Capture Architecture (Closed)
-  - `Issue 12.5` (#50): Unified Cross-Platform Audio Runtime, CLI `--audio-device` & Dynamic Fallback (Closed)
-  - `Issue 12.6` (#51): Micro-Benchmark Expansion, Allocation Profiling & Hotspot Analysis (Closed)
-  - `Issue 12.7` (#52): High-Performance Scalar Field & Framebuffer Rasterization Optimizations (Closed)
-  - `Issue 12.8` (#53): Community Package Manager Distribution (Homebrew, AUR) (Closed)
-  - `Issue 12.9` (#54): V1.0 API Freeze, Configuration Migration Engine & Security Hardening (Closed)
-  - `Issue 12.10` (#55): V1.0 Release Candidate Validation & Documentation Sync (Closed)
-  - `Issue 12.11` (#56): ZenLavaTerm v1.0.0 Production Release & Transition (Closed)
+- **GitHub Milestone**: `Phase 12 — Performance, Native Audio & V1.0` (Closed)
+- **Status**: Complete (Released as v1.0.0 and v1.0.1)
+- **Key Deliverables**:
+  - Live cross-platform audio capture powered by CPAL.
+  - SPSC lock-free Seqlock ring buffer (`PcmRingBuffer`) with 64-bit sequence counter.
+  - In-place Radix-2 FFT spectrum analyzer with Hann windowing.
+  - Verified >5,000 FPS rasterization throughput in Criterion micro-benchmarks.
+  - Official multi-platform desktop packaging (AppImage, DEB, MSI, Universal DMG) and community packages (Homebrew, AUR).
+  - Codebase hygiene, dependency pruning (`thiserror` removed), and Serde alias migration in v1.0.1.
+
+### Phase 13: Advanced Audio Features & DSP Expansion (Planned — v1.1.0)
+- **Objective**: Expand audio visualization capabilities, automate desktop loopback routing across Linux sound servers, and refine spatial multi-band effects.
+- **Status**: Backlog / Planning
+- **Planned Work Items**:
+  - **Linux Audio Loopback & Monitor Source Discovery**: Automatically locate PipeWire and PulseAudio monitor sinks when `--audio-loopback` is passed, matching Windows WASAPI loopback ease of use.
+  - **Dynamic Audio AGC (Automatic Gain Control)**: Normalize varying music volume levels dynamically to maintain vibrant visual responses across diverse acoustic inputs.
+  - **Configurable FFT Frequency Bands**: Allow users to tune crossover cutoff frequencies in `config.toml` for specialized music genres.
+  - **Multi-Channel Surround / Spatial Visualizer**: Map stereo left/right audio channels to spatial horizontal convection dynamics in the metaball field.
+
 
 
 
