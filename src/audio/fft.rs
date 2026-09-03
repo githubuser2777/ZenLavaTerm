@@ -125,6 +125,7 @@ impl SpectrumAnalyzer {
         }
 
         let n = self.window_size;
+        // ponytail: dynamic Vec alloc per frame; pre-allocated scratch buffers if audio polling throughput matters
         let mut real = vec![0.0f32; n];
         let mut imag = vec![0.0f32; n];
 

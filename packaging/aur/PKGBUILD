@@ -3,7 +3,7 @@ pkgname=lavaterm
 pkgver=1.0.0
 pkgrel=1
 pkgdesc="A terminal-native ambient lava lamp and metaball visualizer"
-arch=('x86_64')
+arch=('x86_64' 'aarch64')
 url="https://github.com/githubuser2777/ZenLavaTerm"
 license=('MIT')
 depends=('gcc-libs')
@@ -11,23 +11,23 @@ makedepends=('cargo' 'git')
 provides=('lavaterm')
 conflicts=('lavaterm-bin' 'lavaterm-git')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('__SOURCE_SHA__')
 
 build() {
-  cd "$pkgname-$pkgver"
+  cd "ZenLavaTerm-$pkgver"
   export RUSTUP_TOOLCHAIN=stable
   export CARGO_TARGET_DIR=target
   cargo build --release --locked
 }
 
 check() {
-  cd "$pkgname-$pkgver"
+  cd "ZenLavaTerm-$pkgver"
   export RUSTUP_TOOLCHAIN=stable
   cargo test --release --locked
 }
 
 package() {
-  cd "$pkgname-$pkgver"
+  cd "ZenLavaTerm-$pkgver"
   install -Dm755 "target/release/lavaterm" "$pkgdir/usr/bin/lavaterm"
   install -Dm644 "README.md" "$pkgdir/usr/share/doc/$pkgname/README.md"
   install -Dm644 "LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"

@@ -1,0 +1,133 @@
+   Compiling lavaterm v1.0.0 (/home/skids/Documents/code/ZenLavaTerm)
+    Finished `bench` profile [optimized] target(s) in 1m 09s
+     Running benches/field_and_render.rs (target/release/deps/field_and_render-cee09cdaf35d6bbb)
+Benchmarking field_evaluation/6Benchmarking field_evaluation/6: Warming up for 3.0000 sBenchmarking field_evaluation/6: Collecting 100 samples in estimated 5.0002 s (11M iterations)Benchmarking field_evaluation/6: Analyzingfield_evaluation/6      time:   [451.77 ns 458.97 ns 467.61 ns]
+                        change: [+7.1796% +8.7177% +10.578%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  2 (2.00%) high mild
+  3 (3.00%) high severe
+Benchmarking field_evaluation/12Benchmarking field_evaluation/12: Warming up for 3.0000 sBenchmarking field_evaluation/12: Collecting 100 samples in estimated 5.0015 s (12M iterations)Benchmarking field_evaluation/12: Analyzingfield_evaluation/12     time:   [436.24 ns 441.72 ns 447.90 ns]
+                        change: [+2.4578% +3.3054% +4.1212%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  4 (4.00%) high mild
+  6 (6.00%) high severe
+Benchmarking field_evaluation/24Benchmarking field_evaluation/24: Warming up for 3.0000 sBenchmarking field_evaluation/24: Collecting 100 samples in estimated 5.0005 s (11M iterations)Benchmarking field_evaluation/24: Analyzingfield_evaluation/24     time:   [436.14 ns 440.98 ns 446.68 ns]
+                        change: [+2.5655% +3.7041% +4.9255%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 9 outliers among 100 measurements (9.00%)
+  2 (2.00%) high mild
+  7 (7.00%) high severe
+
+Benchmarking rasterization/rasterize_80x48Benchmarking rasterization/rasterize_80x48: Warming up for 3.0000 sBenchmarking rasterization/rasterize_80x48: Collecting 100 samples in estimated 5.1610 s (40k iterations)Benchmarking rasterization/rasterize_80x48: Analyzingrasterization/rasterize_80x48
+                        time:   [126.42 µs 127.28 µs 128.33 µs]
+                        change: [-2.2776% -1.1186% -0.0587%] (p = 0.05 < 0.05)
+                        Change within noise threshold.
+Found 18 outliers among 100 measurements (18.00%)
+  10 (10.00%) high mild
+  8 (8.00%) high severe
+Benchmarking rasterization/rasterize_120x60Benchmarking rasterization/rasterize_120x60: Warming up for 3.0000 sBenchmarking rasterization/rasterize_120x60: Collecting 100 samples in estimated 6.1947 s (25k iterations)Benchmarking rasterization/rasterize_120x60: Analyzingrasterization/rasterize_120x60
+                        time:   [248.24 µs 252.06 µs 256.49 µs]
+                        change: [+3.9207% +5.6004% +7.4030%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  9 (9.00%) high mild
+  1 (1.00%) high severe
+Benchmarking rasterization/rasterize_stepped_gradient_80x48Benchmarking rasterization/rasterize_stepped_gradient_80x48: Warming up for 3.0000 sBenchmarking rasterization/rasterize_stepped_gradient_80x48: Collecting 100 samples in estimated 5.0177 s (76k iterations)Benchmarking rasterization/rasterize_stepped_gradient_80x48: Analyzingrasterization/rasterize_stepped_gradient_80x48
+                        time:   [64.021 µs 64.387 µs 64.801 µs]
+                        change: [+8.9535% +13.043% +17.820%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 19 outliers among 100 measurements (19.00%)
+  3 (3.00%) high mild
+  16 (16.00%) high severe
+
+Benchmarking renderers/halfblockBenchmarking renderers/halfblock: Warming up for 3.0000 sBenchmarking renderers/halfblock: Collecting 100 samples in estimated 5.2747 s (61k iterations)Benchmarking renderers/halfblock: Analyzingrenderers/halfblock     time:   [85.381 µs 86.211 µs 87.156 µs]
+                        change: [-4.5992% -2.7965% -0.9354%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
+Benchmarking renderers/blockBenchmarking renderers/block: Warming up for 3.0000 sBenchmarking renderers/block: Collecting 100 samples in estimated 5.0864 s (61k iterations)Benchmarking renderers/block: Analyzingrenderers/block         time:   [81.482 µs 83.172 µs 85.059 µs]
+                        change: [-1.2989% +1.1428% +3.4178%] (p = 0.37 > 0.05)
+                        No change in performance detected.
+Found 9 outliers among 100 measurements (9.00%)
+  6 (6.00%) high mild
+  3 (3.00%) high severe
+Benchmarking renderers/brailleBenchmarking renderers/braille: Warming up for 3.0000 sBenchmarking renderers/braille: Collecting 100 samples in estimated 5.3606 s (71k iterations)Benchmarking renderers/braille: Analyzingrenderers/braille       time:   [73.634 µs 74.838 µs 76.241 µs]
+                        change: [+3.1226% +4.9114% +6.8204%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  6 (6.00%) high mild
+  4 (4.00%) high severe
+
+Benchmarking fft_and_audio/compute_fft/512Benchmarking fft_and_audio/compute_fft/512: Warming up for 3.0000 sBenchmarking fft_and_audio/compute_fft/512: Collecting 100 samples in estimated 5.0157 s (874k iterations)Benchmarking fft_and_audio/compute_fft/512: Analyzingfft_and_audio/compute_fft/512
+                        time:   [6.4956 µs 6.6805 µs 6.8855 µs]
+                        change: [+9.9048% +13.008% +16.412%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  5 (5.00%) high mild
+Benchmarking fft_and_audio/compute_fft/1024Benchmarking fft_and_audio/compute_fft/1024: Warming up for 3.0000 sBenchmarking fft_and_audio/compute_fft/1024: Collecting 100 samples in estimated 5.0142 s (343k iterations)Benchmarking fft_and_audio/compute_fft/1024: Analyzingfft_and_audio/compute_fft/1024
+                        time:   [12.973 µs 13.155 µs 13.393 µs]
+                        change: [+8.4714% +11.350% +14.216%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high mild
+Benchmarking fft_and_audio/compute_fft/2048Benchmarking fft_and_audio/compute_fft/2048: Warming up for 3.0000 sBenchmarking fft_and_audio/compute_fft/2048: Collecting 100 samples in estimated 5.1327 s (182k iterations)Benchmarking fft_and_audio/compute_fft/2048: Analyzingfft_and_audio/compute_fft/2048
+                        time:   [27.618 µs 27.941 µs 28.328 µs]
+                        change: [+4.2557% +6.7026% +9.4475%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 16 outliers among 100 measurements (16.00%)
+  4 (4.00%) high mild
+  12 (12.00%) high severe
+Benchmarking fft_and_audio/spectrum_analyze_1024Benchmarking fft_and_audio/spectrum_analyze_1024: Warming up for 3.0000 sBenchmarking fft_and_audio/spectrum_analyze_1024: Collecting 100 samples in estimated 5.0357 s (283k iterations)Benchmarking fft_and_audio/spectrum_analyze_1024: Analyzingfft_and_audio/spectrum_analyze_1024
+                        time:   [17.655 µs 17.785 µs 17.938 µs]
+                        change: [+3.0454% +4.4226% +5.7738%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  8 (8.00%) high mild
+  2 (2.00%) high severe
+Benchmarking fft_and_audio/resample_linear_48k_to_44kBenchmarking fft_and_audio/resample_linear_48k_to_44k: Warming up for 3.0000 sBenchmarking fft_and_audio/resample_linear_48k_to_44k: Collecting 100 samples in estimated 5.0168 s (1.0M iterations)Benchmarking fft_and_audio/resample_linear_48k_to_44k: Analyzingfft_and_audio/resample_linear_48k_to_44k
+                        time:   [4.6881 µs 4.7511 µs 4.8163 µs]
+                        change: [+5.5207% +7.8627% +10.422%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+Benchmarking fft_and_audio/ring_buffer_lock_free_push_256Benchmarking fft_and_audio/ring_buffer_lock_free_push_256: Warming up for 3.0000 sBenchmarking fft_and_audio/ring_buffer_lock_free_push_256: Collecting 100 samples in estimated 5.0007 s (23M iterations)Benchmarking fft_and_audio/ring_buffer_lock_free_push_256: Analyzingfft_and_audio/ring_buffer_lock_free_push_256
+                        time:   [210.98 ns 212.64 ns 214.59 ns]
+                        change: [+3.3925% +4.3701% +5.2876%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+Benchmarking fft_and_audio/ring_buffer_lock_free_read_512Benchmarking fft_and_audio/ring_buffer_lock_free_read_512: Warming up for 3.0000 sBenchmarking fft_and_audio/ring_buffer_lock_free_read_512: Collecting 100 samples in estimated 5.0039 s (5.8M iterations)Benchmarking fft_and_audio/ring_buffer_lock_free_read_512: Analyzingfft_and_audio/ring_buffer_lock_free_read_512
+                        time:   [838.31 ns 842.34 ns 847.00 ns]
+                        change: [+2.2421% +3.2002% +4.1512%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+Benchmarking fft_and_audio/ring_buffer_seqlock_contended_read_512Benchmarking fft_and_audio/ring_buffer_seqlock_contended_read_512: Warming up for 3.0000 sBenchmarking fft_and_audio/ring_buffer_seqlock_contended_read_512: Collecting 100 samples in estimated 5.0067 s (1.3M iterations)Benchmarking fft_and_audio/ring_buffer_seqlock_contended_read_512: Analyzingfft_and_audio/ring_buffer_seqlock_contended_read_512
+                        time:   [3.6728 µs 3.8016 µs 3.9305 µs]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+
+Benchmarking pipeline_and_adaptation/full_frame_audio_halfblockBenchmarking pipeline_and_adaptation/full_frame_audio_halfblock: Warming up for 3.0000 sBenchmarking pipeline_and_adaptation/full_frame_audio_halfblock: Collecting 100 samples in estimated 6.2709 s (20k iterations)Benchmarking pipeline_and_adaptation/full_frame_audio_halfblock: Analyzingpipeline_and_adaptation/full_frame_audio_halfblock
+                        time:   [280.80 µs 287.76 µs 295.78 µs]
+                        change: [+21.063% +24.560% +28.145%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Benchmarking pipeline_and_adaptation/full_frame_reactive_halfblockBenchmarking pipeline_and_adaptation/full_frame_reactive_halfblock: Warming up for 3.0000 sBenchmarking pipeline_and_adaptation/full_frame_reactive_halfblock: Collecting 100 samples in estimated 5.9434 s (25k iterations)Benchmarking pipeline_and_adaptation/full_frame_reactive_halfblock: Analyzingpipeline_and_adaptation/full_frame_reactive_halfblock
+                        time:   [231.71 µs 237.70 µs 244.70 µs]
+                        change: [+1.4699% +3.4307% +5.5362%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  2 (2.00%) high mild
+  3 (3.00%) high severe
+Benchmarking pipeline_and_adaptation/compact_adapt_simulationBenchmarking pipeline_and_adaptation/compact_adapt_simulation: Warming up for 3.0000 sBenchmarking pipeline_and_adaptation/compact_adapt_simulation: Collecting 100 samples in estimated 5.0000 s (409M iterations)Benchmarking pipeline_and_adaptation/compact_adapt_simulation: Analyzingpipeline_and_adaptation/compact_adapt_simulation
+                        time:   [12.188 ns 12.314 ns 12.465 ns]
+                        change: [-2.4817% -1.3499% -0.2184%] (p = 0.02 < 0.05)
+                        Change within noise threshold.
+Found 8 outliers among 100 measurements (8.00%)
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+

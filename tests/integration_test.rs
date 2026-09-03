@@ -587,3 +587,408 @@ fn test_phase11_linux_provider_delta_transition() {
     let _ = fs::remove_file(&disk_file);
     let _ = fs::remove_dir_all(&bat_dir);
 }
+
+#[test]
+fn test_phase12_native_audio_architecture_and_resampling() {
+    use lavaterm::audio::{AudioProvider, LiveAudioProvider, PcmRingBuffer, SpectrumAnalyzer};
+
+    let ring = PcmRingBuffer::new(2048);
+    let analyzer = SpectrumAnalyzer::new(44100, 512);
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+    assert!(provider.is_live());
+    assert_eq!(provider.provider_name(), "live");
+    assert_eq!(provider.sample_rate(), 44100);
+
+    // 1. Ingest 48kHz stereo signal resampled to 44.1kHz
+    let mut stereo_48k = Vec::with_capacity(960);
+    for i in 0..480 {
+        let sample = (2.0 * std::f32::consts::PI * 80.0 * (i as f32) / 48000.0).sin();
+        stereo_48k.push(sample); // L
+        stereo_48k.push(sample); // R
+    }
+
+    // Downmix to mono and resample to 44.1kHz
+    let mut mono_48k = Vec::with_capacity(480);
+    for &[l, r] in stereo_48k.as_chunks::<2>().0 {
+        mono_48k.push((l + r) * 0.5);
+    }
+
+    ring.push_resampled(&mono_48k, 48000, 44100);
+
+    let signals = provider.poll_signals();
+    assert!(
+        signals.bass > 0.0,
+        "80Hz pulse resampled from 48kHz should register bass energy"
+    );
+    assert!(signals.volume > 0.0, "Volume should be non-zero");
+}
+
+#[test]
+fn test_phase12_unified_audio_runtime_and_device_enumeration() {
+    use lavaterm::audio::{create_audio_provider, list_audio_devices};
+    use lavaterm::config::AudioConfig;
+
+    // 1. Device enumeration (validates device listing without requiring hardware on CI)
+    let devices = list_audio_devices();
+    if !devices.is_empty() {
+        assert!(
+            devices.iter().any(|d| d.is_default),
+            "If devices exist, at least one should be marked default"
+        );
+    }
+
+    // 2. Synthetic fallback when disabled
+    let disabled_cfg = AudioConfig {
+        enabled: false,
+        bpm: 130.0,
+        device: None,
+        loopback: false,
+    };
+    let mut disabled_provider = create_audio_provider(&disabled_cfg).unwrap();
+    assert!(!disabled_provider.is_live());
+    assert_eq!(disabled_provider.provider_name(), "synthetic");
+    let disabled_signals = disabled_provider.poll_signals();
+    assert!(disabled_signals.bass.is_finite());
+
+    // 3. Live capture provider when enabled
+    let enabled_cfg = AudioConfig {
+        enabled: true,
+        bpm: 120.0,
+        device: None,
+        loopback: false,
+    };
+    let mut enabled_provider = create_audio_provider(&enabled_cfg).unwrap();
+    let signals = enabled_provider.poll_signals();
+    assert!(signals.bass.is_finite());
+    assert!(signals.mid.is_finite());
+    assert!(signals.treble.is_finite());
+    assert!(signals.volume.is_finite());
+}
+
+#[test]
+fn test_phase12_config_migration_and_security_bounds() {
+    use lavaterm::config::load_from_path;
+    use std::fs;
+
+    let temp_dir = std::env::temp_dir();
+    let legacy_file = temp_dir.join(format!(
+        "lavaterm_legacy_config_{}.toml",
+        std::process::id()
+    ));
+
+    let legacy_toml = r#"
+        [simulation]
+        num_blobs = 16
+        gravity_constant = 0.18
+        buoyancy_force = 0.95
+
+        [render]
+        renderer_type = "block"
+        target_fps = 40
+        smooth_gradient = true
+
+        [audio]
+        tempo = 135.0
+
+        [widget]
+        compact_mode = true
+    "#;
+
+    fs::write(&legacy_file, legacy_toml).expect("write legacy config");
+
+    let loaded = load_from_path(&legacy_file).expect("load and migrate succeeds");
+    assert_eq!(loaded.simulation.blobs, 16);
+    assert!((loaded.simulation.gravity - 0.18).abs() < 1e-4);
+    assert!((loaded.simulation.buoyancy - 0.95).abs() < 1e-4);
+    assert_eq!(loaded.render.renderer, "block");
+    assert_eq!(loaded.render.fps, 40);
+    assert!(loaded.render.gradient);
+    assert_eq!(loaded.audio.bpm, 135.0);
+    assert!(loaded.widget.compact);
+
+    let _ = fs::remove_file(&legacy_file);
+}
+
+#[test]
+fn test_phase12_real_audio_mock_stream_feeder_continuous_streaming() {
+    use lavaterm::audio::{
+        AudioProvider, LiveAudioProvider, MockAudioStreamFeeder, PcmRingBuffer, SpectrumAnalyzer,
+    };
+    use std::thread;
+    use std::time::Duration;
+
+    let ring = PcmRingBuffer::new(4096);
+    let analyzer = SpectrumAnalyzer::new(44100, 512);
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+    let mut feeder = MockAudioStreamFeeder::new(ring.clone(), 44100, 2).with_frequency(80.0); // 80Hz bass pulse
+
+    // Start background stream worker feeding 128-frame chunks every 3ms
+    feeder.start_worker(128, 3);
+    thread::sleep(Duration::from_millis(20));
+
+    assert!(provider.is_live());
+    assert_eq!(provider.provider_name(), "live");
+
+    // Simulate 15 visualizer render frames at ~60 FPS
+    let mut polled_frames = 0;
+    for _ in 0..15 {
+        let sig = provider.poll_signals();
+        assert!(
+            sig.bass > 0.0,
+            "Continuous stream should contain 80Hz bass energy"
+        );
+        assert!(sig.volume > 0.0, "Volume should be non-zero");
+        polled_frames += 1;
+        thread::sleep(Duration::from_millis(5));
+    }
+    assert_eq!(polled_frames, 15);
+    assert!(ring.total_samples_written() >= 512);
+
+    feeder.stop();
+
+    // Verify format ingestion (i16 and u16) via feeder bursts
+    ring.clear();
+    feeder.feed_frames_i16(512);
+    let sig_i16 = provider.poll_signals();
+    assert!(
+        sig_i16.bass > 0.0,
+        "Interleaved i16 stream must produce bass energy"
+    );
+
+    ring.clear();
+    feeder.feed_frames_u16(512);
+    let sig_u16 = provider.poll_signals();
+    assert!(
+        sig_u16.bass > 0.0,
+        "Interleaved u16 stream must produce bass energy"
+    );
+}
+
+#[test]
+fn test_phase12_real_audio_stream_interruption_and_runtime_recovery() {
+    use lavaterm::audio::{
+        AudioProvider, LiveAudioProvider, MockAudioStreamFeeder, PcmRingBuffer, SpectrumAnalyzer,
+    };
+
+    let ring = PcmRingBuffer::new(2048);
+    let analyzer = SpectrumAnalyzer::new(44100, 256);
+
+    let feeder = MockAudioStreamFeeder::new(ring.clone(), 44100, 2).with_frequency(60.0);
+
+    let stream_alive = feeder.stream_alive_handle();
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer)
+        .with_stream_alive(stream_alive)
+        .with_fallback_bpm(135.0);
+
+    // 1. Initial live streaming
+    feeder.feed_frames_f32(512);
+    assert!(provider.is_live());
+    let live_sig = provider.poll_signals();
+    assert!(live_sig.bass > 0.0);
+    assert!(live_sig.volume > 0.0);
+
+    // 2. Hardware disconnect event (e.g. unplugged DAC or CPAL stream error)
+    feeder.simulate_disconnect();
+    assert!(
+        !provider.is_live(),
+        "Provider must reflect dead stream state"
+    );
+
+    // Clear buffer to guarantee no residual frames
+    ring.clear();
+
+    // 3. Fallback to synthetic beat generator: visualizer does not freeze or flatline to silence
+    let fallback_1 = provider.poll_signals();
+    assert!(
+        fallback_1.volume > 0.0,
+        "Fallback generator must produce active audio signals upon disconnect"
+    );
+
+    let fallback_2 = provider.poll_signals();
+    assert!(fallback_2.volume > 0.0);
+    assert_ne!(
+        fallback_1, fallback_2,
+        "Synthetic generator must advance dynamically"
+    );
+
+    // 4. Hardware reconnect event
+    feeder.simulate_reconnect();
+    assert!(
+        provider.is_live(),
+        "Provider must report live after reconnection"
+    );
+
+    // Feed new 1000Hz tone into reconnected stream
+    let feeder_mid = MockAudioStreamFeeder::new(ring.clone(), 44100, 1).with_frequency(1000.0);
+    feeder_mid.feed_frames_f32(512);
+
+    let recovered_sig = provider.poll_signals();
+    assert!(
+        recovered_sig.mid > 0.0,
+        "Recovered live stream must analyze new incoming frequency content"
+    );
+}
+
+#[test]
+fn test_phase12_mock_stream_feeder_buffer_overrun_and_underrun_resilience() {
+    use lavaterm::audio::{
+        AudioProvider, LiveAudioProvider, MockAudioStreamFeeder, PcmRingBuffer, SpectrumAnalyzer,
+    };
+
+    let ring = PcmRingBuffer::new(256); // small ring buffer to test overrun
+    let analyzer = SpectrumAnalyzer::new(44100, 128);
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+    let feeder = MockAudioStreamFeeder::new(ring.clone(), 44100, 1).with_frequency(150.0);
+
+    // Overrun test: push 5,000 frames into a 256-capacity buffer
+    feeder.feed_frames_f32(5000);
+    assert_eq!(ring.total_samples_written(), 5000);
+
+    let sig_after_overrun = provider.poll_signals();
+    assert!(sig_after_overrun.bass.is_finite());
+    assert!(sig_after_overrun.volume > 0.0);
+
+    // Underrun test: clear ring buffer and poll repeatedly without any new frames
+    ring.clear();
+    for _ in 0..10 {
+        let sig = provider.poll_signals();
+        assert_eq!(sig.bass, 0.0);
+        assert_eq!(sig.volume, 0.0);
+    }
+}
+
+#[test]
+fn test_phase12_ring_buffer_wrap_around_and_reader_seqlock_consistency() {
+    use lavaterm::audio::{
+        AudioProvider, LiveAudioProvider, MockAudioStreamFeeder, PcmRingBuffer, SpectrumAnalyzer,
+    };
+    use std::thread;
+    use std::time::Duration;
+
+    let ring = PcmRingBuffer::new(512); // small buffer wraps every 2-4 chunks
+    let analyzer = SpectrumAnalyzer::new(44100, 256);
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+
+    let mut feeder = MockAudioStreamFeeder::new(ring.clone(), 44100, 2).with_frequency(120.0);
+
+    // Feeder pushes 64-frame chunks rapidly every 1ms
+    feeder.start_worker(64, 1);
+
+    // Poll signals over 50 iterations simulating real-time render loop under active wrap-around
+    for _ in 0..50 {
+        let sig = provider.poll_signals();
+        assert!(
+            sig.bass.is_finite(),
+            "Bass must be finite during wrap-around"
+        );
+        assert!(sig.mid.is_finite(), "Mid must be finite during wrap-around");
+        assert!(
+            sig.treble.is_finite(),
+            "Treble must be finite during wrap-around"
+        );
+        assert!(
+            sig.volume.is_finite(),
+            "Volume must be finite during wrap-around"
+        );
+        assert!(sig.volume >= 0.0 && sig.volume <= 1.0);
+        thread::sleep(Duration::from_millis(2));
+    }
+
+    assert!(
+        ring.total_samples_written() > 1000,
+        "Feeder must have pushed samples before clear"
+    );
+
+    // Mid-stream clear must be coherent and safe
+    ring.clear();
+    assert_eq!(ring.total_samples_written(), 0);
+    let post_clear_sig = provider.poll_signals();
+    assert!(post_clear_sig.volume.is_finite());
+
+    feeder.stop();
+}
+
+#[test]
+fn test_phase12_audio_pipeline_full_e2e_samples_to_render() {
+    use lavaterm::audio::{
+        AudioProvider, LiveAudioProvider, MockAudioStreamFeeder, PcmRingBuffer, SpectrumAnalyzer,
+    };
+    use lavaterm::core::{PhysicsParams, Simulation};
+    use lavaterm::render::{rasterize_simulation, ColorPalette, VirtualFramebuffer};
+
+    // 1. Setup audio pipeline components
+    let ring = PcmRingBuffer::new(4096);
+    let analyzer = SpectrumAnalyzer::new(44100, 512);
+    let mut provider = LiveAudioProvider::new(ring.clone(), analyzer);
+    let feeder = MockAudioStreamFeeder::new(ring.clone(), 44100, 2).with_frequency(60.0);
+
+    // 2. Initially ring buffer is empty -> signals are zero
+    let initial_sig = provider.poll_signals();
+    assert_eq!(initial_sig.bass, 0.0);
+    assert_eq!(initial_sig.volume, 0.0);
+
+    // 3. Stage 1: Feed 512 PCM f32 samples (simulating native capture callback)
+    feeder.feed_frames_f32(512);
+    assert!(
+        ring.total_samples_written() >= 512,
+        "Ring buffer must have received PCM samples from capture callback"
+    );
+
+    // 4. Stage 2 & 3: Read from ring buffer -> SpectrumAnalyzer FFT -> AudioSignals
+    let bass_sig = provider.poll_signals();
+    assert!(
+        bass_sig.bass > 0.1,
+        "FFT spectrum analyzer must detect energy in bass band for 60Hz input (got: {})",
+        bass_sig.bass
+    );
+    assert!(
+        bass_sig.volume > 0.1,
+        "Audio volume must reflect incoming wave energy (got: {})",
+        bass_sig.volume
+    );
+
+    // 5. Stage 4: Feed into Simulation via step_audio
+    let mut sim_silent = Simulation::new(PhysicsParams::default(), 6, 12345);
+    let mut sim_audio = Simulation::new(PhysicsParams::default(), 6, 12345);
+
+    // Step both simulations for 20 frames
+    let palette = ColorPalette::default();
+    let mut fb_silent = VirtualFramebuffer::new(40, 20, palette.background);
+    let mut fb_audio = VirtualFramebuffer::new(40, 20, palette.background);
+
+    for _ in 0..20 {
+        sim_silent.step(0.033);
+        sim_audio.step_audio(0.033, &bass_sig);
+    }
+
+    // Audio bass boost increases buoyancy (0.80 + bass * 1.50 vs default 0.85)
+    assert!(
+        sim_audio.params.buoyancy > sim_silent.params.buoyancy,
+        "Audio signals must dynamically boost simulation buoyancy"
+    );
+
+    // 6. Stage 5: Rasterize to framebuffer and verify divergence
+    rasterize_simulation(&sim_silent, &mut fb_silent, &palette, 1.0);
+    rasterize_simulation(&sim_audio, &mut fb_audio, &palette, 1.0);
+
+    let silent_pixels: Vec<_> = fb_silent.as_slice().to_vec();
+    let audio_pixels: Vec<_> = fb_audio.as_slice().to_vec();
+    assert_ne!(
+        silent_pixels, audio_pixels,
+        "Audio reactive pipeline must affect the rendered framebuffer pixels"
+    );
+
+    // 7. Verify i16 and u16 PCM pipelines end-to-end
+    ring.clear();
+    feeder.feed_frames_i16(512);
+    let sig_i16 = provider.poll_signals();
+    assert!(sig_i16.bass > 0.1, "i16 PCM pipeline produces valid bass");
+
+    ring.clear();
+    feeder.feed_frames_u16(512);
+    let sig_u16 = provider.poll_signals();
+    assert!(sig_u16.bass > 0.1, "u16 PCM pipeline produces valid bass");
+}

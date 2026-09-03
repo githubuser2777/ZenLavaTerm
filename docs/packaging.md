@@ -19,9 +19,25 @@ Every official release includes a consolidated `SHA256SUMS.txt` and SLSA build p
 
 ---
 
-## 2. User Installation Instructions
+### Community Package Managers
 
-### Linux
+#### Homebrew (macOS & Linux)
+```bash
+brew install githubuser2777/tap/lavaterm
+```
+
+#### Arch Linux (AUR)
+```bash
+# Using yay
+yay -S lavaterm
+
+# Using paru
+paru -S lavaterm
+```
+
+---
+
+### Linux Installers
 
 #### Option A: Portable AppImage (Universal Linux)
 
@@ -57,7 +73,7 @@ The `.deb` package installs the `lavaterm` binary system-wide to `/usr/bin/lavat
 
 ---
 
-### Windows
+### Windows Installers
 
 #### Windows Installer (`.msi`)
 
@@ -76,7 +92,7 @@ The `.msi` installer provides a standard Windows installation experience.
 
 ---
 
-### macOS
+### macOS Installers
 
 #### Apple Disk Image (`.dmg`)
 
@@ -91,6 +107,7 @@ The `.dmg` contains a universal application bundle supporting both Apple Silicon
    ```
 
 > **Note on Signing & Notarization:** Official macOS builds are currently unsigned community binaries. On macOS Ventura/Sonoma/Sequoia, if Gatekeeper warns about an unidentified developer, open **System Settings → Privacy & Security** and click **Open Anyway**, or run `xattr -cr /Applications/ZenLavaTerm.app`.
+
 
 ---
 

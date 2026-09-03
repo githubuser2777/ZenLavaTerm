@@ -1,7 +1,8 @@
 [package]
 name = "lavaterm"
-version = "0.11.0"
+version = "1.0.0"
 edition = "2021"
+
 authors = ["ZenLavaTerm Contributors"]
 description = "A terminal-native ambient lava lamp and metaball visualizer"
 readme = "README.md"
@@ -27,6 +28,7 @@ toml = "0.8"
 thiserror = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 signal-hook = "0.3"
+cpal = "0.15"
 
 [dev-dependencies]
 criterion = { version = "0.5", default-features = false }

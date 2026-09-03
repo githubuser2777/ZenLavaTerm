@@ -74,6 +74,9 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
 
+      - name: Install Linux audio dependencies
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
+
       - name: Build release binary
         run: cargo build --release --target x86_64-unknown-linux-gnu --verbose
 
@@ -279,6 +282,41 @@ jobs:
             dist/*.msi
             dist/*.dmg
 
+
+      - name: Generate Release Package Manifests (Homebrew & AUR)
+        env:
+          VERSION: ${{ needs.verify-tag.outputs.version }}
+        run: |
+          set -e
+          echo "Generating manifests for release version $VERSION..."
+          
+          # Download immutable source archive from tag to compute exact release checksum
+          wget --fail --show-progress -O source.tar.gz "https://github.com/githubuser2777/ZenLavaTerm/archive/refs/tags/v${VERSION}.tar.gz"
+          test -s source.tar.gz
+          SOURCE_SHA=$(sha256sum source.tar.gz | awk '{print $1}')
+          echo "Release Source Archive SHA256: $SOURCE_SHA"
+
+          # Prepare output bundle directory
+          mkdir -p dist/packaging/homebrew dist/packaging/aur dist/packaging/arch
+          cp packaging/homebrew/lavaterm.rb dist/packaging/homebrew/
+          cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO dist/packaging/aur/
+          cp packaging/arch/PKGBUILD dist/packaging/arch/
+
+          # Update manifests in dist
+          sed -i "s/__SOURCE_SHA__/${SOURCE_SHA}/g" dist/packaging/homebrew/lavaterm.rb dist/packaging/aur/PKGBUILD dist/packaging/aur/.SRCINFO dist/packaging/arch/PKGBUILD
+          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v${VERSION}/g" dist/packaging/homebrew/lavaterm.rb
+          sed -i "s/pkgver=[0-9]\+\.[0-9]\+\.[0-9]\+/pkgver=${VERSION}/g" dist/packaging/aur/PKGBUILD dist/packaging/arch/PKGBUILD
+          sed -i "s/pkgver = [0-9]\+\.[0-9]\+\.[0-9]\+/pkgver = ${VERSION}/g" dist/packaging/aur/.SRCINFO
+
+          # Verify manifests contain correct hash and version
+          grep -q "${SOURCE_SHA}" dist/packaging/homebrew/lavaterm.rb || { echo "Failed Homebrew verification"; exit 1; }
+          grep -q "${SOURCE_SHA}" dist/packaging/aur/PKGBUILD || { echo "Failed AUR PKGBUILD verification"; exit 1; }
+          grep -q "${SOURCE_SHA}" dist/packaging/aur/.SRCINFO || { echo "Failed AUR .SRCINFO verification"; exit 1; }
+          grep -q "${SOURCE_SHA}" dist/packaging/arch/PKGBUILD || { echo "Failed Arch PKGBUILD verification"; exit 1; }
+
+          # Package manifests into an archive for release attachment
+          (cd dist/packaging && tar -czf ../lavaterm-package-manifests-v${VERSION}.tar.gz .)
+
       - name: Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
@@ -294,6 +332,7 @@ jobs:
             dist/*.dmg
             dist/*.dmg.sha256
             dist/SHA256SUMS.txt
+            dist/lavaterm-package-manifests-v*.tar.gz
           draft: false
           prerelease: false
           generate_release_notes: true

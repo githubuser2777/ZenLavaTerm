@@ -77,6 +77,9 @@ poll_interval_ms = 500
 enabled = false
 # BPM tempo for synthetic fallback beat generator
 bpm = 120.0
+# Optional specific audio capture device name
+# device = "default"
+
 
 [theme]
 # Active theme preset ("lava", "ocean", "cyberpunk", "synthwave", "nord", "forest", "monochrome", "matrix", "sunset", "dracula", "catppuccin", "tokyo-night"), "auto", "pywal", "wallust", or custom file path

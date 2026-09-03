@@ -1,14 +1,16 @@
 //! Configuration loading, file discovery, and defaults.
 
+pub mod migrate;
 pub mod schema;
 
-pub use schema::{Config, PaletteConfig, RenderConfig, SimulationConfig};
+pub use migrate::migrate_config;
+pub use schema::{AudioConfig, Config, PaletteConfig, RenderConfig, SimulationConfig};
 
 use crate::{LavaError, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Loads a configuration from a specific file path.
+/// Loads a configuration from a specific file path with automatic backward-compatible schema migration.
 pub fn load_from_path<P: AsRef<Path>>(path: P) -> Result<Config> {
     let path_ref = path.as_ref();
     let content = fs::read_to_string(path_ref).map_err(|e| {
@@ -19,15 +21,7 @@ pub fn load_from_path<P: AsRef<Path>>(path: P) -> Result<Config> {
         ))
     })?;
 
-    let config: Config = toml::from_str(&content).map_err(|e| {
-        LavaError::Config(format!(
-            "Failed to parse TOML config at '{}': {}",
-            path_ref.display(),
-            e
-        ))
-    })?;
-
-    config.validate().map_err(LavaError::Config)?;
+    let (config, _migrated) = migrate_config(&content)?;
     Ok(config)
 }
 

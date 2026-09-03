@@ -8,8 +8,8 @@ use crossterm::{
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use lavaterm::{
-    audio::default_audio_provider,
-    config::load_config,
+    audio::{create_audio_provider, list_audio_devices},
+    config::{load_config, AudioConfig},
     core::{Interaction, PhysicsParams, Simulation},
     input::{map_key_event_with_ripple, Action, MouseTracker},
     reactive::default_system_provider,
@@ -24,6 +24,7 @@ use lavaterm::{
     },
     LavaError, Result,
 };
+
 use std::{
     io::{stdout, BufWriter, Write},
     path::PathBuf,
@@ -87,6 +88,17 @@ struct Cli {
     /// Enable audio-reactive visualizer mode (FFT bass/mid/treble)
     #[arg(long)]
     audio: bool,
+
+    /// Target audio input or capture device name
+    #[arg(long, value_name = "DEVICE")]
+    audio_device: Option<String>,
+    /// Capture system audio (loopback) instead of microphone
+    #[arg(long)]
+    audio_loopback: bool,
+
+    /// List available audio capture devices and exit
+    #[arg(long)]
+    list_audio_devices: bool,
 
     /// Disable mouse click shockwaves, dragging, and scroll pressure
     #[arg(long)]
@@ -177,6 +189,7 @@ struct RuntimeOptions {
     gradient: bool,
     system_reactive: bool,
     audio_reactive: bool,
+    audio_config: AudioConfig,
     poll_interval_ms: u64,
     mouse_enabled: bool,
     keyboard_ripple: bool,
@@ -202,7 +215,7 @@ fn run_headless(
         None
     };
     let mut audio_provider = if opts.audio_reactive {
-        Some(default_audio_provider())
+        Some(create_audio_provider(&opts.audio_config)?)
     } else {
         None
     };
@@ -305,7 +318,7 @@ fn run_event_loop(
         None
     };
     let mut audio_provider = if opts.audio_reactive {
-        Some(default_audio_provider())
+        Some(create_audio_provider(&opts.audio_config)?)
     } else {
         None
     };
@@ -402,6 +415,7 @@ fn run_event_loop(
 
             let elapsed = now.elapsed();
             if elapsed < target_frame_duration {
+                // ponytail: thread::sleep for frame cadence; spin-wait/high-precision timer if jitter occurs
                 std::thread::sleep(target_frame_duration - elapsed);
             }
         }
@@ -423,6 +437,23 @@ fn run_event_loop(
 
 fn main() -> std::process::ExitCode {
     let cli = Cli::parse();
+
+    if cli.list_audio_devices {
+        let devices = list_audio_devices();
+        println!("Available Audio Capture Devices ({} found):", devices.len());
+        for (i, dev) in devices.iter().enumerate() {
+            let default_tag = if dev.is_default { " (default)" } else { "" };
+            let direction_tag = format!("[{}]", dev.direction);
+            println!(
+                "  {}. {} {} {}",
+                i + 1,
+                direction_tag,
+                dev.name,
+                default_tag
+            );
+        }
+        return std::process::ExitCode::SUCCESS;
+    }
 
     let config = match load_config(cli.config.as_deref()) {
         Ok(c) => c,
@@ -463,6 +494,16 @@ fn main() -> std::process::ExitCode {
     let renderer_type = cli.renderer.unwrap_or(config.render.renderer);
     let system_reactive = cli.system || config.reactive.enabled;
     let audio_reactive = cli.audio || config.audio.enabled;
+    let mut audio_config = config.audio.clone();
+    if cli.audio {
+        audio_config.enabled = true;
+    }
+    if cli.audio_loopback {
+        audio_config.loopback = true;
+    }
+    if let Some(ref dev) = cli.audio_device {
+        audio_config.device = Some(dev.clone());
+    }
     let poll_interval_ms = config.reactive.poll_interval_ms;
     let threshold = config.simulation.threshold;
 
@@ -543,6 +584,7 @@ fn main() -> std::process::ExitCode {
         gradient: config.render.gradient,
         system_reactive,
         audio_reactive,
+        audio_config,
         poll_interval_ms,
         mouse_enabled,
         keyboard_ripple,

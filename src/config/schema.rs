@@ -324,6 +324,13 @@ pub struct AudioConfig {
     /// BPM tempo for synthetic fallback beat generator.
     #[serde(default = "default_bpm")]
     pub bpm: f32,
+
+    /// Optional target audio input/capture device name.
+    #[serde(default)]
+    pub device: Option<String>,
+    /// Whether to capture system output audio (loopback) instead of microphone input.
+    #[serde(default)]
+    pub loopback: bool,
 }
 
 fn default_audio_enabled() -> bool {
@@ -338,6 +345,8 @@ impl Default for AudioConfig {
         Self {
             enabled: default_audio_enabled(),
             bpm: default_bpm(),
+            device: None,
+            loopback: false,
         }
     }
 }

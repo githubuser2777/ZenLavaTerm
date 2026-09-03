@@ -2,7 +2,7 @@
 
 This document outlines the phased milestone progression of LavaTerm. Each phase builds upon the previous phase following strict Definition of Done criteria.
 
-**Current Maintenance State:** v0.11.0 released — Phase 11 Complete (Cross-Platform Expansion & Hardening) — Phase 12 Planned.
+**Current Maintenance State:** Phase 12 In Review (PR #57) — v1.0.0 Release Candidate — Pending Final Signoff & Merge.
 
 ---
 
@@ -33,7 +33,9 @@ Phase 10: Interactive Mode (Mouse, Keyboard Ripple) (Complete - v0.11.0)
    │
 Phase 11: Cross-Platform Expansion & Hardening (Complete - v0.11.0)
    │
-Phase 12: Performance Optimization, Native Audio Capture & V1.0 Release (Planned - Next)
+Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (In Review / RC - PR #57)
+   │
+Phase 13: Advanced Audio Features & DSP Expansion (Planned - v1.1)
 ```
 
 ---
@@ -125,11 +127,26 @@ Phase 12: Performance Optimization, Native Audio Capture & V1.0 Release (Planned
   - Three-tier workflow architecture: PR CI (`ci.yml`), Release Candidate Packaging (`package.yml`), and Strict SemVer Production Release (`release.yml`).
 - **Testing & Validation**:
   - 120 automated tests (105 unit + 15 integration tests), including cross-platform provider contracts, lifecycle transitions, theme discovery, and headless smoke testing across Ubuntu, macOS, and Windows runners.
-- **Remaining Limitations**:
-  - Live hardware audio capture backends (WASAPI capture on Windows, CoreAudio on macOS, native PipeWire on Linux) remain synthetic/stream-based and are scheduled for Phase 12.
+- **Milestone Outcome**:
+  - Successfully expanded platform support across Linux, macOS, and Windows with robust configuration and theme discovery. Hardened foundation for Phase 12.
 
-### Phase 12: Performance Optimization, Native Audio Capture & V1.0 Release (Planned - Next)
-- **Native Live Audio Capture**: Hardware capture providers for Windows (WASAPI loopback), macOS (CoreAudio tap), and Linux (PipeWire/ALSA stream capture) feeding the existing `SpectrumAnalyzer` and `PcmRingBuffer`.
-- **Field & Rasterization Optimizations**: SIMD / Rayon data-parallel scalar field evaluation and memory footprint minimization.
-- **Package Manager Distribution**: Community submission of Homebrew formula, AUR package maintenance, and Scoop/Winget manifests.
-- **V1.0 Stabilization**: Long-term API freeze, configuration migration guards, and final production readiness audit.
+### Phase 12: Performance Optimization, Audio Architecture & V1.0 Release (Release Candidate — PR #57, Milestone #1)
+- **Objective**: Implement unified audio capture architecture with real cross-platform hardware audio capture via CPAL (WASAPI on Windows, ALSA on Linux, CoreAudio on macOS), ring buffer resampling utility and FFT spectrum analysis, evidence-driven field & rasterization performance optimizations, package manager distribution manifests, and v1.0.0 production stabilization.
+- **GitHub Milestone**: `Phase 12 — Performance, Native Audio & V1.0` (Milestone #1)
+- **Status**: In Review (PR #57 Active — Release Candidate Verification)
+- **Issue Breakdown**:
+  - `Issue 12.0` (#45): Architecture, Performance Baseline & Phase 12 Inception (Closed)
+  - `Issue 12.1` (#46): Audio Architecture, Dynamic Provider Contract & Ring Buffer Hardening (Closed)
+  - `Issue 12.2` (#47): Windows Audio Capture Architecture (Closed)
+  - `Issue 12.3` (#48): Linux Audio Capture Architecture (Closed)
+  - `Issue 12.4` (#49): macOS Audio Capture Architecture (Closed)
+  - `Issue 12.5` (#50): Unified Cross-Platform Audio Runtime, CLI `--audio-device` & Dynamic Fallback (Closed)
+  - `Issue 12.6` (#51): Micro-Benchmark Expansion, Allocation Profiling & Hotspot Analysis (Closed)
+  - `Issue 12.7` (#52): High-Performance Scalar Field & Framebuffer Rasterization Optimizations (Closed)
+  - `Issue 12.8` (#53): Community Package Manager Distribution (Homebrew, AUR) (Closed)
+  - `Issue 12.9` (#54): V1.0 API Freeze, Configuration Migration Engine & Security Hardening (Closed)
+  - `Issue 12.10` (#55): V1.0 Release Candidate Validation & Documentation Sync (Closed)
+  - `Issue 12.11` (#56): ZenLavaTerm v1.0.0 Production Release & Transition (Closed)
+
+
+

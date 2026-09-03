@@ -74,8 +74,15 @@ impl VirtualFramebuffer {
     }
 
     /// Returns a direct slice to the contiguous pixel array.
+    #[inline]
     pub fn as_slice(&self) -> &[Rgb] {
         &self.pixels
+    }
+
+    /// Returns a mutable direct slice to the contiguous pixel array.
+    #[inline]
+    pub fn as_mut_slice(&mut self) -> &mut [Rgb] {
+        &mut self.pixels
     }
 }
 

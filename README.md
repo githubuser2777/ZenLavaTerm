@@ -82,7 +82,7 @@
   - **Auto-Detection (`--theme auto`)**: Automatically inspects desktop color caches with smooth fallback.
   - **Custom Files**: Load custom JSON and TOML 4-anchor color schemes.
 - 📊 **Ambient System Observability (`--system`)**: Zero-clutter hardware monitoring reading native operating system telemetry (Linux `/proc` and `/sys`, Windows Win32 API `GetSystemTimes`/`GlobalMemoryStatusEx`/`GetSystemPowerStatus`, and macOS Mach kernel `host_statistics64`). CPU load drives fluid turbulence, RAM usage expands blob volume, and battery charge regulates thermal buoyancy.
-- 🎵 **Audio-Reactive Mode (`--audio`)**: Zero-dependency Cooley-Tukey Radix-2 FFT and Hann-windowed spectrum analyzer isolating Bass ($20-250\text{ Hz}$), Midrange ($250-4000\text{ Hz}$), and Treble ($4-20\text{ kHz}$) into fluid kinematics.
+- 🎵 **Audio-Reactive Mode (`--audio`)**: Zero-dependency Cooley-Tukey Radix-2 FFT and Hann-windowed spectrum analyzer isolating Bass ($20-250\text{ Hz}$), Midrange ($250-4000\text{ Hz}$), and Treble ($4-20\text{ kHz}$) into fluid kinematics. Captures real-time system audio using native platform APIs via `cpal` (WASAPI, PipeWire/ALSA, CoreAudio).
 - 🖱️ **Interactive Physics & Live Modulation**: Click to detonate radial shockwaves, drag to stir fluid currents with momentum transfer, right click for localized thermal pulses, scroll for buoyancy pressure surges, and type characters for acoustic wave ripples.
 - 🪟 **Multiplexer & Widget Integration (`tmux` / `zellij`)**:
   - **Compact Mode (`--compact`)**: Automatically scales particle counts and radii for small split-panes without particle saturation.
@@ -276,6 +276,8 @@ Options:
       --height <ROWS>        Explicit viewport height (rows)
       --system               Enable ambient system-reactive visualizer mode (CPU/RAM/Battery)
       --audio                Enable audio-reactive visualizer mode (FFT spectrum analyzer)
+      --audio-device <DEV>   Target audio input or capture device name
+      --list-audio-devices   List available audio capture devices and exit
       --no-mouse             Disable mouse click shockwaves, dragging, and scroll pressure
       --no-ripple            Disable keyboard ripples on character keypresses
       --shockwave-force <F>  Multiplier for mouse click shockwave force [default: 1.0]
@@ -285,6 +287,7 @@ Options:
   -h, --help                 Print help information
   -V, --version              Print version information
 ```
+
 
 ---
 
@@ -441,7 +444,9 @@ stir_force = 1.0
 | `[reactive]` | `poll_interval_ms` | Integer | `500` | `100..10000` | Polling frequency for `/proc` and `/sys` virtual files. |
 | `[audio]` | `enabled` | Boolean | `false` | `true`, `false` | Enable FFT spectrum analyzer audio reactivity. |
 | `[audio]` | `bpm` | Float | `120.0` | `20.0..300.0` | Procedural rhythm generator tempo for testing and demos. |
+| `[audio]` | `device` | String | `None` | Device Name | Target audio input/capture endpoint name. |
 | `[widget]` | `compact` | Boolean | `false` | `true`, `false` | Force compact profile scaling by default. |
+
 | `[widget]` | `fps` | Integer | `15` | `1..240` | Default frame rate for widget mode. |
 | `[widget]` | `inline` | Boolean | `false` | `true`, `false` | Default to in-place inline rendering without alternate screen. |
 | `[widget]` | `width` | Integer | `None` | `1..1000` | Optional explicit columns width for widget layouts. |
@@ -590,7 +595,7 @@ LavaTerm features a built-in real-time audio visualization engine powered by an 
 ┌─────────────────────────────────────────────────────────────┐
 │                  Audio Capture & Ring Buffer                │
 │  - LiveAudioProvider (PCM streams) / SyntheticAudioGenerator│
-│  - Lock-free PCM circular sample buffer                     │
+│  - Thread-safe PCM circular sample buffer (Mutex-protected) │
 └──────────────────────────────┬──────────────────────────────┘
                                │ 1024-sample analysis window
                                ▼
@@ -856,7 +861,7 @@ cargo run -- --headless --frames 60 --theme cyberpunk
 | `cargo build` | Compile the debug binary in `target/debug/lavaterm`. |
 | `cargo build --release` | Compile the production binary with LTO, opt-level 3, and stripped symbols. |
 | `cargo run --release` | Build and immediately execute LavaTerm. |
-| `cargo test` | Run the complete test suite (105 unit tests + 15 integration tests = 120 tests total). |
+| `cargo test` | Run the complete test suite (121 unit tests + 23 integration tests = 144 tests total). |
 | `cargo test --test integration_test` | Run integration tests only. |
 | `cargo bench` | Run Criterion micro-benchmarks for field math and renderers. |
 | `cargo run --example minimal_sim` | Execute the minimal standalone simulation example. |
