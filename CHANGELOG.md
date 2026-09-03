@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactored & Optimized
 - **Test Fixture Isolation**: Relocated `MockAudioStreamFeeder` (~230 LOC) out of production binary `src/audio/provider.rs` into shared integration test fixtures `tests/common/mod.rs`.
-- **Dependency Elimination**: Dropped `thiserror` crate by manually implementing standard `std::fmt::Display`, `std::error::Error`, and `From<std::io::Error>` on `LavaError`.
+- **Direct Dependency Elimination**: Removed `thiserror` as a direct crate dependency by manually implementing standard `std::fmt::Display`, `std::error::Error`, and `From<std::io::Error>` on `LavaError`.
 - **Native Serde Migration**: Replaced manual AST re-writing engine `src/config/migrate.rs` (-144 LOC) with native Serde field aliases (`#[serde(alias = "...")]`) across config structs.
 - **PaletteConfig Consolidation**: Merged duplicated `PaletteConfig` struct into `pub type PaletteConfig = ColorPalette;` with `#[serde(default)]`, ensuring robust partial table deserialization.
 - **Dead Code Pruning**: Removed unused `resample_linear`, `push_resampled`, and dormant `widget::multiplexer` module.

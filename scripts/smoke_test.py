@@ -187,11 +187,9 @@ def test_interactive_audio():
 
 def test_packaged_artifacts():
     log_test("Packaged Artifacts Verification")
-    import glob
-    appimage_candidates = glob.glob("./dist/ZenLavaTerm-*-linux-x86_64.AppImage")
-    appimage_path = appimage_candidates[0] if appimage_candidates else "./dist/ZenLavaTerm-v1.0.1-linux-x86_64.AppImage"
+    expected_appimage = "./dist/ZenLavaTerm-v1.0.1-linux-x86_64.AppImage"
     packages = [
-        (appimage_path, "Linux AppImage"),
+        (expected_appimage, "Linux AppImage"),
         ("./target/deb_test/usr/bin/lavaterm", "Debian Package Binary"),
         ("./target/arch_test/usr/bin/lavaterm", "Arch Linux Package Binary"),
     ]
@@ -201,7 +199,7 @@ def test_packaged_artifacts():
             print(f"\nVerifying {desc} ({bin_path})...")
             v_proc = subprocess.run([bin_path, "--version"], capture_output=True, text=True)
             assert v_proc.returncode == 0, f"{desc} --version failed"
-            assert "lavaterm 1.0." in v_proc.stdout
+            assert "lavaterm 1.0.1" in v_proc.stdout
             print(f"  ✅ Version check passed: {v_proc.stdout.strip()}")
 
             h_proc = subprocess.run([bin_path, "--headless", "--frames", "10"], capture_output=True, text=True)
