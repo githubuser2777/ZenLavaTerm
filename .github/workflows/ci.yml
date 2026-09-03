@@ -79,6 +79,9 @@ jobs:
       - name: Build release binary
         run: cargo build --release --target x86_64-unknown-linux-gnu --verbose
 
+      - name: Run comprehensive smoke test suite (PTY, Signals, TUI, Audio)
+        run: python3 scripts/smoke_test.py target/x86_64-unknown-linux-gnu/release/lavaterm
+
   test-cross-platform:
     name: Representative Platform (${{ matrix.name }})
     strategy:
