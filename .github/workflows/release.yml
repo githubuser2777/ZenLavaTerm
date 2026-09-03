@@ -291,7 +291,7 @@ jobs:
           echo "Generating manifests for release version $VERSION..."
           
           # Download immutable source archive from tag to compute exact release checksum
-          wget --fail --show-progress -O source.tar.gz "https://github.com/githubuser2777/ZenLavaTerm/archive/refs/tags/v${VERSION}.tar.gz"
+          curl -sSfL -o source.tar.gz "https://github.com/githubuser2777/ZenLavaTerm/archive/refs/tags/v${VERSION}.tar.gz"
           test -s source.tar.gz
           SOURCE_SHA=$(sha256sum source.tar.gz | awk '{print $1}')
           echo "Release Source Archive SHA256: $SOURCE_SHA"
