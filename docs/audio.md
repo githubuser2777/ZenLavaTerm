@@ -16,9 +16,10 @@ The audio pipeline follows a decoupled producer-consumer model:
                                │ Ingests PCM samples
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 Lock-Free PCM Ring Buffer                   │
-│  - Atomic circular buffer (AtomicU32 / AtomicUsize)         │
-│  - Decouples high-rate audio capture without mutex blocking  │
+│             SPSC Lock-Free PCM Ring Buffer (Seqlock)        │
+│  - Atomic circular buffer with 64-bit sequence lock (Seqlock)│
+│  - Tear-free snapshot consistency under wrap-around         │
+│  - Multi-producer guard and non-blocking real-time reads    │
 └──────────────────────────────┬──────────────────────────────┘
                                │ Extracts analysis window
                                ▼
@@ -38,12 +39,16 @@ The audio pipeline follows a decoupled producer-consumer model:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Runtime Providers & Recovery
+### Runtime Providers, SPSC Concurrency & Fallback
 
-- **Native Stream Capture (`NativeAudioCapture`)**: Background streaming capture worker powered by `cpal`, providing cross-platform hardware audio capture across Linux (ALSA), Windows (WASAPI), and macOS (CoreAudio). It detects the default or user-specified audio hardware endpoint and captures raw PCM streams into the ring buffer.
-- **Automatic Runtime Audio Recovery**: `NativeAudioCapture` and `LiveAudioProvider` share an atomic `stream_alive: Arc<AtomicBool>` flag. If the active hardware stream disconnects (e.g. unplugging headphones/DAC or driver crash), CPAL error callbacks immediately trip `stream_alive` to false. `LiveAudioProvider::poll_signals()` automatically falls back to an internal `SyntheticAudioGenerator(bpm)` instance, ensuring the terminal lava lamp visualizer never freezes or flatlines into silence.
-- **Lock-Free Ring Buffer (`PcmRingBuffer`)**: Zero-mutex atomic circular buffer storing recent PCM samples for lock-free audio thread ingestion (>1.25 billion samples/sec throughput).
-- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is explicitly disabled, or when native hardware capture is unavailable / disconnected.
+- **SPSC Lock-Free Seqlock Ring Buffer (`PcmRingBuffer`)**:
+  - **Concurrency Contract**: Operates fundamentally on a Single-Producer, Single-Consumer (SPSC) model where the CPAL audio capture thread writes frames and the terminal visualization thread reads recent analysis windows.
+  - **Tear-Free Snapshot Consistency**: Employs a 64-bit sequence counter (`version`). The producer transitions `version` to odd before writing and even after writing. Consumer reads check `version` before and after copying; if a wrap-around or write collision occurs during read, the reader retries. This mathematically guarantees that the FFT window never mixes older and newly overwritten sample generations.
+  - **Multi-Producer Hardening**: Uses a low-overhead atomic CAS spin-guard (`producer_guard`) to prevent index clobbering if multiple producer threads write simultaneously.
+  - **Coherent Buffer Reset**: `clear()` is coordinated under the version sequence lock, ensuring readers never observe partially-cleared states.
+- **Native Stream Capture (`NativeAudioCapture`)**: Background streaming capture worker powered by `cpal`, providing cross-platform hardware audio capture across Linux (ALSA), Windows (WASAPI), and macOS (CoreAudio). It detects default or user-specified audio endpoints and captures raw PCM streams into the ring buffer.
+- **Runtime Stream Fallback & Live Resumption**: `NativeAudioCapture` and `LiveAudioProvider` share an atomic `stream_alive: Arc<AtomicBool>` flag. If the active hardware stream disconnects (e.g. unplugging headphones/DAC or driver crash), CPAL error callbacks immediately trip `stream_alive` to false. `LiveAudioProvider::poll_signals()` automatically falls back to an internal `SyntheticAudioGenerator(bpm)` instance, ensuring the terminal lava visualizer never freezes or flatlines into silence. When the audio backend stream is restored/reconnected, live signal processing resumes automatically.
+- **Synthetic Generator (`SyntheticAudioGenerator`)**: Procedurally generates rhythmic harmonic beat pulses at configurable `bpm` whenever audio capture is disabled, or when native hardware capture is unavailable or disconnected.
 - **Hardware Frame Simulator (`MockAudioStreamFeeder`)**: Simulates continuous real hardware audio frame streams (f32, i16, u16) with background threads, hardware disconnect/reconnect simulation, and buffer overrun/underrun testing.
 - **Spectrum Analyzer (`SpectrumAnalyzer`)**: Implements an in-place Cooley-Tukey Radix-2 FFT with Hann windowing and spectral band integration, configured dynamically to match the active capture device's sample rate.
 - **Sample Rate Converter (`resample_linear`)**: Linear interpolation resampler utility in `PcmRingBuffer` for sample rate conversions (e.g. 48,000 Hz <-> 44,100 Hz).

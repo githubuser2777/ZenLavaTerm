@@ -58,21 +58,24 @@ Evaluates ANSI string encoding and ANSI escape emission into contiguous byte buf
 
 ---
 
-### 2.4 FFT Analysis, Resampling & Lock-Free Ring Buffer
+### 2.4 FFT Analysis, Resampling & SPSC Seqlock Ring Buffer
 Evaluates real-time audio components:
 
 | Audio Operation | Mean Execution Time | Confidence Interval (95%) | Notes |
 | :--- | :---: | :---: | :---: |
-| `compute_fft/512` | **5.69 µs** | [5.66 µs, 5.73 µs] | Radix-2 in-place |
-| `compute_fft/1024` | **12.49 µs** | [12.44 µs, 12.55 µs] | Standard analysis window |
-| `compute_fft/2048` | **27.10 µs** | [27.00 µs, 27.21 µs] | High resolution window |
-| `spectrum_analyze_1024` | **17.10 µs** | [17.03 µs, 17.17 µs] | Hann window + FFT + band sum |
-| `resample_linear_48k_to_44k` | **4.45 µs** | [4.43 µs, 4.48 µs] | 1024 samples linear resample |
-| `ring_buffer_lock_free_push_256` | **203.36 ns** | [202.83 ns, 203.93 ns] | **>1.25 billion samples/sec** |
-| `ring_buffer_lock_free_read_512` | **813.54 ns** | [811.97 ns, 815.42 ns] | **>630 million samples/sec** |
+| `compute_fft/512` | **6.68 µs** | [6.50 µs, 6.89 µs] | Radix-2 in-place |
+| `compute_fft/1024` | **13.16 µs** | [12.97 µs, 13.39 µs] | Standard analysis window |
+| `compute_fft/2048` | **27.94 µs** | [27.62 µs, 28.33 µs] | High resolution window |
+| `spectrum_analyze_1024` | **17.79 µs** | [17.66 µs, 17.94 µs] | Hann window + FFT + band sum |
+| `resample_linear_48k_to_44k` | **4.75 µs** | [4.69 µs, 4.82 µs] | 1024 samples linear resample |
+| `ring_buffer_lock_free_push_256` | **212.64 ns** | [210.98 ns, 214.59 ns] | Uncontended batch ingestion |
+| `ring_buffer_lock_free_read_512` | **842.34 ns** | [838.31 ns, 847.00 ns] | Uncontended Seqlock read |
+| `ring_buffer_seqlock_contended_read_512` | **3.80 µs** | [3.67 µs, 3.93 µs] | **Active wrap-around contention** |
 
-*Lock-Free Audio Ring Buffer Performance*:
-Pushing 256 PCM audio samples takes only **203.36 nanoseconds** ($0.79\text{ ns/sample}$), completely lock-free without thread preemption or syscalls. Reading a 512-sample analysis window takes **813.54 nanoseconds**.
+*SPSC Seqlock Audio Ring Buffer Performance & Concurrency Verification*:
+- **Uncontended Ingestion**: Pushing 256 PCM audio samples takes **212.64 nanoseconds** ($0.83\text{ ns/sample}$), completely non-blocking without thread preemption or syscalls.
+- **Uncontended Snapshot Read**: Reading a 512-sample analysis window takes **842.34 nanoseconds**.
+- **Contended Concurrent Wrap-Around**: When an active producer thread pushes 256-sample chunks in an unthrottled loop continuously wrapping around the buffer, the consumer reads a guaranteed tear-free, linearizable 512-sample snapshot in **3.80 microseconds** (supporting >260,000 consistent snapshots/sec). At a 60 FPS render budget ($16,666\ \mu\text{s}$), audio snapshot acquisition takes less than $0.023\%$ of the frame interval even under peak contention.
 
 ---
 

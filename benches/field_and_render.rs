@@ -167,6 +167,34 @@ fn bench_fft_and_audio(c: &mut Criterion) {
         });
     });
 
+    // Realistic multi-threaded contention benchmark: consumer reads recent 512 samples while
+    // an active producer thread is continuously pushing 256-sample chunks and wrapping around.
+    let contended_ring = lavaterm::audio::PcmRingBuffer::new(2048);
+    let running = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let running_producer = running.clone();
+    let ring_producer = contended_ring.clone();
+
+    let producer_handle = std::thread::spawn(move || {
+        let chunk = vec![0.3f32; 256];
+        while running_producer.load(std::sync::atomic::Ordering::Relaxed) {
+            ring_producer.push_slice(&chunk);
+            std::hint::spin_loop();
+        }
+    });
+
+    let mut contended_read_out = Vec::with_capacity(512);
+    group.bench_function("ring_buffer_seqlock_contended_read_512", |b| {
+        b.iter(|| {
+            contended_ring.read_recent(black_box(512), &mut contended_read_out);
+            black_box(contended_read_out.len());
+        });
+    });
+
+    running.store(false, std::sync::atomic::Ordering::Release);
+    producer_handle
+        .join()
+        .expect("producer thread finishes cleanly");
+
     group.finish();
 }
 
