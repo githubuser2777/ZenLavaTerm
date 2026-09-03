@@ -555,7 +555,7 @@ fn main() -> std::process::ExitCode {
             }
         }
     } else {
-        ColorPalette::from(config.palette)
+        config.palette
     };
 
     let (initial_cols, initial_rows) = match policy.explicit_dimensions {

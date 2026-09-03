@@ -1,6 +1,6 @@
 //! TOML configuration data structures and validation logic.
 
-use crate::render::{ColorPalette, Rgb};
+use crate::render::ColorPalette;
 use serde::{Deserialize, Serialize};
 
 /// Root configuration for LavaTerm.
@@ -133,196 +133,106 @@ impl Config {
 
 /// Simulation-specific parameters.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct SimulationConfig {
     /// Number of metaball blobs.
-    #[serde(default = "default_blobs")]
+    #[serde(alias = "num_blobs")]
     pub blobs: usize,
 
     /// Gravitational acceleration constant.
-    #[serde(default = "default_gravity")]
+    #[serde(alias = "gravity_constant")]
     pub gravity: f32,
 
     /// Buoyancy upward multiplier.
-    #[serde(default = "default_buoyancy")]
+    #[serde(alias = "buoyancy_force")]
     pub buoyancy: f32,
 
     /// Viscosity drag factor.
-    #[serde(default = "default_viscosity")]
     pub viscosity: f32,
 
     /// Brownian thermal noise amplitude.
-    #[serde(default = "default_noise")]
     pub noise: f32,
 
     /// Isosurface threshold for lava fluid.
-    #[serde(default = "default_threshold")]
     pub threshold: f32,
 
     /// Rate of thermal transfer with chamber boundaries.
-    #[serde(default = "default_thermal_transfer_rate")]
     pub thermal_transfer_rate: f32,
-}
-
-fn default_blobs() -> usize {
-    12
-}
-fn default_gravity() -> f32 {
-    0.12
-}
-fn default_buoyancy() -> f32 {
-    0.80
-}
-fn default_viscosity() -> f32 {
-    0.93
-}
-fn default_noise() -> f32 {
-    0.15
-}
-fn default_threshold() -> f32 {
-    1.00
-}
-fn default_thermal_transfer_rate() -> f32 {
-    0.40
 }
 
 impl Default for SimulationConfig {
     fn default() -> Self {
         Self {
-            blobs: default_blobs(),
-            gravity: default_gravity(),
-            buoyancy: default_buoyancy(),
-            viscosity: default_viscosity(),
-            noise: default_noise(),
-            threshold: default_threshold(),
-            thermal_transfer_rate: default_thermal_transfer_rate(),
+            blobs: 12,
+            gravity: 0.12,
+            buoyancy: 0.80,
+            viscosity: 0.93,
+            noise: 0.15,
+            threshold: 1.00,
+            thermal_transfer_rate: 0.40,
         }
     }
 }
 
 /// Rendering options.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RenderConfig {
     /// Renderer backend ("halfblock", "block", or "braille").
-    #[serde(default = "default_renderer")]
+    #[serde(alias = "renderer_type")]
     pub renderer: String,
 
     /// Target frames per second.
-    #[serde(default = "default_fps")]
+    #[serde(alias = "target_fps")]
     pub fps: u32,
 
     /// Enable smooth gradient color mapping.
-    #[serde(default = "default_gradient")]
+    #[serde(alias = "smooth_gradient")]
     pub gradient: bool,
-}
-
-fn default_renderer() -> String {
-    "halfblock".to_string()
-}
-fn default_fps() -> u32 {
-    30
-}
-fn default_gradient() -> bool {
-    true
 }
 
 impl Default for RenderConfig {
     fn default() -> Self {
         Self {
-            renderer: default_renderer(),
-            fps: default_fps(),
-            gradient: default_gradient(),
+            renderer: "halfblock".to_string(),
+            fps: 30,
+            gradient: true,
         }
     }
 }
 
-/// Color palette configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct PaletteConfig {
-    #[serde(default = "default_bottom")]
-    pub bottom: Rgb,
-
-    #[serde(default = "default_middle")]
-    pub middle: Rgb,
-
-    #[serde(default = "default_top")]
-    pub top: Rgb,
-
-    #[serde(default = "default_background")]
-    pub background: Rgb,
-}
-
-fn default_bottom() -> Rgb {
-    Rgb::new(0xFF, 0x3B, 0x00)
-}
-fn default_middle() -> Rgb {
-    Rgb::new(0xFF, 0x7A, 0x00)
-}
-fn default_top() -> Rgb {
-    Rgb::new(0x7B, 0x2C, 0xFF)
-}
-fn default_background() -> Rgb {
-    Rgb::new(0x0D, 0x0D, 0x15)
-}
-
-impl Default for PaletteConfig {
-    fn default() -> Self {
-        Self {
-            bottom: default_bottom(),
-            middle: default_middle(),
-            top: default_top(),
-            background: default_background(),
-        }
-    }
-}
-
-impl From<PaletteConfig> for ColorPalette {
-    fn from(p: PaletteConfig) -> Self {
-        Self {
-            bottom: p.bottom,
-            middle: p.middle,
-            top: p.top,
-            background: p.background,
-        }
-    }
-}
+/// Color palette configuration (re-exports `ColorPalette` directly).
+pub type PaletteConfig = ColorPalette;
 
 /// Reactive system monitoring configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ReactiveConfig {
     /// Enable system-reactive ambient visualizer mode.
-    #[serde(default = "default_reactive_enabled")]
     pub enabled: bool,
 
     /// Metric polling interval in milliseconds.
-    #[serde(default = "default_poll_interval_ms")]
     pub poll_interval_ms: u64,
-}
-
-fn default_reactive_enabled() -> bool {
-    false
-}
-fn default_poll_interval_ms() -> u64 {
-    500
 }
 
 impl Default for ReactiveConfig {
     fn default() -> Self {
         Self {
-            enabled: default_reactive_enabled(),
-            poll_interval_ms: default_poll_interval_ms(),
+            enabled: false,
+            poll_interval_ms: 500,
         }
     }
 }
 
 /// Audio reactive monitoring configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AudioConfig {
     /// Enable audio-reactive ambient visualizer mode.
-    #[serde(default = "default_audio_enabled")]
     pub enabled: bool,
 
     /// BPM tempo for synthetic fallback beat generator.
-    #[serde(default = "default_bpm")]
+    #[serde(alias = "tempo")]
     pub bpm: f32,
 
     /// Optional target audio input/capture device name.
@@ -333,18 +243,11 @@ pub struct AudioConfig {
     pub loopback: bool,
 }
 
-fn default_audio_enabled() -> bool {
-    false
-}
-fn default_bpm() -> f32 {
-    120.0
-}
-
 impl Default for AudioConfig {
     fn default() -> Self {
         Self {
-            enabled: default_audio_enabled(),
-            bpm: default_bpm(),
+            enabled: false,
+            bpm: 120.0,
             device: None,
             loopback: false,
         }
@@ -365,92 +268,65 @@ pub struct ThemeConfig {
 
 /// Widget and compact multiplexer configuration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct WidgetConfig {
     /// Enable compact layout scaling by default.
-    #[serde(default)]
+    #[serde(alias = "compact_mode")]
     pub compact: bool,
 
     /// Target frame rate in widget mode.
-    #[serde(default = "default_widget_fps")]
     pub fps: u32,
 
     /// Run in inline mode without alternate screen by default.
-    #[serde(default)]
     pub inline: bool,
 
     /// Optional fixed width for widget layout.
-    #[serde(default)]
     pub width: Option<u16>,
 
     /// Optional fixed height for widget layout.
-    #[serde(default)]
     pub height: Option<u16>,
 
     /// Automatically adapt blob count and physics in compact mode.
-    #[serde(default = "default_adapt_blobs")]
     pub adapt_blobs: bool,
-}
-
-fn default_widget_fps() -> u32 {
-    15
-}
-fn default_adapt_blobs() -> bool {
-    true
 }
 
 impl Default for WidgetConfig {
     fn default() -> Self {
         Self {
             compact: false,
-            fps: default_widget_fps(),
+            fps: 15,
             inline: false,
             width: None,
             height: None,
-            adapt_blobs: default_adapt_blobs(),
+            adapt_blobs: true,
         }
     }
 }
 
 /// Interactive physics and user input configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct InteractionConfig {
     /// Enable mouse click shockwaves, dragging, and scroll pressure.
-    #[serde(default = "default_interaction_mouse")]
     pub mouse: bool,
 
     /// Enable keyboard ripples when typing alphanumeric characters.
-    #[serde(default = "default_interaction_keyboard_ripple")]
     pub keyboard_ripple: bool,
 
     /// Multiplier for mouse click shockwave force.
-    #[serde(default = "default_shockwave_force")]
     pub shockwave_force: f32,
 
     /// Multiplier for mouse drag stirring force.
-    #[serde(default = "default_stir_force")]
     pub stir_force: f32,
-}
-
-fn default_interaction_mouse() -> bool {
-    true
-}
-fn default_interaction_keyboard_ripple() -> bool {
-    true
-}
-fn default_shockwave_force() -> f32 {
-    1.0
-}
-fn default_stir_force() -> f32 {
-    1.0
 }
 
 impl Default for InteractionConfig {
     fn default() -> Self {
         Self {
-            mouse: default_interaction_mouse(),
-            keyboard_ripple: default_interaction_keyboard_ripple(),
-            shockwave_force: default_shockwave_force(),
-            stir_force: default_stir_force(),
+            mouse: true,
+            keyboard_ripple: true,
+            shockwave_force: 1.0,
+            stir_force: 1.0,
         }
     }
 }
@@ -458,6 +334,7 @@ impl Default for InteractionConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::render::Rgb;
 
     #[test]
     fn test_interaction_config_validation_and_parsing() {
@@ -633,6 +510,23 @@ mod tests {
         assert_eq!(config.theme.name.as_deref(), Some("cyberpunk"));
         assert!(!config.widget.compact);
         assert_eq!(config.widget.fps, 15);
+    }
+
+    #[test]
+    fn test_partially_specified_palette_deserialization() {
+        let toml_str = r##"
+            [palette]
+            background = "#123456"
+        "##;
+
+        let config: Config =
+            toml::from_str(toml_str).expect("Partially specified palette TOML should deserialize");
+        assert_eq!(config.palette.background, Rgb::new(0x12, 0x34, 0x56));
+        // Unspecified colors should retain defaults
+        let default_pal = ColorPalette::default();
+        assert_eq!(config.palette.bottom, default_pal.bottom);
+        assert_eq!(config.palette.middle, default_pal.middle);
+        assert_eq!(config.palette.top, default_pal.top);
     }
 
     #[test]

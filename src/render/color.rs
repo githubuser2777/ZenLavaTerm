@@ -70,6 +70,7 @@ impl<'de> Deserialize<'de> for Rgb {
 
 /// Palette holding gradient anchor colors.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ColorPalette {
     /// Heat source bottom color (hot).
     pub bottom: Rgb,

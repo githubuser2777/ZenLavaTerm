@@ -690,11 +690,13 @@ ZenLavaTerm/
 │       ├── mod.rs              # Theme engine re-exports
 │       ├── preset.rs           # 12 curated theme presets
 │       ├── detector.rs         # Automatic desktop theme detector
-│       ├── provider.rs         # ThemeProvider trait & resolvers
+│       ├── provider.rs         # Theme resolution engine
 │       ├── file.rs             # JSON/TOML custom theme file parser
 │       ├── pywal.rs            # Pywal color extractor
 │       └── wallust.rs          # Wallust color extractor
 └── tests/
+    ├── common/                 # Test fixtures & mock stream feeder
+    │   └── mod.rs
     └── integration_test.rs     # End-to-end integration test suite
 ```
 

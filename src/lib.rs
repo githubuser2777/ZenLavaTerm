@@ -15,27 +15,49 @@ pub mod widget;
 use std::fmt;
 
 /// Top-level error types for LavaTerm operations.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 pub enum LavaError {
     /// Standard I/O or terminal communication error.
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
+    Io(std::io::Error),
 
     /// Configuration parsing or validation error.
-    #[error("Configuration error: {0}")]
     Config(String),
 
     /// Rendering or framebuffer error.
-    #[error("Rendering error: {0}")]
     Render(String),
 
     /// Simulation or physics error.
-    #[error("Simulation error: {0}")]
     Simulation(String),
 
     /// Audio or FFT processing error.
-    #[error("Audio error: {0}")]
     Audio(String),
+}
+
+impl fmt::Display for LavaError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(e) => write!(f, "I/O error: {e}"),
+            Self::Config(msg) => write!(f, "Configuration error: {msg}"),
+            Self::Render(msg) => write!(f, "Rendering error: {msg}"),
+            Self::Simulation(msg) => write!(f, "Simulation error: {msg}"),
+            Self::Audio(msg) => write!(f, "Audio error: {msg}"),
+        }
+    }
+}
+
+impl std::error::Error for LavaError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Io(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<std::io::Error> for LavaError {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(err)
+    }
 }
 
 /// Specialized Result type for LavaTerm operations.

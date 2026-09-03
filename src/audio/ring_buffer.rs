@@ -259,40 +259,6 @@ impl PcmRingBuffer {
         self.release_producer();
     }
 
-    /// Pushes mono samples with linear resampling from `src_rate` to `dst_rate`.
-    pub fn push_resampled(&self, samples: &[f32], src_rate: u32, dst_rate: u32) {
-        if samples.is_empty() {
-            return;
-        }
-        if src_rate == dst_rate || src_rate == 0 || dst_rate == 0 {
-            self.push_slice(samples);
-            return;
-        }
-
-        let ratio = src_rate as f64 / dst_rate as f64;
-        let output_len = ((samples.len() as f64) / ratio).round() as usize;
-        if output_len == 0 {
-            return;
-        }
-
-        let mut resampled = Vec::with_capacity(output_len);
-        for i in 0..output_len {
-            let src_idx = i as f64 * ratio;
-            let idx0 = src_idx.floor() as usize;
-            let frac = (src_idx - idx0 as f64) as f32;
-
-            if idx0 + 1 < samples.len() {
-                let s0 = samples[idx0];
-                let s1 = samples[idx0 + 1];
-                resampled.push(s0 + frac * (s1 - s0));
-            } else if idx0 < samples.len() {
-                resampled.push(samples[idx0]);
-            }
-        }
-
-        self.push_slice(&resampled);
-    }
-
     /// Reads the most recent `count` samples in chronological order without locking.
     /// Employs an optimistic Seqlock protocol: guarantees that the returned window is a
     /// 100% coherent snapshot and never a torn mix of older and overwritten newer generations.
@@ -347,39 +313,6 @@ impl PcmRingBuffer {
     }
 }
 
-/// Helper function to linearly resample a PCM slice.
-pub fn resample_linear(input: &[f32], src_rate: u32, dst_rate: u32, out: &mut Vec<f32>) {
-    out.clear();
-    if input.is_empty() || src_rate == 0 || dst_rate == 0 {
-        return;
-    }
-    if src_rate == dst_rate {
-        out.extend_from_slice(input);
-        return;
-    }
-
-    let ratio = src_rate as f64 / dst_rate as f64;
-    let output_len = ((input.len() as f64) / ratio).round() as usize;
-    if output_len == 0 {
-        return;
-    }
-
-    out.reserve(output_len);
-    for i in 0..output_len {
-        let src_idx = i as f64 * ratio;
-        let idx0 = src_idx.floor() as usize;
-        let frac = (src_idx - idx0 as f64) as f32;
-
-        if idx0 + 1 < input.len() {
-            let s0 = input[idx0];
-            let s1 = input[idx0 + 1];
-            out.push(s0 + frac * (s1 - s0));
-        } else if idx0 < input.len() {
-            out.push(input[idx0]);
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -426,59 +359,6 @@ mod tests {
         assert_eq!(read_out.len(), 2);
         assert!((read_out[0] - 1.0).abs() < 1e-3);
         assert!((read_out[1] - 0.0).abs() < 1e-3);
-    }
-
-    #[test]
-    fn test_ring_buffer_resampling_linear() {
-        let mut out = Vec::new();
-        let input = vec![0.0f32, 1.0, 2.0, 3.0, 4.0];
-        // Resample 2x up
-        resample_linear(&input, 100, 200, &mut out);
-        assert_eq!(out.len(), 10);
-        assert_eq!(out[0], 0.0);
-        assert_eq!(out[2], 1.0);
-    }
-
-    #[test]
-    fn test_ring_buffer_cross_chunk_resampling_continuity() {
-        let ring = PcmRingBuffer::new(1024);
-        let sample_rate_src = 48000;
-        let sample_rate_dst = 44100;
-        let freq = 440.0f32;
-
-        // Generate chunk 1: frames 0..256
-        let chunk1: Vec<f32> = (0..256)
-            .map(|i| ((i as f32 / sample_rate_src as f32) * freq * std::f32::consts::TAU).sin())
-            .collect();
-
-        // Generate chunk 2: frames 256..512 (smooth continuous continuation)
-        let chunk2: Vec<f32> = (256..512)
-            .map(|i| ((i as f32 / sample_rate_src as f32) * freq * std::f32::consts::TAU).sin())
-            .collect();
-
-        ring.push_resampled(&chunk1, sample_rate_src, sample_rate_dst);
-        let written_1 = ring.total_samples_written();
-
-        ring.push_resampled(&chunk2, sample_rate_src, sample_rate_dst);
-        let written_2 = ring.total_samples_written();
-
-        let mut read_out = Vec::new();
-        assert!(ring.read_recent(written_2, &mut read_out));
-        assert_eq!(read_out.len(), written_2);
-
-        // Verify that across the boundary around written_1, the delta between consecutive samples
-        // is bounded by max sine slope (smoothness check)
-        let max_expected_delta = (freq * std::f32::consts::TAU) / (sample_rate_dst as f32) * 1.5;
-        let boundary_idx = written_1;
-        if boundary_idx < read_out.len() && boundary_idx > 0 {
-            let delta = (read_out[boundary_idx] - read_out[boundary_idx - 1]).abs();
-            assert!(
-                delta <= max_expected_delta,
-                "Boundary discontinuity too high: delta = {}, max = {}",
-                delta,
-                max_expected_delta
-            );
-        }
     }
 
     #[test]

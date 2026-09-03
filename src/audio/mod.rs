@@ -9,11 +9,8 @@ pub mod signals;
 
 pub use capture::LiveAudioProvider;
 pub use fft::SpectrumAnalyzer;
-pub use provider::{
-    AudioDeviceInfo, AudioProvider, MockAudioProvider, MockAudioStreamFeeder,
-    SyntheticAudioGenerator,
-};
-pub use ring_buffer::{resample_linear, PcmRingBuffer};
+pub use provider::{AudioDeviceInfo, AudioProvider, MockAudioProvider, SyntheticAudioGenerator};
+pub use ring_buffer::PcmRingBuffer;
 pub use signals::AudioSignals;
 
 use crate::config::AudioConfig;
